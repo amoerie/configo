@@ -1,14 +1,17 @@
 using System.IO.Compression;
 using Configo.Data;
 using Configo.Database;
+using Configo.Domain;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 var host = builder.Host;
+var environment = builder.Environment;
 
 // Host
 // ----
@@ -47,11 +50,39 @@ services.AddDataProtection()
 // SQL Server Database
 services.AddDbContextFactory<ConfigoDbContext>(dbContextOptions =>
 {
+    if (environment.IsDevelopment())
+    {
+        /*
+         * For performance reasons, EF Core does not wrap each call to read a value from the database provider in a try-catch block.
+         * However, this sometimes results in exceptions that are hard to diagnose, especially when the database returns a NULL when not allowed by the model.
+         * Turning on EnableDetailedErrors will cause EF to introduce these try-catch blocks and thereby provide more detailed errors.
+         */
+        dbContextOptions.EnableDetailedErrors();
+        
+        /*
+         * By default, EF Core will not include the values of any data in exception messages.
+         * This is because such data may be confidential, and could be revealed in production use if an exception is not handled.
+         * However, knowing data values, especially for keys, can be very helpful when debugging
+         */
+        dbContextOptions.EnableSensitiveDataLogging();
+    }
+    
+    /*
+     * For performance reasons, don't track loaded entities by default
+     */
+    dbContextOptions.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+    
+    dbContextOptions.ConfigureWarnings(warnings =>
+    {
+        warnings.Throw(RelationalEventId.MultipleCollectionIncludeWarning);
+    });
+    
     dbContextOptions.UseSqlServer(configuration.GetConnectionString("ConfigoDb"));
 });
 services.AddHostedService<DatabaseMigrator>();
 
-services.AddSingleton<WeatherForecastService>();
+// Domain
+services.AddSingleton<TagManager>();
 
 var app = builder.Build();
 

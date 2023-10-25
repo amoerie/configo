@@ -1,0 +1,164 @@
+﻿@page "/tags"
+@using Configo.Domain
+@using Configo.Domain.Models
+@inject TagManager TagManager
+
+<PageTitle>Tags</PageTitle>
+
+<h1>Tags</h1>
+
+@if (_tags == null)
+{
+    <p>
+        <em>Loading tags...</em>
+    </p>
+}
+else
+{
+    <div>
+        <button class="btn btn-success" @onclick="AddTag">
+            <span class="oi oi-plus" aria-hidden="true"></span> Add new tag
+        </button>
+    </div>
+
+    <div class="grid-table tags">
+        <div class="grid-table-header grid-table-row">
+            <span class="grid-table-cell">Id</span>
+            <span class="grid-table-cell">Name</span>
+            <span class="grid-table-cell"># Variables</span>
+            <span class="grid-table-cell"></span>
+        </div>
+        <div class="grid-table-body">
+            @foreach (var tag in TagsToShow)
+            {
+                @if (_tagBeingEdited?.Id == tag.Id)
+                {
+                    <EditForm Model="@_tagBeingEdited" OnSubmit="@SaveTag" class="grid-table-row">
+                        <span class="grid-table-cell">?</span>
+                        <span class="grid-table-cell">
+                            <InputText @bind-Value="_tagBeingEdited!.Name"/>
+                        </span>
+                        <span class="grid-table-cell">0</span>
+                        <span class="grid-table-cell">
+                            <button type="submit" class="btn btn-success">
+                                <span class="oi oi-check" aria-hidden="true"></span> Save
+                            </button>
+                            <button type="button" class="btn btn-default" @onclick=StopEditing>
+                                <span class="oi oi-x" aria-hidden="true"></span> Cancel
+                            </button>
+                        </span>
+                    </EditForm>
+                }
+                else if (_tagBeingDeleted?.Id == tag.Id)
+                {
+                    <EditForm Model="@_tagBeingDeleted" OnSubmit="@ConfirmDeleteTag" class="grid-table-row">
+                        <span class="grid-table-cell"></span>
+                        <span class="grid-table-cell">
+                            <InputNumber @bind-Value="_tagBeingDeleted!.Id" hidden="hidden"/>
+                        </span>
+                        <span class="grid-table-cell">Are you sure you want to delete @tag.Name?</span>
+                        <span class="grid-table-cell">
+                            <button type="submit" class="btn btn-danger">
+                                <span class="oi oi-check" aria-hidden="true"></span> Yes, delete it
+                            </button>
+                            <button type="button" class="btn btn-default" @onclick=StopDeleting>
+                                <span class="oi oi-x" aria-hidden="true"></span> No, keep it
+                            </button>
+                        </span>
+                    </EditForm>
+                }
+                else
+                {
+                    <div class="grid-table-row">
+                        <span class="grid-table-cell">@tag.Id</span>
+                        <span class="grid-table-cell">@tag.Name</span>
+                        <span class="grid-table-cell">@tag.NumberOfVariables</span>
+                        <span class="grid-table-cell">
+                            <button class="btn btn-primary" @onclick="() => EditTag(tag)"><span class="oi oi-pencil" aria-hidden="true"></span> Edit</button>
+                            <button class="btn btn-danger" @onclick="() => DeleteTag(tag)"><span class="oi oi-x" aria-hidden="true"></span> Delete</button>
+                        </span>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private List<TagListModel>? _tags;
+    private TagEditModel? _tagBeingEdited;
+    private TagDeleteModel? _tagBeingDeleted;
+
+    private IEnumerable<TagListModel> TagsToShow
+    {
+        get
+        {
+            if (_tags == null) yield break;
+            foreach (var tag in _tags) yield return tag;
+            if (_tagBeingEdited?.Id == 0) yield return new TagListModel { Id = 0, Name = _tagBeingEdited.Name ?? "", NumberOfVariables = 0 };
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _tags = await TagManager.GetAllTagsAsync(CancellationToken);
+    }
+
+    private void AddTag()
+    {
+        _tagBeingEdited = new TagEditModel { Id = 0, Name = "" };
+    }
+
+    private void EditTag(TagListModel tag)
+    {
+        _tagBeingEdited = new TagEditModel { Id = tag.Id, Name = tag.Name };
+    }
+
+    private void DeleteTag(TagListModel tag)
+    {
+        _tagBeingDeleted = new TagDeleteModel { Id = tag.Id };
+    }
+
+    private async Task SaveTag()
+    {
+        var tag = await TagManager.SaveTagAsync(_tagBeingEdited!, CancellationToken);
+        if (_tagBeingEdited!.Id == 0)
+        {
+            _tags!.Add(tag);
+        }
+        else
+        {
+            for (var i = 0; i < _tags!.Count; i++)
+            {
+                if (_tags[i].Id == _tagBeingEdited!.Id)
+                {
+                    _tags[i] = tag;
+                }
+            }
+        }
+        _tagBeingEdited = null;
+    }
+
+    private async Task ConfirmDeleteTag()
+    {
+        await TagManager.DeleteTagAsync(_tagBeingDeleted!, CancellationToken);
+        for (var i = 0; i < _tags!.Count; i++)
+        {
+            if (_tags[i].Id != _tagBeingDeleted!.Id) continue;
+            _tags.RemoveAt(i);
+            break;
+        }
+        _tagBeingDeleted = null;
+    }
+
+    private void StopEditing()
+    {
+        _tagBeingEdited = null;
+    }
+
+    private void StopDeleting()
+    {
+        _tagBeingDeleted = null;
+    }
+
+}

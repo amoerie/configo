@@ -1,0 +1,26 @@
+.grid-table {
+    width: 100%;
+    margin-bottom: 3rem;
+}
+
+.grid-table .grid-table-row {
+    display: grid;
+    place-items: start;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.grid-table .grid-table-row:nth-child(even) {
+    background: #eeeeee;
+}
+
+.grid-table .grid-table-header .grid-table-cell {
+    font-weight: bold;
+}
+
+.grid-table .grid-table-body .grid-table-row:last-child {
+    border-bottom: none;
+}
+
+.grid-table .grid-table-row .grid-table-cell {
+    padding: .5rem;
+}

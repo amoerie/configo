@@ -1,4 +1,4 @@
-﻿namespace Configo.Domain;
+﻿namespace Configo.Database.Tables;
 
 public enum VariableValueType
 {
