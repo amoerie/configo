@@ -14,6 +14,7 @@ services.AddDbContextFactory<ConfigoDbContext>(dbContextOptions =>
     dbContextOptions.UseSqlServer(configuration.GetConnectionString("ConfigoDb"));
 });
 services.AddSingleton<WeatherForecastService>();
+services.AddHostedService<DatabaseMigrator>();
 
 var app = builder.Build();
 
