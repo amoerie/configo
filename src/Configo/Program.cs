@@ -1,13 +1,19 @@
 using Configo.Data;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
+using Configo.Database;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+var configuration = builder.Configuration;
 
 // Add services to the container.
-builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
-builder.Services.AddSingleton<WeatherForecastService>();
+var services = builder.Services;
+services.AddRazorPages();
+services.AddServerSideBlazor();
+services.AddDbContextFactory<ConfigoDbContext>(dbContextOptions =>
+{
+    dbContextOptions.UseSqlServer(configuration.GetConnectionString("ConfigoDb"));
+});
+services.AddSingleton<WeatherForecastService>();
 
 var app = builder.Build();
 
