@@ -18,7 +18,8 @@ else
         <TableHeader ThemeContrast="ThemeContrast.Light">
             <TableRow>
                 <TableHeaderCell Style="width: 50%">Name</TableHeaderCell>
-                <TableHeaderCell Style="width: 30%">Updated UTC</TableHeaderCell>
+                <TableHeaderCell Style="width: 10%">Schema</TableHeaderCell>
+                <TableHeaderCell Style="width: 20%">Updated UTC</TableHeaderCell>
                 <TableHeaderCell Style="width: 20%"></TableHeaderCell>
             </TableRow>
         </TableHeader>
@@ -34,6 +35,8 @@ else
                                 <Button Color="Color.Secondary" Clicked="StopEditing"><Icon Name="IconName.Times"/> Cancel</Button>
                             </EditForm>
                         </TableRowCell>
+                        <TableRowCell>
+                        </TableRowCell>
                         <TableRowCell>@application.UpdatedAtUtc.ToString("s")</TableRowCell>
                         <TableRowCell></TableRowCell>
                     </TableRow>
@@ -41,7 +44,7 @@ else
                 else if (_applicationBeingDeleted?.Id == application.Id)
                 {
                     <TableRow>
-                        <TableRowCell ColumnSpan="3">
+                        <TableRowCell ColumnSpan="4">
                             <EditForm Model="@_applicationBeingDeleted" OnSubmit="@ConfirmDeleteApplication" class="grid-table-row">
                                 <InputNumber @bind-Value="_applicationBeingDeleted!.Id" hidden="hidden"/>
                                 <Alert Color="Color.Warning" Visible>
@@ -61,6 +64,14 @@ else
                             <Badge Color="Color.Light" Background="Background.Primary" Padding="Padding.Is3" TextSize="TextSize.Small">
                                 @application.Name
                             </Badge>
+                        </TableRowCell>
+                        <TableRowCell>
+                            <Button Type="ButtonType.Link"
+                                    To="@($"applications/{application.Name}/schema")" 
+                                    Color="Color.Dark" 
+                                    Background="Background.Info">
+                                <Icon Name="IconName.SpellCheck"></Icon> JSON Schema
+                            </Button>
                         </TableRowCell>
                         <TableRowCell>@application.UpdatedAtUtc.ToString("s")</TableRowCell>
                         <TableRowCell>

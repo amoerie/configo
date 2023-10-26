@@ -1,0 +1,29 @@
+﻿@page "/applications/{application}/schema"
+@using Configo.Domain
+@inject ApplicationManager ApplicationManager
+
+@if (_application == null)
+{
+    <p>...loading</p>
+    return;
+}
+
+<Heading Size="HeadingSize.Is1">
+    <Icon Name="IconName.Server"/> @_application.Name JSON schema
+</Heading>
+
+@code {
+    private ApplicationListModel? _application;
+
+    [Parameter]
+    public string? Application { get; set; }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Application == null)
+        {
+            throw new InvalidOperationException("Oi, where is the group");
+        }
+        _application = await ApplicationManager.GetApplicationAsync(Application, CancellationToken);
+    }
+}
