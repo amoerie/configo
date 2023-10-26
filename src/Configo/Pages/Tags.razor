@@ -121,7 +121,7 @@ else
             throw new InvalidOperationException("Oi, where is the group");
         }
         _tagGroup = await TagGroupManager.GetTagGroupAsync(Group, CancellationToken);
-        _tags = await TagManager.GetAllTagsAsync(_tagGroup.Id, CancellationToken);
+        _tags = await TagManager.GetTagsOfGroupAsync(_tagGroup.Id, CancellationToken);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

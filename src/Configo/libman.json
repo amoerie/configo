@@ -32,6 +32,10 @@
         "css/bootstrap.min.css",
         "js/bootstrap.min.js"
       ]
+    },
+    {
+      "library": "monaco-editor@0.44.0",
+      "destination": "wwwroot\\lib\\monaco-editor"
     }
   ]
 }

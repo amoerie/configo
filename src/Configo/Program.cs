@@ -92,6 +92,8 @@ services.AddHostedService<DatabaseMigrator>();
 services.AddSingleton<TagGroupManager>();
 services.AddSingleton<TagManager>();
 services.AddSingleton<ApplicationManager>();
+services.AddSingleton<ApiKeyManager>();
+services.AddSingleton<ApiKeyGenerator>();
 
 var app = builder.Build();
 

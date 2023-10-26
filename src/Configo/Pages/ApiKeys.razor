@@ -1,0 +1,256 @@
+﻿@page "/api-keys"
+@using Configo.Domain
+@inject ApiKeyManager ApiKeyManager
+@inject TagManager TagManager
+@inject ApplicationManager ApplicationManager
+
+<Heading Size="HeadingSize.Is1">
+    <Icon Name="IconName.List"/> Api Keys
+</Heading>
+
+@if (_apiKeys == null || _applications == null || _tags == null)
+{
+    <p>
+        <em>Loading...</em>
+    </p>
+}
+else
+{
+    <Table Hoverable>
+        <TableHeader ThemeContrast="ThemeContrast.Light">
+            <TableRow>
+                <TableHeaderCell Style="width: 20%">Application</TableHeaderCell>
+                <TableHeaderCell Style="width: 30%">Tags</TableHeaderCell>
+                <TableHeaderCell Style="width: 10%">Key</TableHeaderCell>
+                <TableHeaderCell Style="width: 10%">Valid Since UTC</TableHeaderCell>
+                <TableHeaderCell Style="width: 10%">Valid Until UTC</TableHeaderCell>
+                <TableHeaderCell Style="width: 10%">Updated UTC</TableHeaderCell>
+                <TableHeaderCell Style="width: 10%"></TableHeaderCell>
+            </TableRow>
+        </TableHeader>
+        <TableBody>
+            @foreach (var apiKey in ApiKeysToShow)
+            {
+                @if (_apiKeyBeingEdited?.Id == apiKey.Id)
+                {
+                    <TableRow>
+                        <TableRowCell>
+                            <EditForm Model="@_apiKeyBeingEdited" OnSubmit="@SaveApiKey">
+                                <Autocomplete TItem="ApplicationDropdownModel"
+                                              TValue="int"
+                                              Data="@_applications"
+                                              TextField="@(item => item.Name)"
+                                              ValueField="@(item => item.Id)"
+                                              @bind-SelectedValue="@_apiKeyBeingEdited.ApplicationId"
+                                              @bind-SelectedText="ApplicationNameAutoCompleteText"
+                                              Placeholder="Search application..."
+                                              Filter="AutocompleteFilter.Contains"
+                                              FreeTyping>
+                                    <NotFoundContent Context="searchString">No applications found that contain @searchString</NotFoundContent>
+                                </Autocomplete>
+                                <Button Color="Color.Secondary" Clicked="StopEditing"><Icon Name="IconName.Times"/> Cancel</Button>
+                            </EditForm>
+                        </TableRowCell>
+                        <TableRowCell Style="cursor:pointer" Clicked="() => EditApiKey(apiKey)">
+                            <EditForm Model="@_apiKeyBeingEdited" OnSubmit="@SaveApiKey">
+                                <Autocomplete TItem="TagDropdownModel"
+                                              TValue="int"
+                                              Data="@_tags"
+                                              TextField="@(item => item.Name)"
+                                              ValueField="@(item => item.Id)"
+                                              @bind-SelectedValues="@_apiKeyBeingEdited.TagIds"
+                                              @bind-SelectedTextsText="TagNameAutoCompleteTexts"
+                                              SelectionMode="AutocompleteSelectionMode.Multiple"
+                                              Placeholder="Search tag..."
+                                              Filter="AutocompleteFilter.Contains"
+                                              FreeTyping>
+                                    <NotFoundContent Context="searchString">No tags found that contain @searchString</NotFoundContent>
+                                </Autocomplete>
+                            </EditForm>
+                        </TableRowCell>
+                        <TableRowCell>@apiKey.Key.Substring(0, 5)...@apiKey.Key.Substring(apiKey.Key.Length - 5)</TableRowCell>
+                        <TableRowCell>@apiKey.UpdatedAtUtc.ToString("s")</TableRowCell>
+                        <TableRowCell>@apiKey.ActiveSinceUtc.ToString("s")</TableRowCell>
+                        <TableRowCell>@apiKey.ActiveUntilUtc.ToString("s")</TableRowCell>
+                        <TableRowCell></TableRowCell>
+                    </TableRow>
+                }
+                else if (_apiKeyBeingDeleted?.Id == apiKey.Id)
+                {
+                    <TableRow>
+                        <TableRowCell ColumnSpan="6">
+                            <EditForm Model="@_apiKeyBeingDeleted" OnSubmit="@ConfirmDeleteApiKey">
+                                <InputNumber @bind-Value="_apiKeyBeingDeleted!.Id" hidden="hidden" />
+                                <Alert Color="Color.Warning" Visible>
+                                    <AlertMessage>Are you sure?</AlertMessage>
+                                    <AlertDescription>Deleting API key @apiKey.Key.Substring(0, 5)... cannot be undone</AlertDescription>
+                                </Alert>
+                                <Button Color="Color.Danger" Clicked="ConfirmDeleteApiKey"><Icon Name="IconName.Delete"/> Yes, delete it</Button>
+                                <Button Color="Color.Secondary" Clicked="StopDeleting"><Icon Name="IconName.Times"/> No, keep it</Button>
+                            </EditForm>
+                        </TableRowCell>
+                    </TableRow>
+                }
+                else
+                {
+                    <TableRow>
+                        <TableRowCell Style="cursor:pointer" Clicked="() => EditApiKey(apiKey)">
+                            <Badge Color="Color.Light" Background="Background.Primary" Padding="Padding.Is3" TextSize="TextSize.Small">
+                                @(_applicationsById!.TryGetValue(apiKey.ApplicationId, out var application) ? application.Name : "")
+                            </Badge>
+                        </TableRowCell>
+                        <TableRowCell Style="cursor:pointer" Clicked="() => EditApiKey(apiKey)">
+                            @foreach (var tagId in apiKey.TagIds)
+                            {
+                                if (!_tagsById!.TryGetValue(tagId, out var tag))
+                                {
+                                    continue;
+                                }
+                                <Badge Color="Color.Light" Background="Background.Primary" Padding="Padding.Is3" TextSize="TextSize.Small">
+                                    @tag.GroupName:@tag.Name
+                                </Badge>
+                            }
+                        </TableRowCell>
+                        <TableRowCell>@apiKey.Key.Substring(0, 5)...@apiKey.Key.Substring(apiKey.Key.Length - 5)</TableRowCell>
+                        <TableRowCell>@apiKey.UpdatedAtUtc.ToString("s")</TableRowCell>
+                        <TableRowCell>@apiKey.ActiveSinceUtc.ToString("s")</TableRowCell>
+                        <TableRowCell>@apiKey.ActiveUntilUtc.ToString("s")</TableRowCell>
+                        <TableRowCell>
+                            <Button Color="Color.Danger" Clicked="() => DeleteApiKey(apiKey)"><Icon Name="IconName.Delete"/> Delete</Button>
+                        </TableRowCell>
+                    </TableRow>
+                }
+            }
+        </TableBody>
+    </Table>
+
+    <div>
+        <Button Color="Color.Success" Clicked="AddApiKey"><Icon Name="IconName.PlusSquare"/> Add new api key</Button>
+    </div>
+}
+
+@code {
+    private List<ApiKeyListModel>? _apiKeys;
+    private List<TagDropdownModel>? _tags;
+    private Dictionary<int, TagDropdownModel>? _tagsById;
+    private List<ApplicationDropdownModel>? _applications;
+    private Dictionary<int, ApplicationDropdownModel>? _applicationsById;
+    private ApiKeyEditModel? _apiKeyBeingEdited;
+    private ApiKeyDeleteModel? _apiKeyBeingDeleted;
+    private InputText? _apiKeyNameInput;
+
+    public string? ApplicationNameAutoCompleteText { get; set; }
+    public List<string> TagNameAutoCompleteTexts { get; set; }
+
+    private IEnumerable<ApiKeyListModel> ApiKeysToShow
+    {
+        get
+        {
+            if (_apiKeys == null) yield break;
+            foreach (var apiKey in _apiKeys) yield return apiKey;
+            if (_apiKeyBeingEdited?.Id == 0)
+            {
+                yield return new ApiKeyListModel
+                {
+                    Id = 0,
+                    ApplicationId = _applications?.FirstOrDefault()?.Id ?? 0,
+                    Key = "",
+                    TagIds = new List<int>(),
+                    ActiveSinceUtc = DateTime.UtcNow,
+                    ActiveUntilUtc = DateTime.UtcNow.AddYears(10),
+                    UpdatedAtUtc = DateTime.UtcNow,
+                };
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _apiKeys = await ApiKeyManager.GetAllApiKeysAsync(CancellationToken);
+        _tags = await TagManager.GetAllTagsForDropdownAsync(CancellationToken);
+        _applications = await ApplicationManager.GetAllApplicationsForDropdownAsync(CancellationToken);
+        _tagsById = _tags.ToDictionary(t => t.Id);
+        _applicationsById = _applications.ToDictionary(a => a.Id);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_apiKeyNameInput?.Element != null)
+        {
+            await _apiKeyNameInput.Element.Value.FocusAsync();
+        }
+    }
+
+    private void AddApiKey()
+    {
+        _apiKeyBeingEdited = new ApiKeyEditModel
+        {
+            Id = 0,
+            ApplicationId = _applications?.FirstOrDefault()?.Id ?? 0,
+            TagIds = new List<int>(),
+            ActiveSinceUtc = DateTime.UtcNow,
+            ActiveUntilUtc = DateTime.UtcNow.AddYears(10)
+        };
+    }
+
+    private void EditApiKey(ApiKeyListModel apiKey)
+    {
+        _apiKeyBeingEdited = new ApiKeyEditModel
+        {
+            Id = apiKey.Id,
+            ApplicationId = apiKey.ApplicationId,
+            TagIds = apiKey.TagIds,
+            ActiveSinceUtc = apiKey.ActiveSinceUtc,
+            ActiveUntilUtc = apiKey.ActiveUntilUtc
+        };
+    }
+
+    private void DeleteApiKey(ApiKeyListModel apiKey)
+    {
+        _apiKeyBeingDeleted = new ApiKeyDeleteModel { Id = apiKey.Id };
+    }
+
+    private async Task SaveApiKey()
+    {
+        var apiKey = await ApiKeyManager.SaveApiKeyAsync(_apiKeyBeingEdited!, CancellationToken);
+        if (_apiKeyBeingEdited!.Id == 0)
+        {
+            _apiKeys!.Add(apiKey);
+        }
+        else
+        {
+            for (var i = 0; i < _apiKeys!.Count; i++)
+            {
+                if (_apiKeys[i].Id == _apiKeyBeingEdited!.Id)
+                {
+                    _apiKeys[i] = apiKey;
+                }
+            }
+        }
+        StopEditing();
+    }
+
+    private async Task ConfirmDeleteApiKey()
+    {
+        await ApiKeyManager.DeleteApiKeyAsync(_apiKeyBeingDeleted!, CancellationToken);
+        for (var i = 0; i < _apiKeys!.Count; i++)
+        {
+            if (_apiKeys[i].Id != _apiKeyBeingDeleted!.Id) continue;
+            _apiKeys.RemoveAt(i);
+            break;
+        }
+        _apiKeyBeingDeleted = null;
+    }
+
+    private void StopEditing()
+    {
+        _apiKeyBeingEdited = null;
+        _apiKeyNameInput = null;
+    }
+
+    private void StopDeleting()
+    {
+        _apiKeyBeingDeleted = null;
+    }
+
+}

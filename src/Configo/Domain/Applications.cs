@@ -24,6 +24,12 @@ public sealed class ApplicationDeleteModel
     [Required] public int? Id { get; set; }
 }
 
+public sealed record ApplicationDropdownModel
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+}
+
 public sealed class ApplicationManager
 {
     private readonly ILogger<ApplicationManager> _logger;
@@ -34,8 +40,6 @@ public sealed class ApplicationManager
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
     }
-    
-    
 
     public async Task<ApplicationListModel> GetApplicationAsync(string application, CancellationToken cancellationToken)
     {
@@ -54,6 +58,26 @@ public sealed class ApplicationManager
             .SingleAsync(t => t.Name == application, cancellationToken);
 
         _logger.LogInformation("Got application with name {Name}", application);
+
+        return applications;
+    }
+
+    public async Task<List<ApplicationDropdownModel>> GetAllApplicationsForDropdownAsync(CancellationToken cancellationToken)
+    {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        _logger.LogDebug("Getting all applications");
+
+        var applications = await dbContext.Applications
+            .OrderBy(t => t.Name)
+            .Select(t => new ApplicationDropdownModel
+            {
+                Id = t.Id,
+                Name = t.Name,
+            })
+            .ToListAsync(cancellationToken);
+
+        _logger.LogInformation("Got {NumberOfApplications} applications", applications.Count);
 
         return applications;
     }

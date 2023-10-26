@@ -26,6 +26,13 @@ public sealed class TagDeleteModel
     [Required] public int? Id { get; set; }
 }
 
+public sealed record TagDropdownModel
+{
+    public int Id { get; init; }
+    public string GroupName { get; init; }
+    public string Name { get; init; }
+}
+
 public sealed class TagManager
 {
     private readonly ILogger<TagManager> _logger;
@@ -37,11 +44,37 @@ public sealed class TagManager
         _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
     }
 
-    public async Task<List<TagListModel>> GetAllTagsAsync(int tagGroupId, CancellationToken cancellationToken)
+    public async Task<List<TagDropdownModel>> GetAllTagsForDropdownAsync(CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         _logger.LogDebug("Getting all tags");
+
+        var tagRecords = await dbContext.Tags
+            .Select(t => new { t.Id, t.TagGroupId, t.Name })
+            .ToListAsync(cancellationToken);
+        var tagGroupRecords = await dbContext.TagGroups
+            .Select(t => new { t.Id, t.Name })
+            .ToListAsync(cancellationToken);
+            
+        var tagGroupRecordsById = tagGroupRecords.ToDictionary(r => r.Id);
+
+        _logger.LogInformation("Got {NumberOfTags} tags", tagRecords.Count);
+        
+        return tagRecords.Select(tagRecord => new TagDropdownModel
+            {
+                Id = tagRecord.Id,
+                GroupName = tagGroupRecordsById[tagRecord.TagGroupId].Name,
+                Name = tagRecord.Name
+            })
+            .ToList();
+    }
+    
+    public async Task<List<TagListModel>> GetTagsOfGroupAsync(int tagGroupId, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        _logger.LogDebug("Getting tags of group {GroupId}", tagGroupId);
 
         var tags = await dbContext.Tags
             .Where(t => t.TagGroupId == tagGroupId)
@@ -59,7 +92,7 @@ public sealed class TagManager
             .OrderBy(t => t.Name)
             .ToListAsync(cancellationToken);
 
-        _logger.LogInformation("Got {NumberOfTags} tags", tags.Count);
+        _logger.LogInformation("Got {NumberOfTags} tags of group {GroupId}", tags.Count, tagGroupId);
 
         return tags;
     }
