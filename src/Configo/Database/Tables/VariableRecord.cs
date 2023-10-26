@@ -21,5 +21,8 @@ public class VariableRecordConfigurator: IEntityTypeConfiguration<VariableRecord
         builder.HasKey(r => r.Id);
         builder.Property(r => r.Key).HasMaxLength(512);
         builder.Property(r => r.ValueType).HasConversion<string>().HasMaxLength(16).HasDefaultValue(VariableValueType.String);
+        builder.Property(r => r.CreatedAtUtc).HasDefaultValue(DateTime.UnixEpoch);
+        builder.Property(r => r.UpdatedAtUtc).HasDefaultValue(DateTime.UnixEpoch);
+        builder.Property(r => r.ActiveFromUtc).HasDefaultValue(DateTime.UnixEpoch);
     }
 }

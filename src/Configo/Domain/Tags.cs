@@ -9,6 +9,7 @@ public sealed record TagListModel
 {
     public required int Id { get; init; }
     public required string Name { get; init; }
+    public required DateTime UpdatedAtUtc { get; init; }
     public required int NumberOfVariables { get; init; }
 }
 
@@ -54,6 +55,7 @@ public sealed class TagManager
                 {
                     Id = tag.Id,
                     Name = tag.Name,
+                    UpdatedAtUtc = tag.UpdatedAtUtc,
                     NumberOfVariables = tagVariables.Count()
                 })
             .ToListAsync(cancellationToken);
@@ -72,7 +74,7 @@ public sealed class TagManager
         TagRecord tagRecord;
         if (tag.Id == 0)
         {
-            tagRecord = new TagRecord { Name = tag.Name! };
+            tagRecord = new TagRecord { Name = tag.Name!, TagGroupId = 0, CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow };
             dbContext.Tags.Add(tagRecord);
             await dbContext.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("Saved {@Tag}", tagRecord);
@@ -80,7 +82,8 @@ public sealed class TagManager
             {
                 Id = tagRecord.Id,
                 Name = tagRecord.Name,
-                NumberOfVariables = 0
+                UpdatedAtUtc = tagRecord.UpdatedAtUtc,
+                NumberOfVariables = 0,
             };
         }
 
@@ -88,6 +91,7 @@ public sealed class TagManager
             .AsTracking()
             .SingleAsync(t => t.Id == tag.Id, cancellationToken);
         tagRecord.Name = tag.Name!;
+        tagRecord.UpdatedAtUtc = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Saved {@Tag}", tagRecord);
 
@@ -95,6 +99,7 @@ public sealed class TagManager
         {
             Id = tagRecord.Id,
             Name = tagRecord.Name,
+            UpdatedAtUtc = tagRecord.UpdatedAtUtc,
             NumberOfVariables = await dbContext.TagVariables.CountAsync(tv => tv.TagId == tagRecord.Id, cancellationToken)
         };
     }

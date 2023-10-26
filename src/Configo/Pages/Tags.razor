@@ -25,6 +25,7 @@ else
             <span class="grid-table-cell">Id</span>
             <span class="grid-table-cell">Name</span>
             <span class="grid-table-cell"># Variables</span>
+            <span class="grid-table-cell">Updated</span>
             <span class="grid-table-cell"></span>
         </div>
         <div class="grid-table-body">
@@ -38,6 +39,7 @@ else
                             <InputText @bind-Value="_tagBeingEdited.Name" @ref=_tagNameInput />
                         </span>
                         <span class="grid-table-cell">0</span>
+                        <span class="grid-table-cell">@tag.UpdatedAtUtc.ToString("s")</span>
                         <span class="grid-table-cell">
                             <button type="submit" class="btn btn-success">
                                 <span class="oi oi-check" aria-hidden="true"></span> Save
@@ -57,6 +59,7 @@ else
                         </span>
                         <span class="grid-table-cell">Are you sure you want to delete @tag.Name?</span>
                         <span class="grid-table-cell"></span>
+                        <span class="grid-table-cell">@tag.UpdatedAtUtc.ToString("s")</span>
                         <span class="grid-table-cell">
                             <button type="submit" class="btn btn-danger">
                                 <span class="oi oi-check" aria-hidden="true"></span> Yes, delete it
@@ -73,6 +76,7 @@ else
                         <span class="grid-table-cell">@tag.Id</span>
                         <span class="grid-table-cell">@tag.Name</span>
                         <span class="grid-table-cell">@tag.NumberOfVariables</span>
+                        <span class="grid-table-cell">@tag.UpdatedAtUtc.ToString("s")</span>
                         <span class="grid-table-cell">
                             <button class="btn btn-primary" @onclick="() => EditTag(tag)"><span class="oi oi-pencil" aria-hidden="true"></span> Edit</button>
                             <button class="btn btn-danger" @onclick="() => DeleteTag(tag)"><span class="oi oi-x" aria-hidden="true"></span> Delete</button>
@@ -82,7 +86,7 @@ else
             }
         </div>
     </div>
-    
+
     <div>
         <button class="btn btn-success" @onclick="AddTag">
             <span class="oi oi-plus" aria-hidden="true"></span> Add new tag
@@ -102,7 +106,16 @@ else
         {
             if (_tags == null) yield break;
             foreach (var tag in _tags) yield return tag;
-            if (_tagBeingEdited?.Id == 0) yield return new TagListModel { Id = 0, Name = _tagBeingEdited.Name ?? "", NumberOfVariables = 0 };
+            if (_tagBeingEdited?.Id == 0)
+            {
+                yield return new TagListModel
+                {
+                    Id = 0,
+                    Name = _tagBeingEdited.Name ?? "",
+                    UpdatedAtUtc = DateTime.UtcNow,
+                    NumberOfVariables = 0
+                };
+            }
         }
     }
 
