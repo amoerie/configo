@@ -1,6 +1,6 @@
 using System.IO.Compression;
 using Blazorise;
-using Blazorise.Bootstrap;
+using Blazorise.Bootstrap5;
 using Blazorise.Icons.FontAwesome;
 using Configo.Database;
 using Configo.Domain;
@@ -33,7 +33,7 @@ services.AddServerSideBlazor();
 
 // Theming
 services.AddBlazorise(o => { o.Immediate = true; });
-services.AddBootstrapProviders();
+services.AddBootstrap5Providers();
 services.AddFontAwesomeIcons();
 
 // Reverse proxy support

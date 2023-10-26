@@ -12,30 +12,16 @@
       ]
     },
     {
-      "library": "jquery@3.7.1",
-      "destination": "wwwroot\\lib\\jquery",
-      "files": [
-        "jquery.slim.min.js"
-      ]
-    },
-    {
-      "library": "popper.js@2.11.8",
-      "destination": "wwwroot\\lib\\popper.js",
-      "files": [
-        "umd/popper.min.js"
-      ]
+      "library": "monaco-editor@0.44.0",
+      "destination": "wwwroot\\lib\\monaco-editor"
     },
     {
       "library": "bootstrap@5.3.2",
       "destination": "wwwroot\\lib\\bootstrap",
       "files": [
         "css/bootstrap.min.css",
-        "js/bootstrap.min.js"
+        "js/bootstrap.bundle.min.js"
       ]
-    },
-    {
-      "library": "monaco-editor@0.44.0",
-      "destination": "wwwroot\\lib\\monaco-editor"
     }
   ]
 }
