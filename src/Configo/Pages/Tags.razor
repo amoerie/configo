@@ -1,5 +1,6 @@
 ﻿@page "/tags"
 @using Configo.Domain
+@inject TagGroupManager TagGroupManager
 @inject TagManager TagManager
 
 <PageTitle>Tags</PageTitle>
@@ -25,7 +26,7 @@ else
             <span class="grid-table-cell">Id</span>
             <span class="grid-table-cell">Name</span>
             <span class="grid-table-cell"># Variables</span>
-            <span class="grid-table-cell">Updated</span>
+            <span class="grid-table-cell">Updated UTC</span>
             <span class="grid-table-cell"></span>
         </div>
         <div class="grid-table-body">

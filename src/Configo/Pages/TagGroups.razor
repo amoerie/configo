@@ -1,0 +1,193 @@
+﻿@page "/tag-groups"
+@using Configo.Domain
+@inject TagGroupManager TagGroupManager
+
+<PageTitle>Tag Groups</PageTitle>
+
+<h1>Tag Groups</h1>
+
+@if (_tagGroups == null)
+{
+    <p>
+        <em>Loading tag groups...</em>
+    </p>
+}
+else
+{
+    <div>
+        <button class="btn btn-success" @onclick="AddTagGroup">
+            <span class="oi oi-plus" aria-hidden="true"></span> Add new tag group
+        </button>
+    </div>
+
+    <div class="grid-table tag-groups">
+        <div class="grid-table-header grid-table-row">
+            <span class="grid-table-cell">Id</span>
+            <span class="grid-table-cell">Name</span>
+            <span class="grid-table-cell"># Tags</span>
+            <span class="grid-table-cell">Updated UTC</span>
+            <span class="grid-table-cell"></span>
+        </div>
+        <div class="grid-table-body">
+            @foreach (var tagGroup in TagGroupsToShow)
+            {
+                @if (_tagGroupBeingEdited?.Id == tagGroup.Id)
+                {
+                    <EditForm Model="@_tagGroupBeingEdited" OnSubmit="@SaveTagGroup" class="grid-table-row">
+                        <span class="grid-table-cell">?</span>
+                        <span class="grid-table-cell">
+                            <InputText @bind-Value="_tagGroupBeingEdited.Name" @ref=_tagGroupNameInput />
+                        </span>
+                        <span class="grid-table-cell">0</span>
+                        <span class="grid-table-cell">@tagGroup.UpdatedAtUtc.ToString("s")</span>
+                        <span class="grid-table-cell">
+                            <button type="submit" class="btn btn-success">
+                                <span class="oi oi-check" aria-hidden="true"></span> Save
+                            </button>
+                            <button type="button" class="btn btn-default" @onclick=StopEditing>
+                                <span class="oi oi-x" aria-hidden="true"></span> Cancel
+                            </button>
+                        </span>
+                    </EditForm>
+                }
+                else if (_tagGroupBeingDeleted?.Id == tagGroup.Id)
+                {
+                    <EditForm Model="@_tagGroupBeingDeleted" OnSubmit="@ConfirmDeleteTagGroup" class="grid-table-row">
+                        <span class="grid-table-cell">
+                            @tagGroup.Id
+                            <InputNumber @bind-Value="_tagGroupBeingDeleted!.Id" hidden="hidden"/>
+                        </span>
+                        <span class="grid-table-cell">Are you sure you want to delete @tagGroup.Name?</span>
+                        <span class="grid-table-cell"></span>
+                        <span class="grid-table-cell">@tagGroup.UpdatedAtUtc.ToString("s")</span>
+                        <span class="grid-table-cell">
+                            <button type="submit" class="btn btn-danger">
+                                <span class="oi oi-check" aria-hidden="true"></span> Yes, delete it
+                            </button>
+                            <button type="button" class="btn btn-default" @onclick=StopDeleting>
+                                <span class="oi oi-x" aria-hidden="true"></span> No, keep it
+                            </button>
+                        </span>
+                    </EditForm>
+                }
+                else
+                {
+                    <div class="grid-table-row">
+                        <span class="grid-table-cell">@tagGroup.Id</span>
+                        <span class="grid-table-cell">@tagGroup.Name</span>
+                        <span class="grid-table-cell">@tagGroup.NumberOfTags</span>
+                        <span class="grid-table-cell">@tagGroup.UpdatedAtUtc.ToString("s")</span>
+                        <span class="grid-table-cell">
+                            <button class="btn btn-primary" @onclick="() => EditTagGroup(tagGroup)"><span class="oi oi-pencil" aria-hidden="true"></span> Edit</button>
+                            <button class="btn btn-danger" @onclick="() => DeleteTagGroup(tagGroup)"><span class="oi oi-x" aria-hidden="true"></span> Delete</button>
+                        </span>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <div>
+        <button class="btn btn-success" @onclick="AddTagGroup">
+            <span class="oi oi-plus" aria-hidden="true"></span> Add new tag group
+        </button>
+    </div>
+}
+
+@code {
+    private List<TagGroupListModel>? _tagGroups;
+    private TagGroupEditModel? _tagGroupBeingEdited;
+    private TagGroupDeleteModel? _tagGroupBeingDeleted;
+    private InputText? _tagGroupNameInput;
+
+    private IEnumerable<TagGroupListModel> TagGroupsToShow
+    {
+        get
+        {
+            if (_tagGroups == null) yield break;
+            foreach (var tagGroup in _tagGroups) yield return tagGroup;
+            if (_tagGroupBeingEdited?.Id == 0)
+            {
+                yield return new TagGroupListModel
+                {
+                    Id = 0,
+                    Name = _tagGroupBeingEdited.Name ?? "",
+                    UpdatedAtUtc = DateTime.UtcNow,
+                    NumberOfTags = 0
+                };
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_tagGroupNameInput?.Element != null)
+        {
+            await _tagGroupNameInput.Element.Value.FocusAsync();
+        }
+    }
+
+    private void AddTagGroup()
+    {
+        _tagGroupBeingEdited = new TagGroupEditModel { Id = 0, Name = "" };
+    }
+
+    private void EditTagGroup(TagGroupListModel tagGroup)
+    {
+        _tagGroupBeingEdited = new TagGroupEditModel { Id = tagGroup.Id, Name = tagGroup.Name };
+    }
+
+    private void DeleteTagGroup(TagGroupListModel tagGroup)
+    {
+        _tagGroupBeingDeleted = new TagGroupDeleteModel { Id = tagGroup.Id };
+    }
+
+    private async Task SaveTagGroup()
+    {
+        var tagGroup = await TagGroupManager.SaveTagGroupAsync(_tagGroupBeingEdited!, CancellationToken);
+        if (_tagGroupBeingEdited!.Id == 0)
+        {
+            _tagGroups!.Add(tagGroup);
+        }
+        else
+        {
+            for (var i = 0; i < _tagGroups!.Count; i++)
+            {
+                if (_tagGroups[i].Id == _tagGroupBeingEdited!.Id)
+                {
+                    _tagGroups[i] = tagGroup;
+                }
+            }
+        }
+        StopEditing();
+    }
+
+    private async Task ConfirmDeleteTagGroup()
+    {
+        await TagGroupManager.DeleteTagGroupAsync(_tagGroupBeingDeleted!, CancellationToken);
+        for (var i = 0; i < _tagGroups!.Count; i++)
+        {
+            if (_tagGroups[i].Id != _tagGroupBeingDeleted!.Id) continue;
+            _tagGroups.RemoveAt(i);
+            break;
+        }
+        _tagGroupBeingDeleted = null;
+    }
+
+    private void StopEditing()
+    {
+        _tagGroupBeingEdited = null;
+        _tagGroupNameInput = null;
+    }
+
+    private void StopDeleting()
+    {
+        _tagGroupBeingDeleted = null;
+    }
+
+}

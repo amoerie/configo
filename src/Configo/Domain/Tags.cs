@@ -58,6 +58,7 @@ public sealed class TagManager
                     UpdatedAtUtc = tag.UpdatedAtUtc,
                     NumberOfVariables = tagVariables.Count()
                 })
+            .OrderBy(t => t.Name)
             .ToListAsync(cancellationToken);
 
         _logger.LogInformation("Got {NumberOfTags} tags", tags.Count);
