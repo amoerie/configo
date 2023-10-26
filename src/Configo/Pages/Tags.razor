@@ -4,7 +4,7 @@
 @inject TagManager TagManager
 
 <Heading Size="HeadingSize.Is1">
-    <Icon Name="IconName.Tag"/> @(_tagGroup?.Name ?? "...") tags 
+    <Icon Name="IconName.Tag"/> @(_tagGroup?.Name ?? "...") tags
 </Heading>
 
 @if (_tags == null)
@@ -30,17 +30,21 @@ else
                 @if (_tagBeingEdited?.Id == tag.Id)
                 {
                     <TableRow>
-                        <TableRowCell>
+                        <TableRowCell ColumnSpan="4">
                             <EditForm Model="@_tagBeingEdited" OnSubmit="@SaveTag">
-                                <InputText @bind-Value="_tagBeingEdited.Name" @ref=_tagNameInput />
-                                <Button Color="Color.Secondary" Clicked="StopEditing"><Icon Name="IconName.Times"/> Cancel</Button>
+                                <Row>
+                                    <Field ColumnSize="ColumnSize.Is2" >
+                                        <TextEdit Placeholder="Name" @bind-Text="_tagBeingEdited.Name" @ref=_tagNameInput>
+                                            <FieldHelp>Tag names must be unique</FieldHelp>
+                                        </TextEdit>
+                                    </Field>
+                                    <Field ColumnSize="ColumnSize.IsAuto" TextAlignment="TextAlignment.Start">
+                                        <Button Color="Color.Success" Clicked="SaveTag"><Icon Name="IconName.Check"/> Save</Button>
+                                        <Button Color="Color.Secondary" Clicked="StopEditing"><Icon Name="IconName.Times"/> Cancel</Button>
+                                    </Field>
+                                </Row>
                             </EditForm>
                         </TableRowCell>
-                        <TableRowCell>
-                            <Badge Color="Color.Primary" Pill Background="Background.Secondary">@tag.NumberOfVariables</Badge>
-                        </TableRowCell>
-                        <TableRowCell>@tag.UpdatedAtUtc.ToString("s")</TableRowCell>
-                        <TableRowCell></TableRowCell>
                     </TableRow>
                 }
                 else if (_tagBeingDeleted?.Id == tag.Id)
@@ -62,15 +66,13 @@ else
                 else
                 {
                     <TableRow>
-                        <TableRowCell Style="cursor:pointer" Clicked="() => EditTag(tag)">
-                            <Badge Color="Color.Light" Background="Background.Primary" Padding="Padding.Is3" TextSize="TextSize.Small">
-                                @tag.Name
-                            </Badge>
-                        </TableRowCell>
+                        <TableRowHeader Style="cursor:pointer" Clicked="() => EditTag(tag)">
+                            @tag.Name
+                        </TableRowHeader>
                         <TableRowCell>
                             <Badge Color="Color.Primary" Pill Background="Background.Secondary">@tag.NumberOfVariables</Badge>
                         </TableRowCell>
-                        <TableRowCell>@tag.UpdatedAtUtc.ToString("s")</TableRowCell>
+                        <TableRowCell>@tag.UpdatedAtUtc.ToString("g")</TableRowCell>
                         <TableRowCell>
                             <Button Color="Color.Danger" Clicked="() => DeleteTag(tag)"><Icon Name="IconName.Delete"/> Delete</Button>
                         </TableRowCell>
@@ -86,11 +88,11 @@ else
 }
 
 @code {
-    private TagGroupListModel _tagGroup = default!;
+    private TagGroupListModel? _tagGroup;
     private List<TagListModel>? _tags;
     private TagEditModel? _tagBeingEdited;
     private TagDeleteModel? _tagBeingDeleted;
-    private InputText? _tagNameInput;
+    private TextEdit? _tagNameInput;
 
     private IEnumerable<TagListModel> TagsToShow
     {
@@ -110,7 +112,7 @@ else
             }
         }
     }
-    
+
     [Parameter]
     public string? Group { get; set; }
 
@@ -126,20 +128,20 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_tagNameInput?.Element != null)
+        if (_tagNameInput != null)
         {
-            await _tagNameInput.Element.Value.FocusAsync();
+            await _tagNameInput.Focus();
         }
     }
 
     private void AddTag()
     {
-        _tagBeingEdited = new TagEditModel { Id = 0, Name = "", TagGroupId = _tagGroup.Id };
+        _tagBeingEdited = new TagEditModel { Id = 0, Name = "", TagGroupId = _tagGroup!.Id };
     }
 
     private void EditTag(TagListModel tag)
     {
-        _tagBeingEdited = new TagEditModel { Id = tag.Id, Name = tag.Name, TagGroupId = _tagGroup.Id };
+        _tagBeingEdited = new TagEditModel { Id = tag.Id, Name = tag.Name, TagGroupId = _tagGroup!.Id };
     }
 
     private void DeleteTag(TagListModel tag)

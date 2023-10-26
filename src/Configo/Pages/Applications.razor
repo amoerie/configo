@@ -29,16 +29,21 @@ else
                 @if (_applicationBeingEdited?.Id == application.Id)
                 {
                     <TableRow>
-                        <TableRowCell>
+                        <TableRowCell ColumnSpan="4">
                             <EditForm Model="@_applicationBeingEdited" OnSubmit="@SaveApplication">
-                                <InputText @bind-Value="_applicationBeingEdited.Name" @ref=_applicationNameInput />
-                                <Button Color="Color.Secondary" Clicked="StopEditing"><Icon Name="IconName.Times"/> Cancel</Button>
+                                <Row>
+                                    <Field ColumnSize="ColumnSize.Is2">
+                                        <TextEdit Placeholder="Name" @bind-Text="_applicationBeingEdited.Name" @ref=_applicationNameInput>
+                                            <FieldHelp>Application names must be unique</FieldHelp>
+                                        </TextEdit>
+                                    </Field>
+                                    <Field ColumnSize="ColumnSize.IsAuto" TextAlignment="TextAlignment.Start">
+                                        <Button Color="Color.Success" Clicked="SaveApplication"><Icon Name="IconName.Check"/> Save</Button>
+                                        <Button Color="Color.Secondary" Clicked="StopEditing"><Icon Name="IconName.Times"/> Cancel</Button>
+                                    </Field>
+                                </Row>
                             </EditForm>
                         </TableRowCell>
-                        <TableRowCell>
-                        </TableRowCell>
-                        <TableRowCell>@application.UpdatedAtUtc.ToString("s")</TableRowCell>
-                        <TableRowCell></TableRowCell>
                     </TableRow>
                 }
                 else if (_applicationBeingDeleted?.Id == application.Id)
@@ -60,11 +65,9 @@ else
                 else
                 {
                     <TableRow>
-                        <TableRowCell Style="cursor:pointer" Clicked="() => EditApplication(application)">
-                            <Badge Color="Color.Light" Background="Background.Primary" Padding="Padding.Is3" TextSize="TextSize.Small">
-                                @application.Name
-                            </Badge>
-                        </TableRowCell>
+                        <TableRowHeader Style="cursor:pointer" Clicked="() => EditApplication(application)">
+                            @application.Name
+                        </TableRowHeader>
                         <TableRowCell>
                             <Button Type="ButtonType.Link"
                                     To="@($"applications/{application.Name}/schema")" 
@@ -73,7 +76,7 @@ else
                                 <Icon Name="IconName.SpellCheck"></Icon> JSON Schema
                             </Button>
                         </TableRowCell>
-                        <TableRowCell>@application.UpdatedAtUtc.ToString("s")</TableRowCell>
+                        <TableRowCell>@application.UpdatedAtUtc.ToString("g")</TableRowCell>
                         <TableRowCell>
                             <Button Color="Color.Danger" Clicked="() => DeleteApplication(application)"><Icon Name="IconName.Delete"/> Delete</Button>
                         </TableRowCell>
@@ -92,7 +95,7 @@ else
     private List<ApplicationListModel>? _applications;
     private ApplicationEditModel? _applicationBeingEdited;
     private ApplicationDeleteModel? _applicationBeingDeleted;
-    private InputText? _applicationNameInput;
+    private TextEdit? _applicationNameInput;
     
     private IEnumerable<ApplicationListModel> ApplicationsToShow
     {
@@ -119,9 +122,9 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_applicationNameInput?.Element != null)
+        if (_applicationNameInput != null)
         {
-            await _applicationNameInput.Element.Value.FocusAsync();
+            await _applicationNameInput.Focus();
         }
     }
 

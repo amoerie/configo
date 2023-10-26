@@ -23,8 +23,8 @@ else
                 <TableHeaderCell Style="width: 20%">Application</TableHeaderCell>
                 <TableHeaderCell Style="width: 30%">Tags</TableHeaderCell>
                 <TableHeaderCell Style="width: 10%">Key</TableHeaderCell>
-                <TableHeaderCell Style="width: 10%">Valid Since UTC</TableHeaderCell>
-                <TableHeaderCell Style="width: 10%">Valid Until UTC</TableHeaderCell>
+                <TableHeaderCell Style="width: 10%">Active Since UTC</TableHeaderCell>
+                <TableHeaderCell Style="width: 10%">Active Until UTC</TableHeaderCell>
                 <TableHeaderCell Style="width: 10%">Updated UTC</TableHeaderCell>
                 <TableHeaderCell Style="width: 10%"></TableHeaderCell>
             </TableRow>
@@ -35,45 +35,67 @@ else
                 @if (_apiKeyBeingEdited?.Id == apiKey.Id)
                 {
                     <TableRow>
-                        <TableRowCell>
+                        <TableRowCell ColumnSpan="6">
                             <EditForm Model="@_apiKeyBeingEdited" OnSubmit="@SaveApiKey">
-                                <Autocomplete TItem="ApplicationDropdownModel"
-                                              TValue="int"
-                                              Data="@_applications"
-                                              TextField="@(item => item.Name)"
-                                              ValueField="@(item => item.Id)"
-                                              @bind-SelectedValue="@_apiKeyBeingEdited.ApplicationId"
-                                              @bind-SelectedText="ApplicationNameAutoCompleteText"
-                                              Placeholder="Search application..."
-                                              Filter="AutocompleteFilter.Contains"
-                                              FreeTyping>
-                                    <NotFoundContent Context="searchString">No applications found that contain @searchString</NotFoundContent>
-                                </Autocomplete>
-                                <Button Color="Color.Secondary" Clicked="StopEditing"><Icon Name="IconName.Times"/> Cancel</Button>
+                            <Field Horizontal>
+                                <FieldLabel ColumnSize="ColumnSize.Is2">Application</FieldLabel>
+                                <FieldBody ColumnSize="ColumnSize.Is10">
+                                    <Autocomplete TItem="ApplicationDropdownModel"
+                                                  TValue="int"
+                                                  Data="@_applications"
+                                                  TextField="@(item => item.Name)"
+                                                  ValueField="@(item => item.Id)"
+                                                  @bind-SelectedValue="@_apiKeyBeingEdited.ApplicationId"
+                                                  @bind-SelectedText="ApplicationNameAutoCompleteText"
+                                                  Placeholder="Search application..."
+                                                  Filter="AutocompleteFilter.Contains"
+                                                  FreeTyping>
+                                        <NotFoundContent Context="searchString">No applications found that contain @searchString</NotFoundContent>
+                                    </Autocomplete>
+                                    <FieldHelp>It's okay if one application has multiple API keys</FieldHelp>
+                                </FieldBody>
+                            </Field>
+                                <Field Horizontal>
+                                    <FieldLabel ColumnSize="ColumnSize.Is2">Tags</FieldLabel>
+                                    <FieldBody ColumnSize="ColumnSize.Is10">
+                                        <Autocomplete TItem="TagDropdownModel"
+                                                      TValue="int"
+                                                      Data="@_tags"
+                                                      TextField="@(item => item.CombinedName)"
+                                                      ValueField="@(item => item.Id)"
+                                                      @bind-SelectedValues="@_apiKeyBeingEdited.TagIds"
+                                                      @bind-SelectedTextsText="TagNameAutoCompleteTexts"
+                                                      SelectionMode="AutocompleteSelectionMode.Multiple"
+                                                      Placeholder="Search tag..."
+                                                      Filter="AutocompleteFilter.Contains"
+                                                      FreeTyping>
+                                            <NotFoundContent Context="searchString">No tags found that contain @searchString</NotFoundContent>
+                                        </Autocomplete>
+                                        <FieldHelp>You probably want to combine tags to narrow things down to a single application instance on a single machine</FieldHelp>
+                                    </FieldBody>
+                                </Field>
+                                <Field Horizontal>
+                                    <FieldLabel ColumnSize="ColumnSize.Is2">Active Since</FieldLabel>
+                                    <FieldBody ColumnSize="ColumnSize.Is10">
+                                    <DateEdit TValue="DateTime" @bind-Date="@_apiKeyBeingEdited.ActiveSinceUtc">
+                                        <FieldHelp>Set in the future to disable this API key</FieldHelp>
+                                    </DateEdit>
+                                    </FieldBody>
+                                </Field>
+                                <Field Horizontal>
+                                    <FieldLabel ColumnSize="ColumnSize.Is2">Active Until</FieldLabel>
+                                    <FieldBody ColumnSize="ColumnSize.Is10">
+                                    <DateEdit TValue="DateTime" @bind-Date="@_apiKeyBeingEdited.ActiveUntilUtc">
+                                        <FieldHelp>Set in the past to disable this API key</FieldHelp>
+                                    </DateEdit>
+                                    </FieldBody>
+                                </Field>
+                                <Field ColumnSize="ColumnSize.Is2.WithOffset" TextAlignment="TextAlignment.Start">
+                                    <Button Color="Color.Success" Clicked="SaveApiKey"><Icon Name="IconName.Check"/> Save</Button>
+                                    <Button Color="Color.Secondary" Clicked="StopEditing"><Icon Name="IconName.Times"/> Cancel</Button>
+                                </Field>
                             </EditForm>
                         </TableRowCell>
-                        <TableRowCell Style="cursor:pointer" Clicked="() => EditApiKey(apiKey)">
-                            <EditForm Model="@_apiKeyBeingEdited" OnSubmit="@SaveApiKey">
-                                <Autocomplete TItem="TagDropdownModel"
-                                              TValue="int"
-                                              Data="@_tags"
-                                              TextField="@(item => item.Name)"
-                                              ValueField="@(item => item.Id)"
-                                              @bind-SelectedValues="@_apiKeyBeingEdited.TagIds"
-                                              @bind-SelectedTextsText="TagNameAutoCompleteTexts"
-                                              SelectionMode="AutocompleteSelectionMode.Multiple"
-                                              Placeholder="Search tag..."
-                                              Filter="AutocompleteFilter.Contains"
-                                              FreeTyping>
-                                    <NotFoundContent Context="searchString">No tags found that contain @searchString</NotFoundContent>
-                                </Autocomplete>
-                            </EditForm>
-                        </TableRowCell>
-                        <TableRowCell>@apiKey.Key.Substring(0, 5)...@apiKey.Key.Substring(apiKey.Key.Length - 5)</TableRowCell>
-                        <TableRowCell>@apiKey.UpdatedAtUtc.ToString("s")</TableRowCell>
-                        <TableRowCell>@apiKey.ActiveSinceUtc.ToString("s")</TableRowCell>
-                        <TableRowCell>@apiKey.ActiveUntilUtc.ToString("s")</TableRowCell>
-                        <TableRowCell></TableRowCell>
                     </TableRow>
                 }
                 else if (_apiKeyBeingDeleted?.Id == apiKey.Id)
@@ -95,11 +117,9 @@ else
                 else
                 {
                     <TableRow>
-                        <TableRowCell Style="cursor:pointer" Clicked="() => EditApiKey(apiKey)">
-                            <Badge Color="Color.Light" Background="Background.Primary" Padding="Padding.Is3" TextSize="TextSize.Small">
-                                @(_applicationsById!.TryGetValue(apiKey.ApplicationId, out var application) ? application.Name : "")
-                            </Badge>
-                        </TableRowCell>
+                        <TableRowHeader Style="cursor:pointer" Clicked="() => EditApiKey(apiKey)">
+                            @(_applicationsById!.TryGetValue(apiKey.ApplicationId, out var application) ? application.Name : "")
+                        </TableRowHeader>
                         <TableRowCell Style="cursor:pointer" Clicked="() => EditApiKey(apiKey)">
                             @foreach (var tagId in apiKey.TagIds)
                             {
@@ -107,8 +127,8 @@ else
                                 {
                                     continue;
                                 }
-                                <Badge Color="Color.Light" Background="Background.Primary" Padding="Padding.Is3" TextSize="TextSize.Small">
-                                    @tag.GroupName:@tag.Name
+                                <Badge Background="Background.Primary" Padding="Padding.Is1" Margin="Margin.Is1" TextSize="TextSize.Small">
+                                    @tag.CombinedName
                                 </Badge>
                             }
                         </TableRowCell>
@@ -148,7 +168,7 @@ else
     private InputText? _apiKeyNameInput;
 
     public string? ApplicationNameAutoCompleteText { get; set; }
-    public List<string> TagNameAutoCompleteTexts { get; set; }
+    public List<string>? TagNameAutoCompleteTexts { get; set; }
 
     private IEnumerable<ApiKeyListModel> ApiKeysToShow
     {
