@@ -32,7 +32,6 @@ else
                         <TableRowCell>
                             <EditForm Model="@_tagGroupBeingEdited" OnSubmit="@SaveTagGroup">
                                 <InputText @bind-Value="_tagGroupBeingEdited.Name" @ref=_tagGroupNameInput />
-                                <Button Color="Color.Primary" Clicked="ConfirmDeleteTagGroup"><Icon Name="IconName.Save"/> Save</Button>
                                 <Button Color="Color.Secondary" Clicked="StopEditing"><Icon Name="IconName.Times"/> Cancel</Button>
                             </EditForm>
                         </TableRowCell>
@@ -62,7 +61,11 @@ else
                 else
                 {
                     <TableRow>
-                        <TableRowCell Style="cursor:pointer" Clicked="() => EditTagGroup(tagGroup)">@tagGroup.Name</TableRowCell>
+                        <TableRowCell Style="cursor:pointer" Clicked="() => EditTagGroup(tagGroup)">
+                            <Badge Color="Color.Light" Background="Background.Primary" Padding="Padding.Is3" TextSize="TextSize.Small">
+                                @tagGroup.Name
+                            </Badge>
+                        </TableRowCell>
                         <TableRowCell>
                             <Badge Color="Color.Primary" Pill Background="Background.Secondary">@tagGroup.NumberOfTags</Badge>
                         </TableRowCell>
