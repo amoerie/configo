@@ -2,9 +2,9 @@
 @using Configo.Domain
 @inject TagGroupManager TagGroupManager
 
-<PageTitle>Tag Groups</PageTitle>
-
-<h1>Tag Groups</h1>
+<Heading Size="HeadingSize.Is1">
+    <Icon Name="IconName.List"/> Tag Groups
+</Heading>
 
 @if (_tagGroups == null)
 {
@@ -14,83 +14,70 @@
 }
 else
 {
-    <div>
-        <button class="btn btn-success" @onclick="AddTagGroup">
-            <span class="oi oi-plus" aria-hidden="true"></span> Add new tag group
-        </button>
-    </div>
-
-    <div class="grid-table tag-groups">
-        <div class="grid-table-header grid-table-row">
-            <span class="grid-table-cell">Id</span>
-            <span class="grid-table-cell">Name</span>
-            <span class="grid-table-cell"># Tags</span>
-            <span class="grid-table-cell">Updated UTC</span>
-            <span class="grid-table-cell"></span>
-        </div>
-        <div class="grid-table-body">
+    <Table Hoverable>
+        <TableHeader ThemeContrast="ThemeContrast.Light">
+            <TableRow>
+                <TableHeaderCell Style="width: 40%">Name</TableHeaderCell>
+                <TableHeaderCell Style="width: 20%"># Tags</TableHeaderCell>
+                <TableHeaderCell Style="width: 20%">Updated UTC</TableHeaderCell>
+                <TableHeaderCell Style="width: 20%"></TableHeaderCell>
+            </TableRow>
+        </TableHeader>
+        <TableBody>
             @foreach (var tagGroup in TagGroupsToShow)
             {
                 @if (_tagGroupBeingEdited?.Id == tagGroup.Id)
                 {
-                    <EditForm Model="@_tagGroupBeingEdited" OnSubmit="@SaveTagGroup" class="grid-table-row">
-                        <span class="grid-table-cell">?</span>
-                        <span class="grid-table-cell">
-                            <InputText @bind-Value="_tagGroupBeingEdited.Name" @ref=_tagGroupNameInput />
-                        </span>
-                        <span class="grid-table-cell">0</span>
-                        <span class="grid-table-cell">@tagGroup.UpdatedAtUtc.ToString("s")</span>
-                        <span class="grid-table-cell">
-                            <button type="submit" class="btn btn-success">
-                                <span class="oi oi-check" aria-hidden="true"></span> Save
-                            </button>
-                            <button type="button" class="btn btn-default" @onclick=StopEditing>
-                                <span class="oi oi-x" aria-hidden="true"></span> Cancel
-                            </button>
-                        </span>
-                    </EditForm>
+                    <TableRow>
+                        <TableRowCell>
+                            <EditForm Model="@_tagGroupBeingEdited" OnSubmit="@SaveTagGroup">
+                                <InputText @bind-Value="_tagGroupBeingEdited.Name" @ref=_tagGroupNameInput />
+                                <Button Color="Color.Primary" Clicked="ConfirmDeleteTagGroup"><Icon Name="IconName.Save"/> Save</Button>
+                                <Button Color="Color.Secondary" Clicked="StopEditing"><Icon Name="IconName.Times"/> Cancel</Button>
+                            </EditForm>
+                        </TableRowCell>
+                        <TableRowCell>
+                            <Badge Color="Color.Primary" Pill Background="Background.Secondary">@tagGroup.NumberOfTags</Badge>
+                        </TableRowCell>
+                        <TableRowCell>@tagGroup.UpdatedAtUtc.ToString("s")</TableRowCell>
+                        <TableRowCell></TableRowCell>
+                    </TableRow>
                 }
                 else if (_tagGroupBeingDeleted?.Id == tagGroup.Id)
                 {
-                    <EditForm Model="@_tagGroupBeingDeleted" OnSubmit="@ConfirmDeleteTagGroup" class="grid-table-row">
-                        <span class="grid-table-cell">
-                            @tagGroup.Id
-                            <InputNumber @bind-Value="_tagGroupBeingDeleted!.Id" hidden="hidden"/>
-                        </span>
-                        <span class="grid-table-cell">Are you sure you want to delete @tagGroup.Name?</span>
-                        <span class="grid-table-cell"></span>
-                        <span class="grid-table-cell">@tagGroup.UpdatedAtUtc.ToString("s")</span>
-                        <span class="grid-table-cell">
-                            <button type="submit" class="btn btn-danger">
-                                <span class="oi oi-check" aria-hidden="true"></span> Yes, delete it
-                            </button>
-                            <button type="button" class="btn btn-default" @onclick=StopDeleting>
-                                <span class="oi oi-x" aria-hidden="true"></span> No, keep it
-                            </button>
-                        </span>
-                    </EditForm>
+                    <TableRow>
+                        <TableRowCell ColumnSpan="4">
+                            <EditForm Model="@_tagGroupBeingDeleted" OnSubmit="@ConfirmDeleteTagGroup" class="grid-table-row">
+                                <InputNumber @bind-Value="_tagGroupBeingDeleted!.Id" hidden="hidden"/>
+                                <Alert Color="Color.Warning" Visible>
+                                    <AlertMessage>Are you sure?</AlertMessage>
+                                    <AlertDescription>Deleting @tagGroup.Name cannot be undone</AlertDescription>
+                                </Alert>
+                                <Button Color="Color.Danger" Clicked="ConfirmDeleteTagGroup"><Icon Name="IconName.Delete"/> Yes, delete it</Button>
+                                <Button Color="Color.Secondary" Clicked="StopDeleting"><Icon Name="IconName.Times"/> No, keep it</Button>
+                            </EditForm>
+                        </TableRowCell>
+                    </TableRow>
                 }
                 else
                 {
-                    <div class="grid-table-row">
-                        <span class="grid-table-cell">@tagGroup.Id</span>
-                        <span class="grid-table-cell">@tagGroup.Name</span>
-                        <span class="grid-table-cell">@tagGroup.NumberOfTags</span>
-                        <span class="grid-table-cell">@tagGroup.UpdatedAtUtc.ToString("s")</span>
-                        <span class="grid-table-cell">
-                            <button class="btn btn-primary" @onclick="() => EditTagGroup(tagGroup)"><span class="oi oi-pencil" aria-hidden="true"></span> Edit</button>
-                            <button class="btn btn-danger" @onclick="() => DeleteTagGroup(tagGroup)"><span class="oi oi-x" aria-hidden="true"></span> Delete</button>
-                        </span>
-                    </div>
+                    <TableRow>
+                        <TableRowCell Style="cursor:pointer" Clicked="() => EditTagGroup(tagGroup)">@tagGroup.Name</TableRowCell>
+                        <TableRowCell>
+                            <Badge Color="Color.Primary" Pill Background="Background.Secondary">@tagGroup.NumberOfTags</Badge>
+                        </TableRowCell>
+                        <TableRowCell>@tagGroup.UpdatedAtUtc.ToString("s")</TableRowCell>
+                        <TableRowCell>
+                            <Button Color="Color.Danger" Clicked="() => DeleteTagGroup(tagGroup)"><Icon Name="IconName.Delete"/> Delete</Button>
+                        </TableRowCell>
+                    </TableRow>
                 }
             }
-        </div>
-    </div>
+        </TableBody>
+    </Table>
 
     <div>
-        <button class="btn btn-success" @onclick="AddTagGroup">
-            <span class="oi oi-plus" aria-hidden="true"></span> Add new tag group
-        </button>
+        <Button Color="Color.Success" Clicked="AddTagGroup"><Icon Name="IconName.PlusSquare"/> Add new tag group</Button>
     </div>
 }
 

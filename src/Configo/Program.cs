@@ -1,4 +1,7 @@
 using System.IO.Compression;
+using Blazorise;
+using Blazorise.Bootstrap;
+using Blazorise.Icons.FontAwesome;
 using Configo.Data;
 using Configo.Database;
 using Configo.Domain;
@@ -29,6 +32,11 @@ var services = builder.Services;
 services.AddRazorPages();
 services.AddServerSideBlazor();
 
+// Theming
+services.AddBlazorise(o => { o.Immediate = true; });
+services.AddBootstrapProviders();
+services.AddFontAwesomeIcons();
+
 // Reverse proxy support
 services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -58,7 +66,7 @@ services.AddDbContextFactory<ConfigoDbContext>(dbContextOptions =>
          * Turning on EnableDetailedErrors will cause EF to introduce these try-catch blocks and thereby provide more detailed errors.
          */
         dbContextOptions.EnableDetailedErrors();
-        
+
         /*
          * By default, EF Core will not include the values of any data in exception messages.
          * This is because such data may be confidential, and could be revealed in production use if an exception is not handled.
@@ -66,17 +74,17 @@ services.AddDbContextFactory<ConfigoDbContext>(dbContextOptions =>
          */
         dbContextOptions.EnableSensitiveDataLogging();
     }
-    
+
     /*
      * For performance reasons, don't track loaded entities by default
      */
     dbContextOptions.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-    
+
     dbContextOptions.ConfigureWarnings(warnings =>
     {
         warnings.Throw(RelationalEventId.MultipleCollectionIncludeWarning);
     });
-    
+
     dbContextOptions.UseSqlServer(configuration.GetConnectionString("ConfigoDb"));
 });
 services.AddHostedService<DatabaseMigrator>();

@@ -1,44 +1,66 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Configo</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-    </div>
-</div>
+﻿@using Configo.Domain
+@inject TagGroupManager TagGroupManager
 
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="tag-groups">
-                <span class="oi oi-tags" aria-hidden="true"></span> Tag Groups
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="tags">
-                <span class="oi oi-tag" aria-hidden="true"></span> Tags
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="fetchdata">
-                <span class="oi oi-list-rich" aria-hidden="true"></span> Fetch data
-            </NavLink>
-        </div>
-    </nav>
-</div>
+<Bar Mode="BarMode.VerticalInline"
+     CollapseMode="BarCollapseMode.Small"
+     Breakpoint="Breakpoint.Desktop"
+     NavigationBreakpoint="Breakpoint.Tablet"
+     ThemeContrast="ThemeContrast.Dark">
+    <BarBrand>
+        <BarItem>
+            <BarLink To="#">
+                <BarIcon IconName="IconName.Wrench" /> Configo
+            </BarLink>
+        </BarItem>
+    </BarBrand>
+    <BarMenu>
+        <BarStart>
+            <BarItem>
+                <BarLink To="tag-groups"><BarIcon IconName="IconName.List"/> Tag Groups</BarLink>
+            </BarItem>
+            @if (_tagGroups != null)
+            {
+                <BarItem>
+                    <BarDropdown>
+                        <BarDropdownToggle>
+                            <BarIcon IconName="IconName.Tag"/>
+                            Tags
+                        </BarDropdownToggle>
+                        <BarDropdownMenu>
+                            @foreach (var tagGroup in _tagGroups)
+                            {
+                                <BarDropdownItem>
+                                    <BarLink To="@($"tags/{tagGroup.Name}")">
+                                        <BarIcon IconName="IconName.Tag"/> @tagGroup.Name
+                                    </BarLink>
+                                </BarDropdownItem>
+                            }
+                        </BarDropdownMenu>
+                    </BarDropdown>
+                </BarItem>
+            }
+        </BarStart>
+    </BarMenu>
+</Bar>
 
 @code {
-    private bool collapseNavMenu = true;
+    private List<TagGroupListModel>? _tagGroups;
+    private Func<CancellationToken, Task> _listener = default!;
 
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    private void ToggleNavMenu()
+    protected override async Task OnInitializedAsync()
     {
-        collapseNavMenu = !collapseNavMenu;
+        _listener = ReloadAsync;
+        TagGroupManager.Subscribe(_listener);
+        await ReloadAsync(CancellationToken);
+    }
+
+    private async Task ReloadAsync(CancellationToken cancellationToken)
+    {
+        _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken);
+    }
+
+    protected override void OnDispose()
+    {
+        TagGroupManager.Unsubscribe(_listener);
     }
 }

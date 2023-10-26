@@ -29,6 +29,7 @@ public sealed class TagGroupManager
 {
     private readonly ILogger<TagGroupManager> _logger;
     private readonly IDbContextFactory<ConfigoDbContext> _dbContextFactory;
+    private readonly List<Func<CancellationToken, Task>> _changeListeners = new List<Func<CancellationToken, Task>>();
 
     public TagGroupManager(ILogger<TagGroupManager> logger, IDbContextFactory<ConfigoDbContext> dbContextFactory)
     {
@@ -36,11 +37,66 @@ public sealed class TagGroupManager
         _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
     }
 
+    public void Subscribe(Func<CancellationToken, Task> listener)
+    {
+        lock (_changeListeners)
+        {
+            _changeListeners.Add(listener);
+        }
+    }
+
+    public void Unsubscribe(Func<CancellationToken, Task> listener)
+    {
+        lock (_changeListeners)
+        {
+            _changeListeners.Remove(listener);
+        }
+    }
+
+    private async Task NotifyListenersAsync(CancellationToken cancellationToken)
+    {
+        Func<CancellationToken, Task>[] listeners;
+        lock (_changeListeners)
+        {
+            listeners = _changeListeners.ToArray();
+        }
+
+        foreach (var listener in listeners)
+        {
+            await listener(cancellationToken);
+        }
+    }
+
+    public async Task<TagGroupListModel> GetTagGroupAsync(string group, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        _logger.LogDebug("Getting tag group with name {Name}", group);
+
+        var tagGroups = await dbContext.TagGroups
+            .GroupJoin(
+                dbContext.Tags,
+                tagGroup => tagGroup.Id,
+                tag => tag.TagGroupId,
+                (tagGroup, tags) => new TagGroupListModel
+                {
+                    Id = tagGroup.Id,
+                    Name = tagGroup.Name,
+                    UpdatedAtUtc = tagGroup.UpdatedAtUtc,
+                    NumberOfTags = tags.Count()
+                })
+            .SingleAsync(t => t.Name == group, cancellationToken);
+
+        _logger.LogInformation("Got tag group with name {Name}", group);
+
+        return tagGroups;
+    }
+
     public async Task<List<TagGroupListModel>> GetAllTagGroupsAsync(CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        _logger.LogDebug("Getting all tagGroups");
+        _logger.LogDebug("Getting all tag groups");
 
         var tagGroups = await dbContext.TagGroups
             .GroupJoin(
@@ -57,7 +113,7 @@ public sealed class TagGroupManager
             .OrderBy(t => t.Name)
             .ToListAsync(cancellationToken);
 
-        _logger.LogInformation("Got {NumberOfTagGroups} tagGroups", tagGroups.Count);
+        _logger.LogInformation("Got {NumberOfTagGroups} tag groups", tagGroups.Count);
 
         return tagGroups;
     }
@@ -80,6 +136,7 @@ public sealed class TagGroupManager
             };
             dbContext.TagGroups.Add(tagGroupRecord);
             await dbContext.SaveChangesAsync(cancellationToken);
+            await NotifyListenersAsync(cancellationToken);
             _logger.LogInformation("Saved {@TagGroup}", tagGroupRecord);
             return new TagGroupListModel
             {
@@ -96,6 +153,7 @@ public sealed class TagGroupManager
         tagGroupRecord.Name = tagGroup.Name!;
         tagGroupRecord.UpdatedAtUtc = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
+        await NotifyListenersAsync(cancellationToken);
         _logger.LogInformation("Saved {@TagGroup}", tagGroupRecord);
 
         return new TagGroupListModel
@@ -112,7 +170,7 @@ public sealed class TagGroupManager
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        _logger.LogDebug("Deleting tagGroup {@TagGroup}", tagGroup);
+        _logger.LogDebug("Deleting tag group {@TagGroup}", tagGroup);
 
         var tagGroupRecord = await dbContext.TagGroups
             .AsTracking()
@@ -120,7 +178,7 @@ public sealed class TagGroupManager
 
         dbContext.TagGroups.Remove(tagGroupRecord);
         await dbContext.SaveChangesAsync(cancellationToken);
-
-        _logger.LogInformation("Deleted tagGroup {@TagGroup}", tagGroup);
+        await NotifyListenersAsync(cancellationToken);
+        _logger.LogInformation("Deleted tag group {@TagGroup}", tagGroup);
     }
 }

@@ -10,10 +10,13 @@ public class ConfigoComponentBase: ComponentBase, IDisposable
     private CancellationTokenSource? _cancellationTokenSource;
 
     protected CancellationToken CancellationToken => (_cancellationTokenSource ??= new CancellationTokenSource()).Token;
+    
+    protected virtual void OnDispose() {}
 
     public virtual void Dispose()
     {
         if (_cancellationTokenSource == null) return;
+        OnDispose();
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
         _cancellationTokenSource = null;

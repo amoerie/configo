@@ -16,17 +16,14 @@ public sealed record TagListModel
 public sealed class TagEditModel
 {
     public int? Id { get; init; }
-    
-    [Required]
-    [MaxLength(256)]
-    public string? Name { get; set; }
-}
+    public required int TagGroupId { get; init; }
 
+    [Required] [MaxLength(256)] public string? Name { get; set; }
+}
 
 public sealed class TagDeleteModel
 {
-    [Required]
-    public int? Id { get; set; }
+    [Required] public int? Id { get; set; }
 }
 
 public sealed class TagManager
@@ -40,13 +37,14 @@ public sealed class TagManager
         _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
     }
 
-    public async Task<List<TagListModel>> GetAllTagsAsync(CancellationToken cancellationToken)
+    public async Task<List<TagListModel>> GetAllTagsAsync(int tagGroupId, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         _logger.LogDebug("Getting all tags");
 
         var tags = await dbContext.Tags
+            .Where(t => t.TagGroupId == tagGroupId)
             .GroupJoin(
                 dbContext.TagVariables,
                 tag => tag.Id,
@@ -75,7 +73,13 @@ public sealed class TagManager
         TagRecord tagRecord;
         if (tag.Id == 0)
         {
-            tagRecord = new TagRecord { Name = tag.Name!, TagGroupId = 0, CreatedAtUtc = DateTime.UtcNow, UpdatedAtUtc = DateTime.UtcNow };
+            tagRecord = new TagRecord
+            {
+                Name = tag.Name!,
+                TagGroupId = tag.TagGroupId,
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow
+            };
             dbContext.Tags.Add(tagRecord);
             await dbContext.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("Saved {@Tag}", tagRecord);
@@ -101,7 +105,8 @@ public sealed class TagManager
             Id = tagRecord.Id,
             Name = tagRecord.Name,
             UpdatedAtUtc = tagRecord.UpdatedAtUtc,
-            NumberOfVariables = await dbContext.TagVariables.CountAsync(tv => tv.TagId == tagRecord.Id, cancellationToken)
+            NumberOfVariables =
+                await dbContext.TagVariables.CountAsync(tv => tv.TagId == tagRecord.Id, cancellationToken)
         };
     }
 
@@ -110,14 +115,14 @@ public sealed class TagManager
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         _logger.LogDebug("Deleting tag {@Tag}", tag);
-        
+
         var tagRecord = await dbContext.Tags
             .AsTracking()
             .SingleAsync(t => t.Id == tag.Id, cancellationToken);
 
         dbContext.Tags.Remove(tagRecord);
         await dbContext.SaveChangesAsync(cancellationToken);
-        
+
         _logger.LogInformation("Deleted tag {@Tag}", tag);
     }
 }
