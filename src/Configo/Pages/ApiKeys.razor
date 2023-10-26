@@ -3,6 +3,7 @@
 @inject ApiKeyManager ApiKeyManager
 @inject TagManager TagManager
 @inject ApplicationManager ApplicationManager
+@inject IJSRuntime JSRuntime
 
 <Heading Size="HeadingSize.Is1">
     <Icon Name="IconName.List"/> Api Keys
@@ -111,10 +112,17 @@ else
                                 </Badge>
                             }
                         </TableRowCell>
-                        <TableRowCell>@apiKey.Key.Substring(0, 5)...@apiKey.Key.Substring(apiKey.Key.Length - 5)</TableRowCell>
-                        <TableRowCell>@apiKey.UpdatedAtUtc.ToString("s")</TableRowCell>
-                        <TableRowCell>@apiKey.ActiveSinceUtc.ToString("s")</TableRowCell>
-                        <TableRowCell>@apiKey.ActiveUntilUtc.ToString("s")</TableRowCell>
+                        <TableRowCell>
+                            <mark>@apiKey.Key.Substring(0, 3)...@apiKey.Key.Substring(apiKey.Key.Length - 3)</mark>
+                            <Tooltip Text="Copy to clipboard">
+                                <Button Type="ButtonType.Button"  @onclick="() => CopyKeyToClipboard(apiKey)">
+                                    <Icon Name="@("fa-copy")"></Icon>
+                                </Button>
+                            </Tooltip>
+                        </TableRowCell>
+                        <TableRowCell Clicked="() => EditApiKey(apiKey)">@apiKey.ActiveSinceUtc.ToString("d")</TableRowCell>
+                        <TableRowCell Clicked="() => EditApiKey(apiKey)">@apiKey.ActiveUntilUtc.ToString("d")</TableRowCell>
+                        <TableRowCell>@apiKey.UpdatedAtUtc.ToString("g")</TableRowCell>
                         <TableRowCell>
                             <Button Color="Color.Danger" Clicked="() => DeleteApiKey(apiKey)"><Icon Name="IconName.Delete"/> Delete</Button>
                         </TableRowCell>
@@ -251,6 +259,11 @@ else
     private void StopDeleting()
     {
         _apiKeyBeingDeleted = null;
+    }
+    
+    private async Task CopyKeyToClipboard(ApiKeyListModel apiKey)
+    {
+        await JSRuntime.InvokeVoidAsync("clipboardHelper.copyText", apiKey.Key);
     }
 
 }
