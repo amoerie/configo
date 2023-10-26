@@ -1,6 +1,5 @@
 ﻿@page "/tags"
 @using Configo.Domain
-@using Configo.Domain.Models
 @inject TagManager TagManager
 
 <PageTitle>Tags</PageTitle>
@@ -36,7 +35,7 @@ else
                     <EditForm Model="@_tagBeingEdited" OnSubmit="@SaveTag" class="grid-table-row">
                         <span class="grid-table-cell">?</span>
                         <span class="grid-table-cell">
-                            <InputText @bind-Value="_tagBeingEdited!.Name"/>
+                            <InputText @bind-Value="_tagBeingEdited.Name" @ref=_tagNameInput />
                         </span>
                         <span class="grid-table-cell">0</span>
                         <span class="grid-table-cell">
@@ -52,11 +51,12 @@ else
                 else if (_tagBeingDeleted?.Id == tag.Id)
                 {
                     <EditForm Model="@_tagBeingDeleted" OnSubmit="@ConfirmDeleteTag" class="grid-table-row">
-                        <span class="grid-table-cell"></span>
                         <span class="grid-table-cell">
+                            @tag.Id
                             <InputNumber @bind-Value="_tagBeingDeleted!.Id" hidden="hidden"/>
                         </span>
                         <span class="grid-table-cell">Are you sure you want to delete @tag.Name?</span>
+                        <span class="grid-table-cell"></span>
                         <span class="grid-table-cell">
                             <button type="submit" class="btn btn-danger">
                                 <span class="oi oi-check" aria-hidden="true"></span> Yes, delete it
@@ -82,12 +82,19 @@ else
             }
         </div>
     </div>
+    
+    <div>
+        <button class="btn btn-success" @onclick="AddTag">
+            <span class="oi oi-plus" aria-hidden="true"></span> Add new tag
+        </button>
+    </div>
 }
 
 @code {
     private List<TagListModel>? _tags;
     private TagEditModel? _tagBeingEdited;
     private TagDeleteModel? _tagBeingDeleted;
+    private InputText? _tagNameInput;
 
     private IEnumerable<TagListModel> TagsToShow
     {
@@ -102,6 +109,14 @@ else
     protected override async Task OnInitializedAsync()
     {
         _tags = await TagManager.GetAllTagsAsync(CancellationToken);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_tagNameInput?.Element != null)
+        {
+            await _tagNameInput.Element.Value.FocusAsync();
+        }
     }
 
     private void AddTag()
@@ -136,7 +151,7 @@ else
                 }
             }
         }
-        _tagBeingEdited = null;
+        StopEditing();
     }
 
     private async Task ConfirmDeleteTag()
@@ -154,6 +169,7 @@ else
     private void StopEditing()
     {
         _tagBeingEdited = null;
+        _tagNameInput = null;
     }
 
     private void StopDeleting()
