@@ -128,6 +128,11 @@ public sealed class TagGroupManager
         TagGroupRecord tagGroupRecord;
         if (tagGroup.Id == 0)
         {
+            if (await dbContext.TagGroups.AnyAsync(t => t.Name == tagGroup.Name, cancellationToken))
+            {
+                throw new ArgumentException("Tag group name already in use");
+            }
+            
             tagGroupRecord = new TagGroupRecord
             {
                 Name = tagGroup.Name!,
@@ -145,6 +150,11 @@ public sealed class TagGroupManager
                 UpdatedAtUtc = tagGroupRecord.UpdatedAtUtc,
                 NumberOfTags = 0,
             };
+        }
+
+        if (await dbContext.TagGroups.AnyAsync(t => t.Id != tagGroup.Id && t.Name == tagGroup.Name, cancellationToken))
+        {
+            throw new ArgumentException("Tag group name already in use");
         }
 
         tagGroupRecord = await dbContext.TagGroups

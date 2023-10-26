@@ -29,8 +29,7 @@ public sealed class TagDeleteModel
 public sealed record TagDropdownModel
 {
     public int Id { get; init; }
-    public string GroupName { get; init; }
-    public string Name { get; init; }
+    public required string CombinedName { get; init; }
 }
 
 public sealed class TagManager
@@ -64,8 +63,7 @@ public sealed class TagManager
         return tagRecords.Select(tagRecord => new TagDropdownModel
             {
                 Id = tagRecord.Id,
-                GroupName = tagGroupRecordsById[tagRecord.TagGroupId].Name,
-                Name = tagRecord.Name
+                CombinedName = $"{tagGroupRecordsById[tagRecord.TagGroupId].Name}:{tagRecord.Name}"
             })
             .ToList();
     }
@@ -106,6 +104,11 @@ public sealed class TagManager
         TagRecord tagRecord;
         if (tag.Id == 0)
         {
+            if (await dbContext.Tags.AnyAsync(t => t.Name == tag.Name, cancellationToken))
+            {
+                throw new ArgumentException("Tag name already in use");
+            }
+            
             tagRecord = new TagRecord
             {
                 Name = tag.Name!,
@@ -123,6 +126,11 @@ public sealed class TagManager
                 UpdatedAtUtc = tagRecord.UpdatedAtUtc,
                 NumberOfVariables = 0,
             };
+        }
+        
+        if (await dbContext.Tags.AnyAsync(t => t.Id != tag.Id && t.Name == tag.Name, cancellationToken))
+        {
+            throw new ArgumentException("Tag name already in use");
         }
 
         tagRecord = await dbContext.Tags

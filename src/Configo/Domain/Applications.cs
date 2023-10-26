@@ -26,8 +26,8 @@ public sealed class ApplicationDeleteModel
 
 public sealed record ApplicationDropdownModel
 {
-    public int Id { get; set; }
-    public string Name { get; set; }
+    public int Id { get; init; }
+    public required string Name { get; init; }
 }
 
 public sealed class ApplicationManager
@@ -113,6 +113,11 @@ public sealed class ApplicationManager
         ApplicationRecord applicationRecord;
         if (application.Id == 0)
         {
+            if (await dbContext.Applications.AnyAsync(t => t.Name == application.Name, cancellationToken))
+            {
+                throw new ArgumentException("Application name already in use");
+            }
+            
             applicationRecord = new ApplicationRecord
             {
                 Name = application.Name!,
@@ -129,6 +134,11 @@ public sealed class ApplicationManager
                 Name = applicationRecord.Name,
                 UpdatedAtUtc = applicationRecord.UpdatedAtUtc,
             };
+        }
+        
+        if (await dbContext.Applications.AnyAsync(t => t.Id != application.Id && t.Name == application.Name, cancellationToken))
+        {
+            throw new ArgumentException("Application name already in use");
         }
 
         applicationRecord = await dbContext.Applications
