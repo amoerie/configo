@@ -16,7 +16,9 @@
     <BarMenu>
         <BarStart>
             <BarItem>
-                <BarLink To="tag-groups"><BarIcon IconName="IconName.List"/> Tag Groups</BarLink>
+                <BarLink To="tag-groups">
+                    <BarIcon IconName="IconName.List"/> Tag Groups
+                </BarLink>
             </BarItem>
             @if (_tagGroups != null)
             {
@@ -39,6 +41,11 @@
                     </BarDropdown>
                 </BarItem>
             }
+            <BarItem>
+                <BarLink To="applications">
+                    <BarIcon IconName="IconName.Server" /> Applications
+                </BarLink>
+            </BarItem>
         </BarStart>
     </BarMenu>
 </Bar>

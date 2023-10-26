@@ -1,0 +1,175 @@
+﻿@page "/applications"
+@using Configo.Domain
+@inject ApplicationManager ApplicationManager
+
+<Heading Size="HeadingSize.Is1">
+    <Icon Name="IconName.Server"/> Applications
+</Heading>
+
+@if (_applications == null)
+{
+    <p>
+        <em>Loading applications...</em>
+    </p>
+}
+else
+{
+    <Table Hoverable>
+        <TableHeader ThemeContrast="ThemeContrast.Light">
+            <TableRow>
+                <TableHeaderCell Style="width: 50%">Name</TableHeaderCell>
+                <TableHeaderCell Style="width: 30%">Updated UTC</TableHeaderCell>
+                <TableHeaderCell Style="width: 20%"></TableHeaderCell>
+            </TableRow>
+        </TableHeader>
+        <TableBody>
+            @foreach (var application in ApplicationsToShow)
+            {
+                @if (_applicationBeingEdited?.Id == application.Id)
+                {
+                    <TableRow>
+                        <TableRowCell>
+                            <EditForm Model="@_applicationBeingEdited" OnSubmit="@SaveApplication">
+                                <InputText @bind-Value="_applicationBeingEdited.Name" @ref=_applicationNameInput />
+                                <Button Color="Color.Secondary" Clicked="StopEditing"><Icon Name="IconName.Times"/> Cancel</Button>
+                            </EditForm>
+                        </TableRowCell>
+                        <TableRowCell>@application.UpdatedAtUtc.ToString("s")</TableRowCell>
+                        <TableRowCell></TableRowCell>
+                    </TableRow>
+                }
+                else if (_applicationBeingDeleted?.Id == application.Id)
+                {
+                    <TableRow>
+                        <TableRowCell ColumnSpan="3">
+                            <EditForm Model="@_applicationBeingDeleted" OnSubmit="@ConfirmDeleteApplication" class="grid-table-row">
+                                <InputNumber @bind-Value="_applicationBeingDeleted!.Id" hidden="hidden"/>
+                                <Alert Color="Color.Warning" Visible>
+                                    <AlertMessage>Are you sure?</AlertMessage>
+                                    <AlertDescription>Deleting @application.Name cannot be undone</AlertDescription>
+                                </Alert>
+                                <Button Color="Color.Danger" Clicked="ConfirmDeleteApplication"><Icon Name="IconName.Delete"/> Yes, delete it</Button>
+                                <Button Color="Color.Secondary" Clicked="StopDeleting"><Icon Name="IconName.Times"/> No, keep it</Button>
+                            </EditForm>
+                        </TableRowCell>
+                    </TableRow>
+                }
+                else
+                {
+                    <TableRow>
+                        <TableRowCell Style="cursor:pointer" Clicked="() => EditApplication(application)">
+                            <Badge Color="Color.Light" Background="Background.Primary" Padding="Padding.Is3" TextSize="TextSize.Small">
+                                @application.Name
+                            </Badge>
+                        </TableRowCell>
+                        <TableRowCell>@application.UpdatedAtUtc.ToString("s")</TableRowCell>
+                        <TableRowCell>
+                            <Button Color="Color.Danger" Clicked="() => DeleteApplication(application)"><Icon Name="IconName.Delete"/> Delete</Button>
+                        </TableRowCell>
+                    </TableRow>
+                }
+            }
+        </TableBody>
+    </Table>
+
+    <div>
+        <Button Color="Color.Success" Clicked="AddApplication"><Icon Name="IconName.PlusSquare"/> Add new application</Button>
+    </div>
+}
+
+@code {
+    private List<ApplicationListModel>? _applications;
+    private ApplicationEditModel? _applicationBeingEdited;
+    private ApplicationDeleteModel? _applicationBeingDeleted;
+    private InputText? _applicationNameInput;
+    
+    private IEnumerable<ApplicationListModel> ApplicationsToShow
+    {
+        get
+        {
+            if (_applications == null) yield break;
+            foreach (var application in _applications) yield return application;
+            if (_applicationBeingEdited?.Id == 0)
+            {
+                yield return new ApplicationListModel
+                {
+                    Id = 0,
+                    Name = _applicationBeingEdited.Name ?? "",
+                    UpdatedAtUtc = DateTime.UtcNow
+                };
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _applications = await ApplicationManager.GetAllApplicationsAsync(CancellationToken);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_applicationNameInput?.Element != null)
+        {
+            await _applicationNameInput.Element.Value.FocusAsync();
+        }
+    }
+
+    private void AddApplication()
+    {
+        _applicationBeingEdited = new ApplicationEditModel { Id = 0, Name = "" };
+    }
+
+    private void EditApplication(ApplicationListModel application)
+    {
+        _applicationBeingEdited = new ApplicationEditModel { Id = application.Id, Name = application.Name };
+    }
+
+    private void DeleteApplication(ApplicationListModel application)
+    {
+        _applicationBeingDeleted = new ApplicationDeleteModel { Id = application.Id };
+    }
+
+    private async Task SaveApplication()
+    {
+        var application = await ApplicationManager.SaveApplicationAsync(_applicationBeingEdited!, CancellationToken);
+        if (_applicationBeingEdited!.Id == 0)
+        {
+            _applications!.Add(application);
+        }
+        else
+        {
+            for (var i = 0; i < _applications!.Count; i++)
+            {
+                if (_applications[i].Id == _applicationBeingEdited!.Id)
+                {
+                    _applications[i] = application;
+                }
+            }
+        }
+        StopEditing();
+    }
+
+    private async Task ConfirmDeleteApplication()
+    {
+        await ApplicationManager.DeleteApplicationAsync(_applicationBeingDeleted!, CancellationToken);
+        for (var i = 0; i < _applications!.Count; i++)
+        {
+            if (_applications[i].Id != _applicationBeingDeleted!.Id) continue;
+            _applications.RemoveAt(i);
+            break;
+        }
+        _applicationBeingDeleted = null;
+    }
+
+    private void StopEditing()
+    {
+        _applicationBeingEdited = null;
+        _applicationNameInput = null;
+    }
+
+    private void StopDeleting()
+    {
+        _applicationBeingDeleted = null;
+    }
+
+}

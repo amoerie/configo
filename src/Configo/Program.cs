@@ -2,7 +2,6 @@ using System.IO.Compression;
 using Blazorise;
 using Blazorise.Bootstrap;
 using Blazorise.Icons.FontAwesome;
-using Configo.Data;
 using Configo.Database;
 using Configo.Domain;
 using Microsoft.AspNetCore.DataProtection;
@@ -92,6 +91,7 @@ services.AddHostedService<DatabaseMigrator>();
 // Domain
 services.AddSingleton<TagGroupManager>();
 services.AddSingleton<TagManager>();
+services.AddSingleton<ApplicationManager>();
 
 var app = builder.Build();
 
