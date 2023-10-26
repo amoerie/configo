@@ -6,6 +6,7 @@ namespace Configo.Database;
 
 public class ConfigoDbContext : DbContext, IDataProtectionKeyContext
 {
+    public DbSet<ApplicationRecord> Applications => Set<ApplicationRecord>();
     public DbSet<VariableRecord> Variables => Set<VariableRecord>();
     public DbSet<TagRecord> Tags => Set<TagRecord>();
     public DbSet<TagVariableRecord> TagVariables => Set<TagVariableRecord>();

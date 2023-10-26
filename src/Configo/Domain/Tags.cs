@@ -1,9 +1,32 @@
-﻿using Configo.Database;
+﻿using System.ComponentModel.DataAnnotations;
+using Configo.Database;
 using Configo.Database.Tables;
-using Configo.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Configo.Domain;
+
+public sealed record TagListModel
+{
+    public required int Id { get; init; }
+    public required string Name { get; init; }
+    public required int NumberOfVariables { get; init; }
+}
+
+public sealed class TagEditModel
+{
+    public int? Id { get; init; }
+    
+    [Required]
+    [MaxLength(256)]
+    public string? Name { get; set; }
+}
+
+
+public sealed class TagDeleteModel
+{
+    [Required]
+    public int? Id { get; set; }
+}
 
 public sealed class TagManager
 {
