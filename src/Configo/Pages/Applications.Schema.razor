@@ -1,6 +1,7 @@
 ﻿@page "/applications/{application}/schema"
 @using Configo.Domain
 @inject ApplicationManager ApplicationManager
+@inject IJSRuntime JsRuntime
 
 @if (_application == null)
 {
@@ -11,6 +12,10 @@
 <Heading Size="HeadingSize.Is1">
     <Icon Name="IconName.Server"/> @_application.Name JSON schema
 </Heading>
+
+<div id="editor-container">
+    
+</div>
 
 @code {
     private ApplicationListModel? _application;
@@ -25,5 +30,6 @@
             throw new InvalidOperationException("Oi, where is the group");
         }
         _application = await ApplicationManager.GetApplicationAsync(Application, CancellationToken);
+        await JsRuntime.InvokeVoidAsync("applications.schema.initializeEditor");
     }
 }

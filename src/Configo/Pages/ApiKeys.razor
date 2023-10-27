@@ -3,7 +3,7 @@
 @inject ApiKeyManager ApiKeyManager
 @inject TagManager TagManager
 @inject ApplicationManager ApplicationManager
-@inject IJSRuntime JSRuntime
+@inject IJSRuntime JsRuntime
 
 <Heading Size="HeadingSize.Is1">
     <Icon Name="IconName.List"/> Api Keys
@@ -283,7 +283,7 @@ else
     
     private async Task CopyKeyToClipboard(ApiKeyListModel apiKey)
     {
-        await JSRuntime.InvokeVoidAsync("clipboardHelper.copyText", apiKey.Key);
+        await JsRuntime.InvokeVoidAsync("clipboardHelper.copyText", apiKey.Key);
     }
 
 }
