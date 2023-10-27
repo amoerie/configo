@@ -1,12 +1,24 @@
 ﻿// use strict
+((global) => {
+    const state = {};
+    
+    let initializeEditor = () => {
+        if(state.editor) {
+            return;
+        }
 
-window.applications = window.applications ?? {};
-window.applications.schema = {
-    initializeEditor: () => {
         const container = document.getElementById("editor-container");
-        const editor = monaco.editor.create(container, {
+        state.editor = global.monaco.editor.create(container, {
             value: ['function x() {', '\tconsole.log("Hello world!");', '}'].join('\n'),
             language: 'javascript'
         });
+
+        // TODO other stuff
     }
-};
+
+    global.applications = global.applications ?? {};
+    global.applications.schema = {
+        initializeEditor: () => {}/*window.require(["vs/editor/editor.main"], () => initializeEditor())*/
+    };
+})(window);
+

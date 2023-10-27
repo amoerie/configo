@@ -13,7 +13,7 @@
     <Icon Name="IconName.Server"/> @_application.Name JSON schema
 </Heading>
 
-<div id="editor-container">
+<div id="editor-container" class="container-fluid" style="height: 75vh">
     
 </div>
 
@@ -22,7 +22,12 @@
 
     [Parameter]
     public string? Application { get; set; }
-    
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JsRuntime.InvokeVoidAsync("applications.schema.initializeEditor");
+    }
+
     protected override async Task OnParametersSetAsync()
     {
         if (Application == null)
@@ -30,6 +35,5 @@
             throw new InvalidOperationException("Oi, where is the group");
         }
         _application = await ApplicationManager.GetApplicationAsync(Application, CancellationToken);
-        await JsRuntime.InvokeVoidAsync("applications.schema.initializeEditor");
     }
 }
