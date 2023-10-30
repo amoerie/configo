@@ -4,18 +4,34 @@ import * as monaco from "monaco-editor/esm/vs/editor/editor.main.js";
 
 const state = {};
 
-let initializeEditorIfNecessary = () => {
-    if(state.editor) {
-        return;
+class ApplicationsSchema {
+    #dotNetRef;
+    #schema;
+    #editor;
+    constructor() {
     }
+    
+    initialize(dotNetRef, schema) {
+        this.#dotNetRef = dotNetRef;
+        this.#schema = schema;
 
-    const container = document.getElementById("editor-container");
-    state.editor = monaco.editor.create(container, {
-        value: ['function x() {', '\tconsole.log("Hello world!");', '}'].join('\n'),
-        language: 'javascript'
-    });
+        monaco.editor.setTheme("vs-dark");
+        const container = document.getElementById("editor-container");
+        this.#editor = monaco.editor.create(container, {
+            value: schema,
+            language: 'json',
+            automaticLayout: true
+        });
 
-    // TODO other stuff
+        this.#editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, async () => {
+            await this.save();
+        });
+    }
+    
+    async save() {
+        const schema = this.#editor.getValue();
+        await this.#dotNetRef.invokeMethodAsync("Save", schema);
+    }
 }
 
 window.MonacoEnvironment = {
@@ -36,8 +52,6 @@ window.MonacoEnvironment = {
     }
 };
 window.applications = window.applications ?? {};
-window.applications.schema = {
-    initializeEditor: () => initializeEditorIfNecessary()
-};
+window.applications.schema = new ApplicationsSchema();
 
 

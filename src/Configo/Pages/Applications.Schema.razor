@@ -1,31 +1,40 @@
 ﻿@page "/applications/{application}/schema"
 @using Configo.Domain
 @inject ApplicationManager ApplicationManager
+@inject SchemaManager SchemaManager
 @inject IJSRuntime JsRuntime
 
-@if (_application == null)
+@if (_schema == null)
 {
     <p>...loading</p>
     return;
 }
 
 <Heading Size="HeadingSize.Is1">
-    <Icon Name="IconName.Server"/> @_application.Name JSON schema
+    <Icon Name="IconName.Server"/> @Application JSON schema
 </Heading>
 
-<div id="editor-container" class="container-fluid" style="height: 50vh">
+<SnackbarStack @ref="_schemaSavedNotification" Color="SnackbarColor.Success"></SnackbarStack>
+
+<div id="editor-container" class="container-fluid" style="height: 90vh">
     
 </div>
 
 @code {
-    private ApplicationListModel? _application;
+    private string? _schema;
+    private SnackbarStack _schemaSavedNotification;
+    private DotNetObjectReference<Applications_Schema>? _objectReference;
 
     [Parameter]
     public string? Application { get; set; }
-
+    
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await JsRuntime.InvokeVoidAsync("applications.schema.initializeEditor");
+        if (firstRender)
+        {
+            _objectReference = DotNetObjectReference.Create(this);
+            await JsRuntime.InvokeVoidAsync("applications.schema.initialize", CancellationToken, _objectReference, _schema);
+        }
     }
 
     protected override async Task OnParametersSetAsync()
@@ -34,6 +43,20 @@
         {
             throw new InvalidOperationException("Oi, where is the group");
         }
-        _application = await ApplicationManager.GetApplicationAsync(Application, CancellationToken);
+        _schema = await SchemaManager.GetSchemaAsync(Application, CancellationToken);
     }
+
+    [JSInvokable]
+    public async Task Save(string schema)
+    {
+        await SchemaManager.SaveSchemaAsync(Application!, schema, CancellationToken);
+        _schemaSavedNotification?.PushAsync("Application schema saved successfully", SnackbarColor.Success);
+    }
+
+    protected override void OnDispose()
+    {
+        base.OnDispose();
+        _objectReference?.Dispose();
+    }
+
 }

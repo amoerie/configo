@@ -12,6 +12,7 @@
     <PackageReference Include="Blazorise.Bootstrap5" Version="1.3.2" />
     <PackageReference Include="Blazorise.Components" Version="1.3.2" />
     <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.3.2" />
+    <PackageReference Include="Blazorise.Snackbar" Version="1.3.2" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="7.0.13" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.13">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -19,6 +20,17 @@
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.13" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="wwwroot\dist\applications.schema.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\applications.schema.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\codicon-5T574S7B.ttf" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\vs\editor\editor.worker.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\vs\language\css\css.worker.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\vs\language\html\html.worker.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\vs\language\json\json.worker.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\vs\language\typescript\ts.worker.js" />
   </ItemGroup>
 
 </Project>

@@ -94,6 +94,7 @@ services.AddSingleton<TagManager>();
 services.AddSingleton<ApplicationManager>();
 services.AddSingleton<ApiKeyManager>();
 services.AddSingleton<ApiKeyGenerator>();
+services.AddSingleton<SchemaManager>();
 
 var app = builder.Build();
 

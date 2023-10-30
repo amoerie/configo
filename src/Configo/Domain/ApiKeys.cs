@@ -75,7 +75,7 @@ public sealed class ApiKeyManager
                 Id = apiKeyRecord.Id,
                 ApplicationId = apiKeyRecord.ApplicationId,
                 Key = apiKeyRecord.Key,
-                ActiveSinceUtc = apiKeyRecord.ActiveUntilUtc,
+                ActiveSinceUtc = apiKeyRecord.ActiveSinceUtc,
                 ActiveUntilUtc = apiKeyRecord.ActiveUntilUtc,
                 UpdatedAtUtc = apiKeyRecord.UpdatedAtUtc,
                 TagIds = apiKeyTagIds
