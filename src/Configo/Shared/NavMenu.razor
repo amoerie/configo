@@ -71,8 +71,9 @@
         _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken);
     }
 
-    protected override void OnDispose()
+    protected override ValueTask OnDisposeAsync()
     {
         TagGroupManager.Unsubscribe(_listener);
+        return base.OnDisposeAsync();
     }
 }

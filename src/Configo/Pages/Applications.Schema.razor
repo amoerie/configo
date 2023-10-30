@@ -41,7 +41,7 @@
     {
         if (Application == null)
         {
-            throw new InvalidOperationException("Oi, where is the group");
+            throw new InvalidOperationException("Oi, where is the application");
         }
         _schema = await SchemaManager.GetSchemaAsync(Application, CancellationToken);
     }
@@ -52,11 +52,21 @@
         await SchemaManager.SaveSchemaAsync(Application!, schema, CancellationToken);
         _schemaSavedNotification?.PushAsync("Application schema saved successfully", SnackbarColor.Success);
     }
-
-    protected override void OnDispose()
+    
+    protected override async ValueTask OnDisposeAsync()
     {
-        base.OnDispose();
-        _objectReference?.Dispose();
+        if (_objectReference != null)
+        {
+            try
+            {
+                await JsRuntime.InvokeVoidAsync("applications.schema.destroy", CancellationToken);
+            }
+            finally
+            {
+                _objectReference?.Dispose();
+            }
+        }
+        await base.OnDisposeAsync();
     }
 
 }

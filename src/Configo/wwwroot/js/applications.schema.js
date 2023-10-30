@@ -2,30 +2,47 @@
 
 import * as monaco from "monaco-editor/esm/vs/editor/editor.main.js";
 
-const state = {};
-
 class ApplicationsSchema {
     #dotNetRef;
-    #schema;
+    #model;
     #editor;
     constructor() {
     }
     
     initialize(dotNetRef, schema) {
         this.#dotNetRef = dotNetRef;
-        this.#schema = schema;
 
         monaco.editor.setTheme("vs-dark");
+        
+        // Allow the editor to make HTTP requests to fetch referenced JSON schemas
+        monaco.languages.json.jsonDefaults.setDiagnosticsOptions({ 
+            validate: true, 
+            allowComments: false, 
+            schemas: [{
+                fileMatch: [ "schema.json" ],
+                uri: "https://json-schema.org/draft-04/schema",
+            }], 
+            enableSchemaRequest: true
+        });
+
+        this.#model = monaco.editor.createModel(schema, "json", monaco.Uri.parse("internal://server/schema.json"));
         const container = document.getElementById("editor-container");
         this.#editor = monaco.editor.create(container, {
-            value: schema,
-            language: 'json',
+            model: this.#model,
             automaticLayout: true
         });
 
         this.#editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, async () => {
             await this.save();
         });
+    }
+    
+    destroy() {
+        this.#model.dispose();
+        this.#editor.dispose();
+        this.#model = null;
+        this.#editor = null;
+        this.#dotNetRef = null;
     }
     
     async save() {
