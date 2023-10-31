@@ -1,6 +1,5 @@
 ﻿@page "/applications/{application}/schema"
 @using Configo.Domain
-@inject ApplicationManager ApplicationManager
 @inject SchemaManager SchemaManager
 @inject IJSRuntime JsRuntime
 
@@ -22,8 +21,8 @@
 
 @code {
     private string? _schema;
-    private SnackbarStack _schemaSavedNotification;
-    private DotNetObjectReference<Applications_Schema>? _objectReference;
+    private SnackbarStack? _schemaSavedNotification;
+    private DotNetObjectReference<Schema>? _objectReference;
 
     [Parameter]
     public string? Application { get; set; }
@@ -59,7 +58,7 @@
         {
             try
             {
-                await JsRuntime.InvokeVoidAsync("applications.schema.destroy", CancellationToken);
+                await JsRuntime.InvokeVoidAsync("schema.destroy", CancellationToken);
             }
             finally
             {

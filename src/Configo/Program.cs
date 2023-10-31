@@ -95,6 +95,7 @@ services.AddSingleton<ApplicationManager>();
 services.AddSingleton<ApiKeyManager>();
 services.AddSingleton<ApiKeyGenerator>();
 services.AddSingleton<SchemaManager>();
+services.AddSingleton<VariableManager>();
 
 var app = builder.Build();
 

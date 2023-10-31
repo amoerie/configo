@@ -1,4 +1,5 @@
 ﻿@using Configo.Domain
+@using Configo.Blazor
 @inject TagGroupManager TagGroupManager
 
 <Bar Mode="BarMode.VerticalInline"
@@ -49,6 +50,11 @@
             <BarItem>
                 <BarLink To="api-keys">
                     <BarIcon IconName="IconName.Key" /> API Keys
+                </BarLink>
+            </BarItem>
+            <BarItem>
+                <BarLink To="variables">
+                    <BarIcon IconName="FaNames.FaCog" /> Variables
                 </BarLink>
             </BarItem>
         </BarStart>

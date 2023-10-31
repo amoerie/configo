@@ -1,0 +1,92 @@
+﻿@page "/variables"
+@using Configo.Domain
+@using Configo.Blazor
+@inject TagGroupManager TagGroupManager
+@inject TagManager TagManager
+@inject VariableManager VariableManager
+@inject IJSRuntime JsRuntime
+
+@if (_tagGroups == null)
+{
+    <p>...loading</p>
+    return;
+}
+
+<Heading Size="HeadingSize.Is1">
+    <Icon Name="FaNames.FaCog"/> Variables
+</Heading>
+
+@foreach (var batch in _tagGroups.Chunk(4))
+{
+    <Row>
+        @foreach (var tagGroup in batch)
+        {
+            <Column Size="ColumnSize.Is3">
+                <Card>
+                    <CardHeader>@tagGroup.Name</CardHeader>
+                    <ListGroup Flush>
+                        @foreach (var tag in _tags[tagGroup.Id])
+                        {
+                            <ListGroupItem>@tag.Name</ListGroupItem>
+                        }
+                    </ListGroup>
+                </Card>
+            </Column>
+        }
+    </Row>
+}
+
+<div id="editor-container" class="container-fluid" style="height: 90vh">
+
+</div>
+
+<SnackbarStack @ref="_variablesSavedNotification" Color="SnackbarColor.Success"></SnackbarStack>
+
+@code {
+    private DotNetObjectReference<Variables>? _objectReference;
+    private SnackbarStack? _variablesSavedNotification;
+    private List<TagGroupListModel>? _tagGroups;
+    private Dictionary<int, List<TagListModel>> _tags = new Dictionary<int, List<TagListModel>>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken);
+        foreach (var tagGroup in _tagGroups)
+        {
+            _tags[tagGroup.Id] = await TagManager.GetTagsOfGroupAsync(tagGroup.Id, CancellationToken);
+        }
+        await base.OnInitializedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _objectReference = DotNetObjectReference.Create(this);
+    //await JsRuntime.InvokeVoidAsync("variables.initialize", CancellationToken, _objectReference, _schema);
+        }
+    }
+
+    [JSInvokable]
+    public async Task Save(string variables)
+    {
+        _variablesSavedNotification?.PushAsync("Variables saved successfully", SnackbarColor.Success);
+    }
+
+    protected override async ValueTask OnDisposeAsync()
+    {
+        if (_objectReference != null)
+        {
+            try
+            {
+                await JsRuntime.InvokeVoidAsync("variables.destroy", CancellationToken);
+            }
+            finally
+            {
+                _objectReference?.Dispose();
+            }
+        }
+        await base.OnDisposeAsync();
+    }
+
+}

@@ -33,4 +33,8 @@
     <_ContentIncludedByDefault Remove="wwwroot\dist\vs\language\typescript\ts.worker.js" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Endpoints\" />
+  </ItemGroup>
+
 </Project>

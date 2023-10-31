@@ -2,7 +2,7 @@
 
 import * as monaco from "monaco-editor/esm/vs/editor/editor.main.js";
 
-class ApplicationsSchema {
+class Schema {
     #dotNetRef;
     #model;
     #editor;
@@ -19,6 +19,8 @@ class ApplicationsSchema {
             validate: true, 
             allowComments: false, 
             schemas: [{
+                // If we give the model a name that matches wich this filematch
+                // monaco will use this schema file for validation
                 fileMatch: [ "schema.json" ],
                 uri: "https://json-schema.org/draft-04/schema",
             }], 
@@ -68,7 +70,6 @@ window.MonacoEnvironment = {
         return './dist/vs/editor/editor.worker.js';
     }
 };
-window.applications = window.applications ?? {};
-window.applications.schema = new ApplicationsSchema();
+window.schema = new Schema();
 
 
