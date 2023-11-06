@@ -1,5 +1,7 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics;
+using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Configo.Database;
 using Configo.Database.Tables;
 using Microsoft.EntityFrameworkCore;
@@ -64,11 +66,16 @@ public sealed class VariableManager
     }
 }
 
-public class VariablesDeserializer
+public class VariablesJsonSerializer
 {
-    public JsonObject DeserializeVariables(List<VariableForConfigModel> variables)
+    
+    public string SerializeToJson(List<VariableForConfigModel> variables)
     {
+        // Enforce ascending order of variable keys
+        variables = variables.OrderBy(v => v.Key).ToList();
+        
         var root = new JsonObject();
+        var indexLookup = new Dictionary<string, int>();
         foreach (var variable in variables)
         {
             var key = variable.Key;
@@ -76,9 +83,105 @@ public class VariablesDeserializer
             var valueType = variable.ValueType;
 
             var path = key.Split(":");
-            var parent = root;
+            JsonNode parent = root;
 
-            // TODO dynamically build JSON object that represents the variable structure
+            // For example, Foo:Bar=Test should become  "Foo": { "Bar": "Test }
+            for (var index = 0; index < path.Length; index++)
+            {
+                string current = path[index];
+                var isLast = index == path.Length - 1;
+                if (!isLast)
+                {
+                    // We have to either prep an object or an array
+                    var next = path[index + 1];
+                    var isArray = int.TryParse(next, out _);
+
+                    JsonNode? node;
+                    switch (parent)
+                    {
+                        case JsonArray parentArray:
+                            var originalParentIndex = int.Parse(current);
+                            var parentPath = parentArray.GetPath();
+                            var indexLookupKey = parentPath + ":" + originalParentIndex;
+                            if (indexLookup.TryGetValue(indexLookupKey, out var parentIndex))
+                            {
+                                node = parentArray[parentIndex]!;
+                            }
+                            else
+                            {
+                                if (isArray)
+                                {
+                                    node = new JsonArray();
+                                }
+                                else
+                                {
+                                    node = new JsonObject();
+                                }
+                                
+                                parentArray.Add(node);
+                                indexLookup.Add(indexLookupKey, parentArray.Count - 1);
+                            }
+                            break;
+                        case JsonObject parentObject:
+                            node = parentObject[current];
+
+                            if (node == null)
+                            {
+                                if (isArray)
+                                {
+                                    node = new JsonArray();
+                                }
+                                else
+                                {
+                                    node = new JsonObject();
+                                }
+
+                                parentObject.Add(current, node);
+                            }
+                            break;
+                        default:
+                            throw new UnreachableException();
+                    }
+
+                    parent = node;
+                }
+                else
+                {
+                    // We have to write the value
+                    JsonValue jsonValue;
+                    switch (valueType)
+                    {
+                        case VariableValueType.String:
+                            jsonValue = JsonValue.Create(value)!;
+                            break;
+                        case VariableValueType.Number:
+                            jsonValue = JsonValue.Create(long.Parse(value));
+                            break;
+                        case VariableValueType.Boolean:
+                            jsonValue = JsonValue.Create(bool.Parse(value));
+                            break;
+                        default:
+                            throw new UnreachableException();
+                    }
+                    switch (parent)
+                    {
+                        case JsonArray jsonArray:
+                            jsonArray.Add(jsonValue);
+                            break;
+                        case JsonObject jsonObject:
+                            jsonObject.Add(current, jsonValue);
+                            break;
+                        default:
+                            throw new UnreachableException();
+                    }
+                }
+            }
         }
+
+        return root.ToJsonString(new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            NumberHandling = JsonNumberHandling.Strict
+        });
     }
 }
