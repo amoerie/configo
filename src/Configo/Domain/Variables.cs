@@ -68,12 +68,11 @@ public sealed class VariableManager
 
 public class VariablesJsonSerializer
 {
-    
     public string SerializeToJson(List<VariableForConfigModel> variables)
     {
         // Enforce ascending order of variable keys
         variables = variables.OrderBy(v => v.Key).ToList();
-        
+
         var root = new JsonObject();
         var indexLookup = new Dictionary<string, int>();
         foreach (var variable in variables)
@@ -109,35 +108,23 @@ public class VariablesJsonSerializer
                             }
                             else
                             {
-                                if (isArray)
-                                {
-                                    node = new JsonArray();
-                                }
-                                else
-                                {
-                                    node = new JsonObject();
-                                }
-                                
+                                node = isArray ? new JsonArray() : new JsonObject();
+
                                 parentArray.Add(node);
                                 indexLookup.Add(indexLookupKey, parentArray.Count - 1);
                             }
+
                             break;
                         case JsonObject parentObject:
                             node = parentObject[current];
 
                             if (node == null)
                             {
-                                if (isArray)
-                                {
-                                    node = new JsonArray();
-                                }
-                                else
-                                {
-                                    node = new JsonObject();
-                                }
+                                node = isArray ? new JsonArray() : new JsonObject();
 
                                 parentObject.Add(current, node);
                             }
+
                             break;
                         default:
                             throw new UnreachableException();
@@ -163,6 +150,7 @@ public class VariablesJsonSerializer
                         default:
                             throw new UnreachableException();
                     }
+
                     switch (parent)
                     {
                         case JsonArray jsonArray:
