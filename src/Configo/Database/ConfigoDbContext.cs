@@ -13,6 +13,7 @@ public class ConfigoDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<TagRecord> Tags => Set<TagRecord>();
     public DbSet<TagGroupRecord> TagGroups => Set<TagGroupRecord>();
     public DbSet<TagVariableRecord> TagVariables => Set<TagVariableRecord>();
+    
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
     public ConfigoDbContext(DbContextOptions options) : base(options) { }
