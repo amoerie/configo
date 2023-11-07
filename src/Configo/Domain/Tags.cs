@@ -102,7 +102,7 @@ public sealed class TagManager
         _logger.LogDebug("Saving tag {@Tag}", tag);
 
         TagRecord tagRecord;
-        if (tag.Id == 0)
+        if (tag.Id is null or 0)
         {
             if (await dbContext.Tags.AnyAsync(t => t.Name == tag.Name, cancellationToken))
             {

@@ -91,7 +91,7 @@ public sealed class ApplicationManager
         _logger.LogDebug("Saving application {@Application}", application);
 
         ApplicationRecord applicationRecord;
-        if (application.Id == 0)
+        if (application.Id is null or 0)
         {
             if (await dbContext.Applications.AnyAsync(t => t.Name == application.Name, cancellationToken))
             {

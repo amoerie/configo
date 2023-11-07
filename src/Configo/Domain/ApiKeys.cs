@@ -131,7 +131,7 @@ public sealed class ApiKeyManager
         _logger.LogDebug("Saving apiKey {@ApiKey}", apiKey);
 
         ApiKeyRecord apiKeyRecord;
-        if (apiKey.Id == 0)
+        if (apiKey.Id is null or 0)
         {
             apiKeyRecord = new ApiKeyRecord
             {

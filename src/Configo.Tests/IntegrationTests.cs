@@ -7,7 +7,7 @@ public class IntegrationTests : IClassFixture<TestWebApplicationFactory<Program>
 {
     private readonly TestWebApplicationFactory<Program> _factory;
 
-    internal IntegrationTests(TestWebApplicationFactory<Program> factory)
+    public IntegrationTests(TestWebApplicationFactory<Program> factory)
     {
         _factory = factory ?? throw new ArgumentNullException(nameof(factory));
     }
@@ -78,8 +78,7 @@ public class IntegrationTests : IClassFixture<TestWebApplicationFactory<Program>
                          }
                          """";
         
-        await variableManager.SaveVariablesAsync()
-
+        // TODO Remainder of the thing
 
         // Assert
     }

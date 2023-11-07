@@ -102,6 +102,8 @@ services.AddSingleton<ApiKeyManager>();
 services.AddSingleton<ApiKeyGenerator>();
 services.AddSingleton<SchemaManager>();
 services.AddSingleton<VariableManager>();
+services.AddSingleton<VariablesJsonSerializer>();
+services.AddSingleton<VariablesJsonDeserializer>();
 
 var app = builder.Build();
 
@@ -126,9 +128,13 @@ api.MapGet("/config", GetConfigEndpoint.HandleAsync)
     .RequireAuthorization(authorizationPolicyBuilder =>
     {
         authorizationPolicyBuilder.AddAuthenticationSchemes(ApiKeyAuthenticationHandler.AuthenticationScheme);
+        authorizationPolicyBuilder.RequireClaim(ApiKeyAuthenticationHandler.ApiKeyIdClaim);
     });
 app.MapFallbackToPage("/_Host");
 
 // Let's go
 // --------
 app.Run();
+
+// Expose for integration tests
+public partial class Program { }

@@ -126,7 +126,7 @@ public sealed class TagGroupManager
         _logger.LogDebug("Saving tag group {@TagGroup}", tagGroup);
 
         TagGroupRecord tagGroupRecord;
-        if (tagGroup.Id == 0)
+        if (tagGroup.Id is null or 0)
         {
             if (await dbContext.TagGroups.AnyAsync(t => t.Name == tagGroup.Name, cancellationToken))
             {
