@@ -1,8 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using System.Security.Claims;
 using System.Text;
+using System.Text.Encodings.Web;
 using Configo.Database;
 using Configo.Database.Tables;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Configo.Domain;
 
@@ -37,6 +42,13 @@ public sealed class ApiKeyEditModel
 public sealed class ApiKeyDeleteModel
 {
     [Required] public int? Id { get; set; }
+}
+
+public sealed record ApiKeyValidationModel
+{
+    public required int Id { get; set; }
+    public required DateTime ActiveSinceUtc { get; init; }
+    public required DateTime ActiveUntilUtc { get; init; }
 }
 
 public sealed class ApiKeyManager
@@ -75,7 +87,7 @@ public sealed class ApiKeyManager
                 Id = apiKeyRecord.Id,
                 ApplicationId = apiKeyRecord.ApplicationId,
                 Key = apiKeyRecord.Key,
-                ActiveSinceUtc = apiKeyRecord.ActiveUntilUtc,
+                ActiveSinceUtc = apiKeyRecord.ActiveSinceUtc,
                 ActiveUntilUtc = apiKeyRecord.ActiveUntilUtc,
                 UpdatedAtUtc = apiKeyRecord.UpdatedAtUtc,
                 TagIds = apiKeyTagIds
@@ -87,6 +99,29 @@ public sealed class ApiKeyManager
         _logger.LogInformation("Got {NumberOfApiKeys} apiKeys", apiKeys.Count);
         
         return apiKeys;
+    }
+    
+    public async Task<ApiKeyValidationModel?> GetApiKeyForValidationAsync(string key, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        _logger.LogDebug("Getting all apiKeys");
+
+        var apiKeyRecord = await dbContext.ApiKeys
+            .Where(a => a.Key == key)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (apiKeyRecord == null)
+        {
+            return null;
+        }
+        
+        return new ApiKeyValidationModel
+        {
+            Id = apiKeyRecord.Id,
+            ActiveSinceUtc = apiKeyRecord.ActiveSinceUtc,
+            ActiveUntilUtc = apiKeyRecord.ActiveUntilUtc,
+        };
     }
 
     public async Task<ApiKeyListModel> SaveApiKeyAsync(ApiKeyEditModel apiKey, CancellationToken cancellationToken)
@@ -195,3 +230,79 @@ public sealed class ApiKeyGenerator
     }
 }
 
+public sealed class ApiKeyAuthenticationOptions : AuthenticationSchemeOptions
+{
+    
+}
+
+public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthenticationOptions>
+{
+    private readonly ILogger<ApiKeyAuthenticationHandler> _logger;
+    private readonly ISystemClock _clock;
+    private readonly ApiKeyManager _apiKeyManager;
+    
+    public const string AuthenticationScheme = "Configo-Api-Key";
+    public const string ApiKeyIdClaim = "api_key_id";
+
+    public ApiKeyAuthenticationHandler(
+        IOptionsMonitor<ApiKeyAuthenticationOptions> options,
+        ILoggerFactory loggerFactory,
+        ILogger<ApiKeyAuthenticationHandler> logger,
+        UrlEncoder encoder,
+        ISystemClock clock, ApiKeyManager apiKeyManager) : base(options, loggerFactory, encoder, clock)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+        _apiKeyManager = apiKeyManager ?? throw new ArgumentNullException(nameof(apiKeyManager));
+    }
+
+    // Override the HandleAuthenticateAsync method to implement the custom logic
+    protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
+    {
+        // Get the authorization header from the request
+        var authorizationHeader = Request.Headers["Authorization"].ToString();
+
+        // If the header is empty or does not start with "Bearer ", return no result
+        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            return AuthenticateResult.NoResult();
+        }
+
+        // Extract the API key from the header
+        var key = authorizationHeader.Substring("Bearer ".Length).Trim();
+
+        // Validate the API key
+        var apiKey = await _apiKeyManager.GetApiKeyForValidationAsync(key, CancellationToken.None);
+        if (apiKey == null)
+        {
+            _logger.LogWarning("Authentication failed - Invalid API key because key not found: {Key}", key);
+            return AuthenticateResult.NoResult();
+        }
+
+        var utcNow = _clock.UtcNow.DateTime;
+        if (apiKey.ActiveSinceUtc > utcNow)
+        {
+            _logger.LogWarning("Authentication failed - API key not yet active: {Key}", key);
+            return AuthenticateResult.NoResult();
+        }
+
+        if (apiKey.ActiveUntilUtc < utcNow)
+        {
+            _logger.LogWarning("Authentication failed - API key expired: {Key}", key);
+            return AuthenticateResult.NoResult();
+        }
+
+        _logger.LogInformation("Valid API key: {Key}", key);
+        
+        // Create a claim identity with a dummy name claim
+        var identity = new ClaimsIdentity(Scheme.Name);
+        
+        identity.AddClaim(new Claim(ApiKeyIdClaim, apiKey.Id.ToString(CultureInfo.InvariantCulture)));
+
+        // Create a ticket with the identity and the scheme
+        var ticket = new AuthenticationTicket(new ClaimsPrincipal(identity), Scheme.Name);
+
+        // Return a success result with the ticket
+        return AuthenticateResult.Success(ticket);
+    }
+}

@@ -5,18 +5,21 @@ namespace Configo.Blazor;
 /// <summary>
 /// Custom base component to support cancellation tokens
 /// </summary>
-public class ConfigoComponentBase: ComponentBase, IDisposable
+public class ConfigoComponentBase: ComponentBase, IAsyncDisposable
 {
     private CancellationTokenSource? _cancellationTokenSource;
 
     protected CancellationToken CancellationToken => (_cancellationTokenSource ??= new CancellationTokenSource()).Token;
-    
-    protected virtual void OnDispose() {}
 
-    public virtual void Dispose()
+    protected virtual ValueTask OnDisposeAsync()
+    {
+        return default;
+    }
+
+    public async ValueTask DisposeAsync()
     {
         if (_cancellationTokenSource == null) return;
-        OnDispose();
+        await OnDisposeAsync();
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
         _cancellationTokenSource = null;

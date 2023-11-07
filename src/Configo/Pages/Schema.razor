@@ -1,0 +1,71 @@
+﻿@page "/applications/{application}/schema"
+@using Configo.Domain
+@inject SchemaManager SchemaManager
+@inject IJSRuntime JsRuntime
+
+@if (_schema == null)
+{
+    <p>...loading</p>
+    return;
+}
+
+<Heading Size="HeadingSize.Is1">
+    <Icon Name="IconName.Server"/> @Application JSON schema
+</Heading>
+
+<SnackbarStack @ref="_schemaSavedNotification" Color="SnackbarColor.Success"></SnackbarStack>
+
+<div id="editor-container" class="container-fluid" style="height: 90vh">
+    
+</div>
+
+@code {
+    private string? _schema;
+    private SnackbarStack? _schemaSavedNotification;
+    private DotNetObjectReference<Schema>? _objectReference;
+
+    [Parameter]
+    public string? Application { get; set; }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _objectReference = DotNetObjectReference.Create(this);
+            await JsRuntime.InvokeVoidAsync("applications.schema.initialize", CancellationToken, _objectReference, _schema);
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Application == null)
+        {
+            throw new InvalidOperationException("Oi, where is the application");
+        }
+        _schema = await SchemaManager.GetSchemaAsync(Application, CancellationToken);
+    }
+
+    [JSInvokable]
+    public async Task Save(string schema)
+    {
+        await SchemaManager.SaveSchemaAsync(Application!, schema, CancellationToken);
+        _schemaSavedNotification?.PushAsync("Application schema saved successfully", SnackbarColor.Success);
+    }
+    
+    protected override async ValueTask OnDisposeAsync()
+    {
+        if (_objectReference != null)
+        {
+            try
+            {
+                await JsRuntime.InvokeVoidAsync("schema.destroy", CancellationToken);
+            }
+            finally
+            {
+                _objectReference?.Dispose();
+            }
+        }
+        await base.OnDisposeAsync();
+    }
+
+}

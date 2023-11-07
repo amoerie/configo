@@ -1,4 +1,5 @@
 ﻿@using Configo.Domain
+@using Configo.Blazor
 @inject TagGroupManager TagGroupManager
 
 <Bar Mode="BarMode.VerticalInline"
@@ -51,6 +52,11 @@
                     <BarIcon IconName="IconName.Key" /> API Keys
                 </BarLink>
             </BarItem>
+            <BarItem>
+                <BarLink To="variables">
+                    <BarIcon IconName="FaNames.FaCog" /> Variables
+                </BarLink>
+            </BarItem>
         </BarStart>
     </BarMenu>
 </Bar>
@@ -71,8 +77,9 @@
         _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken);
     }
 
-    protected override void OnDispose()
+    protected override ValueTask OnDisposeAsync()
     {
         TagGroupManager.Unsubscribe(_listener);
+        return base.OnDisposeAsync();
     }
 }

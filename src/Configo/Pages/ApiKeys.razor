@@ -23,8 +23,8 @@ else
                 <TableHeaderCell Style="width: 20%">Application</TableHeaderCell>
                 <TableHeaderCell Style="width: 30%">Tags</TableHeaderCell>
                 <TableHeaderCell Style="width: 10%">Key</TableHeaderCell>
-                <TableHeaderCell Style="width: 10%">Active Since UTC</TableHeaderCell>
-                <TableHeaderCell Style="width: 10%">Active Until UTC</TableHeaderCell>
+                <TableHeaderCell Style="width: 10%">Active Since</TableHeaderCell>
+                <TableHeaderCell Style="width: 10%">Active Until</TableHeaderCell>
                 <TableHeaderCell Style="width: 10%">Updated UTC</TableHeaderCell>
                 <TableHeaderCell Style="width: 10%"></TableHeaderCell>
             </TableRow>
@@ -155,6 +155,8 @@ else
     <div>
         <Button Color="Color.Success" Clicked="AddApiKey"><Icon Name="IconName.PlusSquare"/> Add new api key</Button>
     </div>
+    
+    <SnackbarStack @ref="_apiKeyCopiedNotification" Color="SnackbarColor.Success"></SnackbarStack>
 }
 
 @code {
@@ -166,6 +168,7 @@ else
     private ApiKeyEditModel? _apiKeyBeingEdited;
     private ApiKeyDeleteModel? _apiKeyBeingDeleted;
     private InputText? _apiKeyNameInput;
+    private SnackbarStack? _apiKeyCopiedNotification;
 
     public string? ApplicationNameAutoCompleteText { get; set; }
     public List<string>? TagNameAutoCompleteTexts { get; set; }
@@ -284,6 +287,7 @@ else
     private async Task CopyKeyToClipboard(ApiKeyListModel apiKey)
     {
         await JsRuntime.InvokeVoidAsync("clipboardHelper.copyText", apiKey.Key);
+        _apiKeyCopiedNotification?.PushAsync("API key copied to clipboard", SnackbarColor.Success);
     }
 
 }

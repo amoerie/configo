@@ -4,7 +4,9 @@ using Blazorise.Bootstrap5;
 using Blazorise.Icons.FontAwesome;
 using Configo.Database;
 using Configo.Domain;
+using Configo.Endpoints;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
@@ -54,6 +56,10 @@ services.AddDataProtection()
     .SetApplicationName("Configo")
     .PersistKeysToDbContext<ConfigoDbContext>();
 
+// Authentication
+services.AddAuthentication()
+    .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(ApiKeyAuthenticationHandler.AuthenticationScheme, "Configo API Key", _ => {});
+
 // SQL Server Database
 services.AddDbContextFactory<ConfigoDbContext>(dbContextOptions =>
 {
@@ -94,6 +100,8 @@ services.AddSingleton<TagManager>();
 services.AddSingleton<ApplicationManager>();
 services.AddSingleton<ApiKeyManager>();
 services.AddSingleton<ApiKeyGenerator>();
+services.AddSingleton<SchemaManager>();
+services.AddSingleton<VariableManager>();
 
 var app = builder.Build();
 
@@ -112,6 +120,13 @@ app.UseRouting();
 // Routing
 // ---------
 app.MapBlazorHub();
+var api = app.MapGroup("/api");
+
+api.MapGet("/config", GetConfigEndpoint.HandleAsync)
+    .RequireAuthorization(authorizationPolicyBuilder =>
+    {
+        authorizationPolicyBuilder.AddAuthenticationSchemes(ApiKeyAuthenticationHandler.AuthenticationScheme);
+    });
 app.MapFallbackToPage("/_Host");
 
 // Let's go

@@ -41,26 +41,6 @@ public sealed class ApplicationManager
         _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
     }
 
-    public async Task<ApplicationListModel> GetApplicationAsync(string application, CancellationToken cancellationToken)
-    {
-        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-
-        _logger.LogDebug("Getting application with name {Name}", application);
-
-        var applications = await dbContext.Applications
-            .Where(a => a.Name == application)
-            .Select(a => new ApplicationListModel
-            {
-                Id = a.Id,
-                Name = a.Name,
-                UpdatedAtUtc = a.UpdatedAtUtc
-            })
-            .SingleAsync(t => t.Name == application, cancellationToken);
-
-        _logger.LogInformation("Got application with name {Name}", application);
-
-        return applications;
-    }
 
     public async Task<List<ApplicationDropdownModel>> GetAllApplicationsForDropdownAsync(CancellationToken cancellationToken)
     {
