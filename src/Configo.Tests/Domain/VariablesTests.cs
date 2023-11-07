@@ -279,16 +279,11 @@ public class VariablesJsonDeserializerTests
                        """";
         var expected = new List<VariableForConfigModel>
         {
-            new VariableForConfigModel
-                { Key = "Panel Members:0:FirstName", Value = "Stephen", ValueType = VariableValueType.String },
-            new VariableForConfigModel
-                { Key = "Panel Members:0:LastName", Value = "Fry", ValueType = VariableValueType.String },
-            new VariableForConfigModel
-                { Key = "Panel Members:1:FirstName", Value = "Alan", ValueType = VariableValueType.String },
-            new VariableForConfigModel
-                { Key = "Panel Members:1:LastName", Value = "Davies", ValueType = VariableValueType.String },
-            new VariableForConfigModel
-                { Key = "Number Of Guests", Value = "145", ValueType = VariableValueType.Number },
+            new VariableForConfigModel { Key = "Number Of Guests", Value = "145", ValueType = VariableValueType.Number },
+            new VariableForConfigModel { Key = "Panel Members:0:FirstName", Value = "Stephen", ValueType = VariableValueType.String },
+            new VariableForConfigModel { Key = "Panel Members:0:LastName", Value = "Fry", ValueType = VariableValueType.String },
+            new VariableForConfigModel { Key = "Panel Members:1:FirstName", Value = "Alan", ValueType = VariableValueType.String },
+            new VariableForConfigModel { Key = "Panel Members:1:LastName", Value = "Davies", ValueType = VariableValueType.String },
             new VariableForConfigModel { Key = "Was Recorded", Value = "true", ValueType = VariableValueType.Boolean },
         };
         
@@ -306,7 +301,7 @@ public class VariablesJsonDeserializerTests
         var json = """"
                    {
                        "0": "Arrays can't exist at the root level",
-                       "1": "So they should be properties instead",
+                       "1": "So they should be properties instead"
                    }
                    """";
         var expected = new List<VariableForConfigModel>

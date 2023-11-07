@@ -69,6 +69,12 @@ public sealed class VariableManager
 
 public class VariablesJsonSerializer
 {
+    private readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions
+    {
+        WriteIndented = true,
+        NumberHandling = JsonNumberHandling.Strict,
+    };
+
     public string SerializeToJson(List<VariableForConfigModel> variables)
     {
         // Enforce ascending order of variable keys
@@ -166,24 +172,33 @@ public class VariablesJsonSerializer
                 }
             }
         }
-
-        return root.ToJsonString(new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            NumberHandling = JsonNumberHandling.Strict
-        });
+        return root.ToJsonString(_jsonSerializerOptions);
     }
 }
 
 public class VariablesJsonDeserializer
 {
+    private readonly JsonNodeOptions _nodeOptions = new JsonNodeOptions
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    private readonly JsonDocumentOptions _documentOptions = new JsonDocumentOptions
+    {
+        AllowTrailingCommas = true,
+        CommentHandling = JsonCommentHandling.Skip
+    };
+
     public List<VariableForConfigModel> DeserializeFromJson(string json)
     {
-        return Deserialize(json).ToList();
-        
-        static IEnumerable<VariableForConfigModel> Deserialize(string json)
+        return Deserialize(json, _nodeOptions, _documentOptions).OrderBy(v => v.Key).ToList();
+
+        static IEnumerable<VariableForConfigModel> Deserialize(
+            string json,
+            JsonNodeOptions nodeOptions,
+            JsonDocumentOptions documentOptions)
         {
-            var jsonObject = JsonNode.Parse(json)!.AsObject();
+            var jsonObject = JsonNode.Parse(json, nodeOptions, documentOptions)!.AsObject();
 
             var stack = new Stack<(JsonNode Node, string Path)>();
             stack.Push((jsonObject, ""));
@@ -195,7 +210,7 @@ public class VariablesJsonDeserializer
                 switch (node)
                 {
                     case JsonValue jsonValue:
-                        var stringValue = jsonValue.GetValue<string>();
+                        var stringValue = jsonValue.ToString();
                         if (jsonValue.TryGetValue(out bool _))
                         {
                             yield return new VariableForConfigModel
@@ -255,7 +270,5 @@ public class VariablesJsonDeserializer
                 }
             }
         }
-
     }
-    
 }
