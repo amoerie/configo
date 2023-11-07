@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -172,4 +173,89 @@ public class VariablesJsonSerializer
             NumberHandling = JsonNumberHandling.Strict
         });
     }
+}
+
+public class VariablesJsonDeserializer
+{
+    public List<VariableForConfigModel> DeserializeFromJson(string json)
+    {
+        return Deserialize(json).ToList();
+        
+        static IEnumerable<VariableForConfigModel> Deserialize(string json)
+        {
+            var jsonObject = JsonNode.Parse(json)!.AsObject();
+
+            var stack = new Stack<(JsonNode Node, string Path)>();
+            stack.Push((jsonObject, ""));
+
+            while (stack.Count > 0)
+            {
+                var (node, path) = stack.Pop();
+
+                switch (node)
+                {
+                    case JsonValue jsonValue:
+                        var stringValue = jsonValue.GetValue<string>();
+                        if (jsonValue.TryGetValue(out bool _))
+                        {
+                            yield return new VariableForConfigModel
+                            {
+                                Key = path,
+                                Value = stringValue,
+                                ValueType = VariableValueType.Boolean
+                            };
+                        }
+                        else if (jsonValue.TryGetValue(out double _))
+                        {
+                            yield return new VariableForConfigModel
+                            {
+                                Key = path,
+                                Value = stringValue,
+                                ValueType = VariableValueType.Number
+                            };
+                        }
+                        else
+                        {
+                            yield return new VariableForConfigModel
+                            {
+                                Key = path,
+                                Value = stringValue,
+                                ValueType = VariableValueType.String
+                            };
+                        }
+
+                        break;
+                    case JsonObject nestedJsonObject:
+                        foreach (var property in nestedJsonObject)
+                        {
+                            var nextPath = path == ""
+                                ? property.Key
+                                : $"{path}:{property.Key}";
+
+                            var nextNode = property.Value;
+                            if (nextNode != null)
+                            {
+                                stack.Push((nextNode, nextPath));
+                            }
+                        }
+
+                        break;
+                    case JsonArray jsonArray:
+                        for (var i = jsonArray.Count - 1; i >= 0; i--)
+                        {
+                            var nextPath = $"{path}:{i}";
+                            var nextNode = jsonArray[i];
+                            if (nextNode != null)
+                            {
+                                stack.Push((nextNode, nextPath));
+                            }
+                        }
+
+                        break;
+                }
+            }
+        }
+
+    }
+    
 }
