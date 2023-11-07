@@ -6,6 +6,21 @@ using Configo.Domain;
 
 namespace Configo.Tests.Domain;
 
+public class VariableManagerTests
+{
+    [Fact]
+    public async Task ShouldReturnCorrectVariables()
+    {
+        // Arrange
+        
+        
+        
+        // Act
+        
+        // Assert
+    }
+}
+
 public class VariablesJsonSerializerTests
 {
     private readonly VariablesJsonSerializer _jsonSerializer = new VariablesJsonSerializer();
