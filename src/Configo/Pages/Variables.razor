@@ -58,19 +58,23 @@
         await base.OnInitializedAsync();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             _objectReference = DotNetObjectReference.Create(this);
     //await JsRuntime.InvokeVoidAsync("variables.initialize", CancellationToken, _objectReference, _schema);
         }
+        return Task.CompletedTask;
     }
 
     [JSInvokable]
     public async Task Save(string variables)
     {
-        _variablesSavedNotification?.PushAsync("Variables saved successfully", SnackbarColor.Success);
+        if (_variablesSavedNotification != null)
+        {
+            await _variablesSavedNotification.PushAsync("Variables saved successfully", SnackbarColor.Success);
+        }
     }
 
     protected override async ValueTask OnDisposeAsync()
