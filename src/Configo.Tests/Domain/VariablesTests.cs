@@ -1,25 +1,14 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Configo.Database;
 using Configo.Database.Tables;
 using Configo.Domain;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Configo.Tests.Domain;
-
-public class VariableManagerTests
-{
-    [Fact]
-    public async Task ShouldReturnCorrectVariables()
-    {
-        // Arrange
-        
-        
-        
-        // Act
-        
-        // Assert
-    }
-}
 
 public class VariablesJsonSerializerTests
 {
@@ -73,9 +62,9 @@ public class VariablesJsonSerializerTests
     public void SimpleKeyValue()
     {
         // Arrange
-        var variables = new List<VariableForConfigModel>
+        var variables = new List<VariableModel>
         {
-            new VariableForConfigModel { Key = "Foo", Value = "Bar", ValueType = VariableValueType.String }
+            new VariableModel { Key = "Foo", Value = "Bar", ValueType = VariableValueType.String }
         };
         var expected = """"
                        {
@@ -94,9 +83,9 @@ public class VariablesJsonSerializerTests
     public void SimpleObject()
     {
         // Arrange
-        var variables = new List<VariableForConfigModel>
+        var variables = new List<VariableModel>
         {
-            new VariableForConfigModel { Key = "Foo:Bar", Value = "Test", ValueType = VariableValueType.String }
+            new VariableModel { Key = "Foo:Bar", Value = "Test", ValueType = VariableValueType.String }
         };
         var expected = """"
                        {
@@ -118,10 +107,10 @@ public class VariablesJsonSerializerTests
     public void Array()
     {
         // Arrange
-        var variables = new List<VariableForConfigModel>
+        var variables = new List<VariableModel>
         {
-            new VariableForConfigModel { Key = "Foo:0", Value = "Test1", ValueType = VariableValueType.String },
-            new VariableForConfigModel { Key = "Foo:1", Value = "Test2", ValueType = VariableValueType.String }
+            new VariableModel { Key = "Foo:0", Value = "Test1", ValueType = VariableValueType.String },
+            new VariableModel { Key = "Foo:1", Value = "Test2", ValueType = VariableValueType.String }
         };
         var expected = """"
                        {
@@ -140,19 +129,19 @@ public class VariablesJsonSerializerTests
     public void ComplexObject()
     {
         // Arrange
-        var variables = new List<VariableForConfigModel>
+        var variables = new List<VariableModel>
         {
-            new VariableForConfigModel
+            new VariableModel
                 { Key = "Panel Members:0:FirstName", Value = "Stephen", ValueType = VariableValueType.String },
-            new VariableForConfigModel
+            new VariableModel
                 { Key = "Panel Members:0:LastName", Value = "Fry", ValueType = VariableValueType.String },
-            new VariableForConfigModel
+            new VariableModel
                 { Key = "Panel Members:1:FirstName", Value = "Alan", ValueType = VariableValueType.String },
-            new VariableForConfigModel
+            new VariableModel
                 { Key = "Panel Members:1:LastName", Value = "Davies", ValueType = VariableValueType.String },
-            new VariableForConfigModel
+            new VariableModel
                 { Key = "Number Of Guests", Value = "145", ValueType = VariableValueType.Number },
-            new VariableForConfigModel { Key = "Was Recorded", Value = "true", ValueType = VariableValueType.Boolean },
+            new VariableModel { Key = "Was Recorded", Value = "true", ValueType = VariableValueType.Boolean },
         };
         var expected = """"
                        {
@@ -176,17 +165,17 @@ public class VariablesJsonSerializerTests
     public void EdgeCases()
     {
         // Arrange
-        var variables = new List<VariableForConfigModel>
+        var variables = new List<VariableModel>
         {
-            new VariableForConfigModel
+            new VariableModel
                 { Key = "0", Value = "Arrays can't exist at the root level", ValueType = VariableValueType.String },
-            new VariableForConfigModel
+            new VariableModel
                 { Key = "1", Value = "So they should be properties instead", ValueType = VariableValueType.String },
-            new VariableForConfigModel
+            new VariableModel
                 { Key = "DeletedVariables:1", Value = "Sometimes variables", ValueType = VariableValueType.String },
-            new VariableForConfigModel
+            new VariableModel
                 { Key = "DeletedVariables:3", Value = "Get deleted", ValueType = VariableValueType.String },
-            new VariableForConfigModel
+            new VariableModel
                 { Key = "DeletedVariables:5", Value = "Which causes gaps", ValueType = VariableValueType.String },
         };
         var expected = """"
@@ -218,9 +207,9 @@ public class VariablesJsonDeserializerTests
                        "Foo": "Bar"
                    }
                    """";
-        var expected = new List<VariableForConfigModel>
+        var expected = new List<VariableModel>
         {
-            new VariableForConfigModel { Key = "Foo", Value = "Bar", ValueType = VariableValueType.String }
+            new VariableModel { Key = "Foo", Value = "Bar", ValueType = VariableValueType.String }
         };
 
         // Act
@@ -242,9 +231,9 @@ public class VariablesJsonDeserializerTests
                        }
                    }
                    """";
-        var expected = new List<VariableForConfigModel>
+        var expected = new List<VariableModel>
         {
-            new VariableForConfigModel { Key = "Foo:Bar", Value = "Test", ValueType = VariableValueType.String }
+            new VariableModel { Key = "Foo:Bar", Value = "Test", ValueType = VariableValueType.String }
         };
 
         // Act
@@ -263,10 +252,10 @@ public class VariablesJsonDeserializerTests
                        "Foo": [ "Test1", "Test2" ]
                    }
                    """";
-        var expected = new List<VariableForConfigModel>
+        var expected = new List<VariableModel>
         {
-            new VariableForConfigModel { Key = "Foo:0", Value = "Test1", ValueType = VariableValueType.String },
-            new VariableForConfigModel { Key = "Foo:1", Value = "Test2", ValueType = VariableValueType.String }
+            new VariableModel { Key = "Foo:0", Value = "Test1", ValueType = VariableValueType.String },
+            new VariableModel { Key = "Foo:1", Value = "Test2", ValueType = VariableValueType.String }
         };
 
         // Act
@@ -292,14 +281,14 @@ public class VariablesJsonDeserializerTests
                             "Was Recorded": true
                        }
                        """";
-        var expected = new List<VariableForConfigModel>
+        var expected = new List<VariableModel>
         {
-            new VariableForConfigModel { Key = "Number Of Guests", Value = "145", ValueType = VariableValueType.Number },
-            new VariableForConfigModel { Key = "Panel Members:0:FirstName", Value = "Stephen", ValueType = VariableValueType.String },
-            new VariableForConfigModel { Key = "Panel Members:0:LastName", Value = "Fry", ValueType = VariableValueType.String },
-            new VariableForConfigModel { Key = "Panel Members:1:FirstName", Value = "Alan", ValueType = VariableValueType.String },
-            new VariableForConfigModel { Key = "Panel Members:1:LastName", Value = "Davies", ValueType = VariableValueType.String },
-            new VariableForConfigModel { Key = "Was Recorded", Value = "true", ValueType = VariableValueType.Boolean },
+            new VariableModel { Key = "Number Of Guests", Value = "145", ValueType = VariableValueType.Number },
+            new VariableModel { Key = "Panel Members:0:FirstName", Value = "Stephen", ValueType = VariableValueType.String },
+            new VariableModel { Key = "Panel Members:0:LastName", Value = "Fry", ValueType = VariableValueType.String },
+            new VariableModel { Key = "Panel Members:1:FirstName", Value = "Alan", ValueType = VariableValueType.String },
+            new VariableModel { Key = "Panel Members:1:LastName", Value = "Davies", ValueType = VariableValueType.String },
+            new VariableModel { Key = "Was Recorded", Value = "true", ValueType = VariableValueType.Boolean },
         };
         
         // Act
@@ -319,11 +308,11 @@ public class VariablesJsonDeserializerTests
                        "1": "So they should be properties instead"
                    }
                    """";
-        var expected = new List<VariableForConfigModel>
+        var expected = new List<VariableModel>
         {
-            new VariableForConfigModel
+            new VariableModel
                 { Key = "0", Value = "Arrays can't exist at the root level", ValueType = VariableValueType.String },
-            new VariableForConfigModel
+            new VariableModel
                 { Key = "1", Value = "So they should be properties instead", ValueType = VariableValueType.String },
         };
 

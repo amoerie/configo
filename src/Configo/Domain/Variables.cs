@@ -8,25 +8,36 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Configo.Domain;
 
-public sealed record VariableForConfigModel
+public sealed record VariableModel
 {
     public required string Key { get; set; }
     public required string Value { get; set; }
     public required VariableValueType ValueType { get; set; }
 }
 
+public sealed record VariablesEditModel
+{
+    public required string Json { get; set; }
+    public required List<int> TagIds { get; set; }
+}
+
 public sealed class VariableManager
 {
     private readonly IDbContextFactory<ConfigoDbContext> _dbContextFactory;
     private readonly ILogger<VariableManager> _logger;
+    private readonly VariablesJsonDeserializer _deserializer;
 
-    public VariableManager(IDbContextFactory<ConfigoDbContext> dbContextFactory, ILogger<VariableManager> logger)
+    public VariableManager(
+        IDbContextFactory<ConfigoDbContext> dbContextFactory,
+        ILogger<VariableManager> logger,
+        VariablesJsonDeserializer deserializer)
     {
         _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _deserializer = deserializer ?? throw new ArgumentNullException(nameof(deserializer));
     }
 
-    public async Task<List<VariableForConfigModel>> GetConfigAsync(int apiKeyId, CancellationToken cancellationToken)
+    public async Task<List<VariableModel>> GetConfigAsync(int apiKeyId, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -52,7 +63,7 @@ public sealed class VariableManager
                 variableId => variableId,
                 variable => variable.Id,
                 (variableId, variable) => variable)
-            .Select(variable => new VariableForConfigModel
+            .Select(variable => new VariableModel
             {
                 Key = variable.Key,
                 Value = variable.Value,
@@ -64,6 +75,39 @@ public sealed class VariableManager
 
         return variables;
     }
+
+    public async Task SaveAsync(VariablesEditModel model, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        _logger.LogDebug("Saving variables for tags {@TagIds}", model.TagIds);
+        
+        // Get tags
+        var tags = await dbContext.Tags
+            .Where(tag => model.TagIds.Contains(tag.Id))
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+        
+        // Get existing variables
+        var existingVariables = await dbContext.TagVariables
+            .Where(tv => model.TagIds.Contains(tv.TagId))
+            .GroupBy(tv => tv.VariableId)
+            .Where(g => g.Count() == tags.Count)
+            .Select(tv => tv.Key)
+            .Join(dbContext.Variables,
+                variableId => variableId,
+                variable => variable.Id,
+                (variableId, variable) => variable)
+            .AsTracking()
+            .ToListAsync(cancellationToken);
+        
+        var newVariables = _deserializer.DeserializeFromJson(model.Json);
+        
+        
+        
+        
+
+    }
 }
 
 public class VariablesJsonSerializer
@@ -74,7 +118,7 @@ public class VariablesJsonSerializer
         NumberHandling = JsonNumberHandling.Strict,
     };
 
-    public string SerializeToJson(List<VariableForConfigModel> variables)
+    public string SerializeToJson(List<VariableModel> variables)
     {
         // Enforce ascending order of variable keys
         variables = variables.OrderBy(v => v.Key).ToList();
@@ -188,11 +232,11 @@ public class VariablesJsonDeserializer
         CommentHandling = JsonCommentHandling.Skip
     };
 
-    public List<VariableForConfigModel> DeserializeFromJson(string json)
+    public List<VariableModel> DeserializeFromJson(string json)
     {
         return Deserialize(json, _nodeOptions, _documentOptions).OrderBy(v => v.Key).ToList();
 
-        static IEnumerable<VariableForConfigModel> Deserialize(
+        static IEnumerable<VariableModel> Deserialize(
             string json,
             JsonNodeOptions nodeOptions,
             JsonDocumentOptions documentOptions)
@@ -212,7 +256,7 @@ public class VariablesJsonDeserializer
                         var stringValue = jsonValue.ToString();
                         if (jsonValue.TryGetValue(out bool _))
                         {
-                            yield return new VariableForConfigModel
+                            yield return new VariableModel
                             {
                                 Key = path,
                                 Value = stringValue,
@@ -221,7 +265,7 @@ public class VariablesJsonDeserializer
                         }
                         else if (jsonValue.TryGetValue(out double _))
                         {
-                            yield return new VariableForConfigModel
+                            yield return new VariableModel
                             {
                                 Key = path,
                                 Value = stringValue,
@@ -230,7 +274,7 @@ public class VariablesJsonDeserializer
                         }
                         else
                         {
-                            yield return new VariableForConfigModel
+                            yield return new VariableModel
                             {
                                 Key = path,
                                 Value = stringValue,
