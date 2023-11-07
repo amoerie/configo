@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+    <PropertyGroup>
+        <LangVersion>Latest</LangVersion>
+        <Version>0.1</Version>
+        <Nullable>enable</Nullable>
+        <Configurations>Debug;Release</Configurations>
+        <OutputPath>bin\$(Configuration)\</OutputPath>
+        <PlatformTarget>x64</PlatformTarget>
+        <Platform>x64</Platform>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+</Project>
