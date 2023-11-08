@@ -1,4 +1,4 @@
-﻿namespace Configo.Migrations.NpgSql;
+﻿namespace Configo.Database.NpgSql;
 
 /// <summary>
 /// Marker class

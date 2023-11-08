@@ -1,4 +1,4 @@
-﻿namespace Configo.Migrations.SqlServer;
+﻿namespace Configo.Database.SqlServer;
 
 /// <summary>
 /// Marker class

@@ -20,9 +20,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{29A8
 		..\.github\workflows\build.yml = ..\.github\workflows\build.yml
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configo.Migrations.SqlServer", "Configo.Migrations.SqlServer\Configo.Migrations.SqlServer.csproj", "{90217652-E981-4324-A36A-E083C28BBD13}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configo.Database.SqlServer", "Configo.Database.SqlServer\Configo.Database.SqlServer.csproj", "{90217652-E981-4324-A36A-E083C28BBD13}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configo.Migrations.NpgSql", "Configo.Migrations.NpgSql\Configo.Migrations.NpgSql.csproj", "{684A3278-384A-4ACE-9684-316D400A4281}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configo.Database.NpgSql", "Configo.Database.NpgSql\Configo.Database.NpgSql.csproj", "{684A3278-384A-4ACE-9684-316D400A4281}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configo.Database", "Configo.Database\Configo.Database.csproj", "{3436F6CE-1843-4827-A112-0ABD485D1769}"
 EndProject
