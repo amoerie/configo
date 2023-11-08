@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace Configo.Tests;
 
-public class JsonNormalizer
+public static class JsonNormalizer
 {
     public static string Normalize(string json)
     {

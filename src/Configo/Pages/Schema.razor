@@ -32,7 +32,7 @@
         if (firstRender)
         {
             _objectReference = DotNetObjectReference.Create(this);
-            await JsRuntime.InvokeVoidAsync("applications.schema.initialize", CancellationToken, _objectReference, _schema);
+            await JsRuntime.InvokeVoidAsync("schema.initialize", CancellationToken, _objectReference, _schema);
         }
     }
 
