@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Configo.Database.Tables;
 
-public sealed class ApplicationRecord
+public sealed record ApplicationRecord
 {
     public int Id { get; set; }
     public required string Name { get; set; }

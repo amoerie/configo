@@ -83,12 +83,12 @@ public class GettingConfigWithApiKeys : IAsyncDisposable
         {
             Json = """"
                    {
-                        "Machine": "Blade2"
+                        "Machine": "Blade2",
                         "Common": "Common from Blade2",
                    }
                    """",
             ApplicationIds = new List<int>(),
-            TagIds = new List<int> { blade1.Id }
+            TagIds = new List<int> { blade2.Id }
         };
         await variableManager.SaveAsync(blade1VariablesModel, cancellationToken);
         await variableManager.SaveAsync(blade2VariablesModel, cancellationToken);
@@ -140,7 +140,7 @@ public class GettingConfigWithApiKeys : IAsyncDisposable
                    }
                    """",
             ApplicationIds = new List<int>(),
-            TagIds = new List<int> { benelux.Id, blade1.Id }
+            TagIds = new List<int> { benelux.Id, blade2.Id }
         };
         var nordicsBlade1VariablesModel = new VariablesEditModel
         {
@@ -161,8 +161,8 @@ public class GettingConfigWithApiKeys : IAsyncDisposable
                         "Common": "Common from Nordics+Blade2"
                    }
                    """",
-            ApplicationIds = new List<int> { router.Id, processor.Id },
-            TagIds = new List<int> { nordics.Id, blade1.Id }
+            ApplicationIds = new List<int>(),
+            TagIds = new List<int> { nordics.Id, blade2.Id }
         };
         await variableManager.SaveAsync(beneluxBlade1VariablesModel, cancellationToken);
         await variableManager.SaveAsync(beneluxBlade2VariablesModel, cancellationToken);
@@ -200,7 +200,7 @@ public class GettingConfigWithApiKeys : IAsyncDisposable
         {
             Json = """"
                    {
-                       "ApplicationBlade": "Processor+Blade1",
+                       "ApplicationMachine": "Processor+Blade1",
                        "Common": "Common from Processor+Blade1"
                    }
                    """",
@@ -211,7 +211,7 @@ public class GettingConfigWithApiKeys : IAsyncDisposable
         {
             Json = """"
                    {
-                        "ApplicationBlade": "Processor+Blade2",
+                        "ApplicationMachine": "Processor+Blade2",
                         "Common": "Common from Processor+Blade2"
                    }
                    """",
@@ -222,7 +222,7 @@ public class GettingConfigWithApiKeys : IAsyncDisposable
         {
             Json = """"
                    {
-                        "ApplicationBlade": "Router+Blade1",
+                        "ApplicationMachine": "Router+Blade1",
                         "Common": "Common from Router+Blade1"
                    }
                    """",
@@ -233,7 +233,7 @@ public class GettingConfigWithApiKeys : IAsyncDisposable
         {
             Json = """"
                    {
-                        "ApplicationBlade": "Router+Blade2",
+                        "ApplicationMachine": "Router+Blade2",
                         "Common": "Common from Router+Blade2"
                    }
                    """",
@@ -425,22 +425,22 @@ public class GettingConfigWithApiKeys : IAsyncDisposable
         };
         var routerBlade1BeneluxApiKeyModel = new ApiKeyEditModel
         {
-            ApplicationId = processor.Id,
+            ApplicationId = router.Id,
             TagIds = new List<int> { benelux.Id, blade1.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
         var routerBlade2NordicsApiKeyModel = new ApiKeyEditModel
         {
-            ApplicationId = processor.Id,
-            TagIds = new List<int> { nordics.Id, blade1.Id },
+            ApplicationId = router.Id,
+            TagIds = new List<int> { nordics.Id, blade2.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
         var otherApiKeyModel = new ApiKeyEditModel
         {
             ApplicationId = otherApplication.Id,
-            TagIds = new List<int> { },
+            TagIds = new List<int> { otherTag.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
@@ -480,8 +480,8 @@ public class GettingConfigWithApiKeys : IAsyncDisposable
                 "Application": "Processor",
                 "ApplicationEnvironment": "Processor+Benelux",
                 "ApplicationEnvironmentMachine": "Processor+Benelux+Blade2",
-                "Common": "Common from Processor+Benelux+Blade2",
                 "ApplicationMachine": "Processor+Blade2",
+                "Common": "Common from Processor+Benelux+Blade2",
                 "Environment": "Benelux",
                 "EnvironmentMachine": "Benelux+Blade2",
                 "Machine": "Blade2"
@@ -506,8 +506,8 @@ public class GettingConfigWithApiKeys : IAsyncDisposable
                 "Application": "Processor",
                 "ApplicationEnvironment": "Processor+Nordics",
                 "ApplicationEnvironmentMachine": "Processor+Nordics+Blade2",
-                "Common": "Common from Processor+Nordics+Blade2",
                 "ApplicationMachine": "Processor+Blade2",
+                "Common": "Common from Processor+Nordics+Blade2",
                 "Environment": "Nordics",
                 "EnvironmentMachine": "Nordics+Blade2",
                 "Machine": "Blade2"
@@ -519,8 +519,8 @@ public class GettingConfigWithApiKeys : IAsyncDisposable
                 "Application": "Router",
                 "ApplicationEnvironment": "Router+Benelux",
                 "ApplicationEnvironmentMachine": "Router+Benelux+Blade1",
-                "Common": "Common from Router+Benelux+Blade1",
                 "ApplicationMachine": "Router+Blade1",
+                "Common": "Common from Router+Benelux+Blade1",
                 "Environment": "Benelux",
                 "EnvironmentMachine": "Benelux+Blade1",
                 "Machine": "Blade1"
@@ -539,11 +539,11 @@ public class GettingConfigWithApiKeys : IAsyncDisposable
                 "Machine": "Blade2"
             }
             """;
-        Assert.Equal(expectedProcessorBlade1BeneluxConfig, processorBlade1BeneluxConfig);
-        Assert.Equal(expectedProcessorBlade2BeneluxConfig, processorBlade2BeneluxConfig);
-        Assert.Equal(expectedProcessorBlade1NordicsConfig, processorBlade1NordicsConfig);
-        Assert.Equal(expectedProcessorBlade2NordicsConfig, processorBlade2NordicsConfig);
-        Assert.Equal(expectedRouterBlade1BeneluxConfig, routerBlade1BeneluxConfig);
-        Assert.Equal(expectedRouterBlade2NordicsConfig, routerBlade2NordicsConfig);
+        Assert.Equal(JsonNormalizer.Normalize(expectedProcessorBlade1BeneluxConfig), JsonNormalizer.Normalize(processorBlade1BeneluxConfig));
+        Assert.Equal(JsonNormalizer.Normalize(expectedProcessorBlade2BeneluxConfig), JsonNormalizer.Normalize(processorBlade2BeneluxConfig));
+        Assert.Equal(JsonNormalizer.Normalize(expectedProcessorBlade1NordicsConfig), JsonNormalizer.Normalize(processorBlade1NordicsConfig));
+        Assert.Equal(JsonNormalizer.Normalize(expectedProcessorBlade2NordicsConfig), JsonNormalizer.Normalize(processorBlade2NordicsConfig));
+        Assert.Equal(JsonNormalizer.Normalize(expectedRouterBlade1BeneluxConfig), JsonNormalizer.Normalize(routerBlade1BeneluxConfig));
+        Assert.Equal(JsonNormalizer.Normalize(expectedRouterBlade2NordicsConfig), JsonNormalizer.Normalize(routerBlade2NordicsConfig));
     }
 }

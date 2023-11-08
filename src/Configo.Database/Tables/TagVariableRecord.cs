@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Configo.Database.Tables;
 
-public sealed class TagVariableRecord
+public sealed record TagVariableRecord
 {
     public int TagId { get; set; }
     public int VariableId { get; set; }

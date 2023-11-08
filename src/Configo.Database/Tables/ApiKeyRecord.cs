@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Configo.Database.Tables;
 
-public sealed class ApiKeyRecord
+public sealed record ApiKeyRecord
 {
     public int Id { get; set; }
     public int ApplicationId { get; set; }

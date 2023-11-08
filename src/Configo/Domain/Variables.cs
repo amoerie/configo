@@ -18,9 +18,9 @@ public sealed record VariableModel
 public sealed record VariablesEditModel
 {
     public required string Json { get; set; }
-    
+
     public required List<int> ApplicationIds { get; set; }
-    
+
     public required List<int> TagIds { get; set; }
 }
 
@@ -56,16 +56,16 @@ public sealed class VariableManager
         var variables = dbContext.Variables;
         var tagVariables = dbContext.TagVariables;
         var applicationVariables = dbContext.ApplicationVariables;
-        
+
         // Get API key
         var apiKey = await apiKeys.SingleAsync(a => a.Id == apiKeyId, cancellationToken);
-        
+
         // Get tags of API key
         var tagIdsOfApiKey = await tags
             .Where(tag => apiKeyTags.Any(at => at.TagId == tag.Id && at.ApiKeyId == apiKeyId))
             .Select(tag => tag.Id)
             .ToListAsync(cancellationToken);
-        
+
         // Get variables of API key
         var variablesOfApiKey = await variables
             // If a variable is linked to any other tag than the API key tags, then it is not relevant to this API key
@@ -83,17 +83,17 @@ public sealed class VariableManager
                     ValueType = v.ValueType
                 },
                 Specificity = tagVariables.Count(tv => tv.VariableId == v.Id && tagIdsOfApiKey.Contains(tv.TagId))
-                    + applicationVariables.Count(av => av.VariableId == v.Id && av.ApplicationId == apiKey.Id)
+                              + applicationVariables.Count(av => av.VariableId == v.Id && av.ApplicationId == apiKey.ApplicationId)
             })
             .ToListAsync(cancellationToken);
-        
+
         // Take into account that we might have overlapping variables with the same key. In that case, the most "specific" variable wins
         var variablesOfApiKeyWithHighestSpecificity = variablesOfApiKey
             .GroupBy(v => v.Variable.Key)
             .Select(g => g.MaxBy(v => v.Specificity)!.Variable)
             .ToList();
 
-        _logger.LogInformation("Got {NumberOfVariables} variables for API key {ApiKeyId}", apiKeyId);
+        _logger.LogInformation("Got {NumberOfVariables} variables for API key {ApiKeyId}", variablesOfApiKeyWithHighestSpecificity.Count, apiKeyId);
 
         return _serializer.SerializeToJson(variablesOfApiKeyWithHighestSpecificity);
     }
@@ -109,44 +109,51 @@ public sealed class VariableManager
         var variables = dbContext.Variables;
         var tagVariables = dbContext.TagVariables;
         var applicationVariables = dbContext.ApplicationVariables;
-        
-        IQueryable<VariableRecord> existingVariables = variables;
-        
-        existingVariables = tagIds.Count == 0
-            // Take variables not linked to any tags
-            ? existingVariables.Where(v => !tagVariables.Any(tv => tv.VariableId == v.Id)) 
-            // Take variables linked to this exact combination of tags
-            : existingVariables.Where(v => tagVariables.Count(tv => tv.VariableId == v.Id && tagIds.Contains(tv.TagId)) == tagVariables.Count(tv => tv.VariableId == v.Id));
-        
-        existingVariables = applicationIds.Count == 0
-            // Take variables not linked to any applications
-            ? existingVariables.Where(v => !applicationVariables.Any(av => av.VariableId == v.Id)) 
-            // Take variables linked to this exact combination of applications
-            : existingVariables.Where(v => applicationVariables.Count(tv => tv.VariableId == v.Id && applicationIds.Contains(tv.ApplicationId)) == applicationVariables.Count(tv => tv.VariableId == v.Id));
 
-        var existingVariablesByKey = (await existingVariables.ToListAsync(cancellationToken)).ToDictionary(v => v.Key);
+        IQueryable<VariableRecord> existingVariablesQuery = variables;
+
+        existingVariablesQuery = existingVariablesQuery.Where(v =>
+            !tagVariables.Any(tv => tv.VariableId == v.Id && !tagIds.Contains(tv.TagId))
+            && tagVariables.Count(tv => tv.VariableId == v.Id) == tagIds.Count);
+
+        existingVariablesQuery = existingVariablesQuery.Where(v =>
+            !applicationVariables.Any(av => av.VariableId == v.Id && !applicationIds.Contains(av.ApplicationId))
+            && applicationVariables.Count(av => av.VariableId == v.Id) == applicationIds.Count);
+
+        var existingVariables = await existingVariablesQuery.ToListAsync(cancellationToken);
+        var existingVariablesByKey = existingVariables.GroupBy(v => v.Key).ToDictionary(group => group.Key, values => values.ToList());
         var newVariables = _deserializer.DeserializeFromJson(model.Json);
 
         // Add or update variables
+        var addedVariables = new List<VariableRecord>();
         foreach (var newVariable in newVariables)
         {
             var key = newVariable.Key;
             var value = newVariable.Value;
             var valueType = newVariable.ValueType;
 
-            if (existingVariablesByKey.Remove(key, out var variableRecord))
+            if (existingVariablesByKey.Remove(key, out var existingVariablesWithSameKey))
             {
-                if (!string.Equals(value, variableRecord.Value)
-                    || valueType != variableRecord.ValueType)
+                var existingVariable = existingVariablesWithSameKey[0];
+                if (!string.Equals(value, existingVariable.Value)
+                    || valueType != existingVariable.ValueType)
                 {
-                    variableRecord.Value = value;
-                    variableRecord.ValueType = valueType;
-                    variableRecord.UpdatedAtUtc = DateTime.UtcNow;
+                    existingVariable.Value = value;
+                    existingVariable.ValueType = valueType;
+                    existingVariable.UpdatedAtUtc = DateTime.UtcNow;
+                    _logger.LogInformation("Updated existing variable: {@Variable}", existingVariable);
+                }
+                
+                // Somehow we managed to have duplicate keys for the same tag + application combinations, clean those up now
+                foreach (var variableToDelete in existingVariablesWithSameKey.Skip(1))
+                {
+                    _logger.LogWarning("Deleted existing variable because of duplicate key: {@Variable}", existingVariable);
+                    dbContext.Variables.Remove(variableToDelete);
                 }
             }
             else
             {
-                variableRecord = new VariableRecord
+                var variableToAdd = new VariableRecord
                 {
                     Key = key,
                     Value = value,
@@ -154,14 +161,46 @@ public sealed class VariableManager
                     CreatedAtUtc = DateTime.UtcNow,
                     UpdatedAtUtc = DateTime.UtcNow
                 };
-                variables.Add(variableRecord);
+                variables.Add(variableToAdd);
+
+                addedVariables.Add(variableToAdd);
             }
         }
-        
+
         // Delete old variables
-        foreach (var deletedVariable in existingVariablesByKey.Values)
+        foreach (var group in existingVariablesByKey.Values)
         {
-            variables.Remove(deletedVariable);
+            foreach (var variableToDelete in group)
+            {
+                _logger.LogInformation("Deleted existing variable: {@Variable}", variableToDelete);
+                variables.Remove(variableToDelete);
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        // Link new variables to applications and tags
+        foreach (var addedVariable in addedVariables)
+        {
+            _logger.LogInformation("Added new variable: {@Variable}", addedVariable);
+
+            foreach (var applicationId in applicationIds)
+            {
+                applicationVariables.Add(new ApplicationVariableRecord
+                {
+                    ApplicationId = applicationId,
+                    VariableId = addedVariable.Id
+                });
+            }
+
+            foreach (var tagId in tagIds)
+            {
+                tagVariables.Add(new TagVariableRecord
+                {
+                    TagId = tagId,
+                    VariableId = addedVariable.Id
+                });
+            }
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -273,6 +312,7 @@ public class VariablesJsonSerializer
                 }
             }
         }
+
         return root.ToJsonString(_jsonSerializerOptions);
     }
 }

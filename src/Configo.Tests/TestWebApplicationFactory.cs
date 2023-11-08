@@ -3,6 +3,7 @@ using Configo.Tests.IntegrationTests;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -18,32 +19,22 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
         _outputAccessor = outputAccessor ?? throw new ArgumentNullException(nameof(outputAccessor));
     }
-    
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.ConfigureServices(services =>
-        {
-            // Prune services we don't need for integration tests
-            for (int i = services.Count - 1; i >= 0; i--)
+        builder.ConfigureAppConfiguration(configuration =>
             {
-                var service = services[i];
-                
-                // Remove existing EF Core stuff, we'll add it anew
-                if (service.ServiceType.Namespace?.StartsWith("Microsoft.EntityFrameworkCore") == true)
+                configuration.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    services.RemoveAt(i);
-                }
-            }
-            
-            services.AddDbContextFactory<ConfigoDbContext>(options =>
+                    { "ConnectionStrings:ConfigoDb", _connectionString },
+                    { "Provider", "Postgres" }
+                });
+            })
+            .ConfigureLogging(logging =>
             {
-                options.UseNpgsql(_connectionString);
+                logging.ClearProviders();
+                logging.AddProvider(new IntegrationTestLoggerProvider(_outputAccessor));
             });
-        }).ConfigureLogging(logging =>
-        {
-            logging.ClearProviders();
-            logging.AddProvider(new IntegrationTestLoggerProvider(_outputAccessor));
-        });
 
         builder.UseEnvironment("Development");
     }
