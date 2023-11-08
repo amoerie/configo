@@ -8,7 +8,6 @@ using Configo.Endpoints;
 using Configo.Migrations.NpgSql;
 using Configo.Migrations.SqlServer;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
@@ -112,11 +111,6 @@ services.AddDbContextFactory<ConfigoDbContext>(dbContextOptions =>
         default:
             throw new InvalidOperationException("Unsupported database provider, only SqlServer and Postgres are supported: " + provider);
     }
-
-    dbContextOptions.UseSqlServer(configuration.GetConnectionString("ConfigoDb"), sqlServerOptions =>
-    {
-        sqlServerOptions.MigrationsAssembly(typeof(SqlServerMigrations).Assembly.GetName().Name);
-    });
 });
 services.AddHostedService<DatabaseMigrator>();
 
@@ -163,4 +157,7 @@ app.MapFallbackToPage("/_Host");
 app.Run();
 
 // Expose for integration tests
-public partial class Program { }
+namespace Configo
+{
+    public partial class Program { }
+}
