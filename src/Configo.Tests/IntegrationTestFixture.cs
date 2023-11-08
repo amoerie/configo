@@ -6,7 +6,7 @@ using Respawn;
 using Testcontainers.PostgreSql;
 using Xunit.Abstractions;
 
-namespace Configo.Tests.IntegrationTests;
+namespace Configo.Tests;
 
 [CollectionDefinition(IntegrationTestFixture.Collection)]
 public class IntegrationTestCollection : ICollectionFixture<IntegrationTestFixture>

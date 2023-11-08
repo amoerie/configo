@@ -13,14 +13,14 @@ public sealed record TagGroupListModel
     public required int NumberOfTags { get; init; }
 }
 
-public sealed class TagGroupEditModel
+public sealed record TagGroupEditModel
 {
     public int? Id { get; init; }
 
     [Required] [MaxLength(256)] public string? Name { get; set; }
 }
 
-public sealed class TagGroupDeleteModel
+public sealed record TagGroupDeleteModel
 {
     [Required] public int? Id { get; set; }
 }

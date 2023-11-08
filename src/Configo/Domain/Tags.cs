@@ -13,7 +13,7 @@ public sealed record TagListModel
     public required int NumberOfVariables { get; init; }
 }
 
-public sealed class TagEditModel
+public sealed record TagEditModel
 {
     public int? Id { get; init; }
     public required int TagGroupId { get; init; }
@@ -21,7 +21,7 @@ public sealed class TagEditModel
     [Required] [MaxLength(256)] public string? Name { get; set; }
 }
 
-public sealed class TagDeleteModel
+public sealed record TagDeleteModel
 {
     [Required] public int? Id { get; set; }
 }

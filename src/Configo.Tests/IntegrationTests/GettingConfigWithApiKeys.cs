@@ -1,11 +1,10 @@
 ﻿using Configo.Domain;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
 namespace Configo.Tests.IntegrationTests;
 
 [Collection(IntegrationTestFixture.Collection)]
-public class GettingConfigWithApiKeys : IAsyncDisposable
+public class GettingConfigWithApiKeys : IAsyncLifetime
 {
     private readonly IntegrationTestFixture _fixture;
 
@@ -15,9 +14,14 @@ public class GettingConfigWithApiKeys : IAsyncDisposable
         _fixture.SetOutput(output);
     }
 
-    public async ValueTask DisposeAsync()
+    public Task InitializeAsync()
     {
-        await _fixture.ResetAsync();
+        return Task.CompletedTask;
+    }
+
+    public Task DisposeAsync()
+    {
+        return _fixture.ResetAsync();
     }
 
     [Fact]

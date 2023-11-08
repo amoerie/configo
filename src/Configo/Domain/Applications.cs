@@ -12,14 +12,14 @@ public sealed record ApplicationListModel
     public required DateTime UpdatedAtUtc { get; init; }
 }
 
-public sealed class ApplicationEditModel
+public sealed record ApplicationEditModel
 {
     public int? Id { get; init; }
 
     [Required] [MaxLength(256)] public string? Name { get; set; }
 }
 
-public sealed class ApplicationDeleteModel
+public sealed record ApplicationDeleteModel
 {
     [Required] public int? Id { get; set; }
 }

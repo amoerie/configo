@@ -22,7 +22,7 @@ public sealed record ApiKeyListModel
     public required DateTime UpdatedAtUtc { get; init; }
 }
 
-public sealed class ApiKeyEditModel
+public sealed record ApiKeyEditModel
 {
     public int? Id { get; init; }
     
@@ -39,7 +39,7 @@ public sealed class ApiKeyEditModel
     public required DateTime ActiveUntilUtc { get; set; }
 }
 
-public sealed class ApiKeyDeleteModel
+public sealed record ApiKeyDeleteModel
 {
     [Required] public int? Id { get; set; }
 }

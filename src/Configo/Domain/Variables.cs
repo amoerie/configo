@@ -24,7 +24,7 @@ public sealed record VariablesEditModel
     public required List<int> TagIds { get; set; }
 }
 
-public sealed class VariableManager
+public sealed record VariableManager
 {
     private readonly IDbContextFactory<ConfigoDbContext> _dbContextFactory;
     private readonly ILogger<VariableManager> _logger;
