@@ -20,6 +20,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{29A8
 		..\.github\workflows\build.yml = ..\.github\workflows\build.yml
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configo.Migrations.SqlServer", "Configo.Migrations.SqlServer\Configo.Migrations.SqlServer.csproj", "{90217652-E981-4324-A36A-E083C28BBD13}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configo.Migrations.NpgSql", "Configo.Migrations.NpgSql\Configo.Migrations.NpgSql.csproj", "{684A3278-384A-4ACE-9684-316D400A4281}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,6 +38,14 @@ Global
 		{11C8D936-2DE3-404C-B1B0-6EBFC490DC99}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{11C8D936-2DE3-404C-B1B0-6EBFC490DC99}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{11C8D936-2DE3-404C-B1B0-6EBFC490DC99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{90217652-E981-4324-A36A-E083C28BBD13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90217652-E981-4324-A36A-E083C28BBD13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90217652-E981-4324-A36A-E083C28BBD13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90217652-E981-4324-A36A-E083C28BBD13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{684A3278-384A-4ACE-9684-316D400A4281}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{684A3278-384A-4ACE-9684-316D400A4281}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{684A3278-384A-4ACE-9684-316D400A4281}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{684A3278-384A-4ACE-9684-316D400A4281}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
