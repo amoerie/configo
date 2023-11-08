@@ -49,13 +49,9 @@ public sealed record VariableManager
 
         _logger.LogDebug("Getting config for API key {ApiKeyId}", apiKeyId);
 
-        var applications = dbContext.Applications;
         var apiKeys = dbContext.ApiKeys;
         var tags = dbContext.Tags;
         var apiKeyTags = dbContext.ApiKeyTags;
-        var variables = dbContext.Variables;
-        var tagVariables = dbContext.TagVariables;
-        var applicationVariables = dbContext.ApplicationVariables;
 
         // Get API key
         var apiKey = await apiKeys.SingleAsync(a => a.Id == apiKeyId, cancellationToken);
@@ -66,13 +62,26 @@ public sealed record VariableManager
             .Select(tag => tag.Id)
             .ToListAsync(cancellationToken);
 
+        var applicationIdsOfApiKey = new List<int> { apiKey.ApplicationId };
+        return await GetConfigAsync(applicationIdsOfApiKey, tagIdsOfApiKey, cancellationToken);
+    }
+    
+    public async Task<string> GetConfigAsync(List<int> applicationIds, List<int> tagIds, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        _logger.LogDebug("Getting config for applications {@ApplicationIds} and tags {@TagIds}", applicationIds, tagIds);
+
+        var variables = dbContext.Variables;
+        var tagVariables = dbContext.TagVariables;
+        var applicationVariables = dbContext.ApplicationVariables;
+
         // Get variables of API key
         var variablesOfApiKey = await variables
             // If a variable is linked to any other tag than the API key tags, then it is not relevant to this API key
-            .Where(v => !tagVariables.Any(tv => tv.VariableId == v.Id && !tagIdsOfApiKey.Contains(tv.TagId)))
+            .Where(v => !tagVariables.Any(tv => tv.VariableId == v.Id && !tagIds.Contains(tv.TagId)))
             // If a variable is linked to one or more applications and the current application is not one of them, then it is not relevant to this API key
-            .Where(v => !applicationVariables.Any(av => av.VariableId == v.Id)
-                        || applicationVariables.Any(av => av.VariableId == v.Id && av.ApplicationId == apiKey.ApplicationId))
+            .Where(v => !applicationVariables.Any(av => av.VariableId == v.Id && applicationIds.Contains(av.ApplicationId)))
             // For each variable, we want to calculate a specificity to decide which variable overrides which other variable
             .Select(v => new
             {
@@ -82,8 +91,8 @@ public sealed record VariableManager
                     Value = v.Value,
                     ValueType = v.ValueType
                 },
-                Specificity = tagVariables.Count(tv => tv.VariableId == v.Id && tagIdsOfApiKey.Contains(tv.TagId))
-                              + applicationVariables.Count(av => av.VariableId == v.Id && av.ApplicationId == apiKey.ApplicationId)
+                Specificity = tagVariables.Count(tv => tv.VariableId == v.Id && tagIds.Contains(tv.TagId))
+                              + applicationVariables.Count(av => av.VariableId == v.Id && applicationIds.Contains(av.ApplicationId))
             })
             .ToListAsync(cancellationToken);
 
@@ -93,7 +102,7 @@ public sealed record VariableManager
             .Select(g => g.MaxBy(v => v.Specificity)!.Variable)
             .ToList();
 
-        _logger.LogInformation("Got {NumberOfVariables} variables for API key {ApiKeyId}", variablesOfApiKeyWithHighestSpecificity.Count, apiKeyId);
+        _logger.LogInformation("Got {NumberOfVariables} variables for applications {@ApplicationIds} and tags {@TagIds}", variablesOfApiKeyWithHighestSpecificity.Count, applicationIds, tagIds);
 
         return _serializer.SerializeToJson(variablesOfApiKeyWithHighestSpecificity);
     }
@@ -191,6 +200,8 @@ public sealed record VariableManager
                     ApplicationId = applicationId,
                     VariableId = addedVariable.Id
                 });
+                
+                _logger.LogInformation("Linked variable {@VariableId} to application {ApplicationId}", addedVariable, applicationId);
             }
 
             foreach (var tagId in tagIds)
@@ -200,6 +211,8 @@ public sealed record VariableManager
                     TagId = tagId,
                     VariableId = addedVariable.Id
                 });
+                
+                _logger.LogInformation("Linked variable {@VariableId} to tag {TagId}", addedVariable, tagId);
             }
         }
 

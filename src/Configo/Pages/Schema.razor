@@ -1,9 +1,11 @@
 ﻿@page "/applications/{application}/schema"
 @using Configo.Domain
+@inject ApplicationManager ApplicationManager
 @inject SchemaManager SchemaManager
 @inject IJSRuntime JsRuntime
+@inject NavigationManager NavigationManager
 
-@if (_schema == null)
+@if (_application == null || _schema == null)
 {
     <p>...loading</p>
     return;
@@ -15,7 +17,7 @@
 
 <SnackbarStack @ref="_schemaSavedNotification" Color="SnackbarColor.Success"></SnackbarStack>
 
-<div id="editor-container" class="container-fluid" style="height: 90vh">
+<div id="schema-editor-container" class="container-fluid" style="height: 90vh">
     
 </div>
 
@@ -23,10 +25,11 @@
     private string? _schema;
     private SnackbarStack? _schemaSavedNotification;
     private DotNetObjectReference<Schema>? _objectReference;
+    private ApplicationListModel? _application;
 
     [Parameter]
     public string? Application { get; set; }
-    
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -37,18 +40,21 @@
     }
 
     protected override async Task OnParametersSetAsync()
-    {
-        if (Application == null)
+    {        
+        var application = await ApplicationManager.GetApplicationByNameAsync(Application, CancellationToken);
+        if (application == null)
         {
-            throw new InvalidOperationException("Oi, where is the application");
+            NavigationManager.NavigateTo("applications");
+            return;
         }
-        _schema = await SchemaManager.GetSchemaAsync(Application, CancellationToken);
+        _application = application;
+        _schema = await SchemaManager.GetSchemaAsync(_application!.Id, CancellationToken);
     }
 
     [JSInvokable]
     public async Task Save(string schema)
     {
-        await SchemaManager.SaveSchemaAsync(Application!, schema, CancellationToken);
+        await SchemaManager.SaveSchemaAsync(_application!.Id, schema, CancellationToken);
         _schemaSavedNotification?.PushAsync("Application schema saved successfully", SnackbarColor.Success);
     }
     

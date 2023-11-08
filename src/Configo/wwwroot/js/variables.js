@@ -1,15 +1,13 @@
 ﻿// use strict
-
 import * as monaco from "monaco-editor/esm/vs/editor/editor.main.js";
-
-class Schema {
+class Variables {
     #dotNetRef;
     #model;
     #editor;
     constructor() {
     }
     
-    initialize(dotNetRef, schema) {
+    initialize(dotNetRef, config, schema) {
         this.#dotNetRef = dotNetRef;
 
         monaco.editor.setTheme("vs-dark");
@@ -21,14 +19,14 @@ class Schema {
             schemas: [{
                 // If we give the model a name that matches wich this filematch
                 // monaco will use this schema file for validation
-                fileMatch: [ "schema.json" ],
-                uri: "https://json-schema.org/draft-04/schema",
-            }], 
-            enableSchemaRequest: true
+                fileMatch: [ "config.json" ],
+                schema: schema,
+                uri: ""
+            }] 
         });
 
-        this.#model = monaco.editor.createModel(schema, "json", monaco.Uri.parse("internal://server/schema.json"));
-        const container = document.getElementById("schema-editor-container");
+        this.#model = monaco.editor.createModel(config, "json", monaco.Uri.parse("internal://server/config.json"));
+        const container = document.getElementById("variables-editor-container");
         this.#editor = monaco.editor.create(container, {
             model: this.#model,
             automaticLayout: true
@@ -37,6 +35,23 @@ class Schema {
         this.#editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, async () => {
             await this.save();
         });
+    }
+    
+    update(config, schema) {
+        // Allow the editor to make HTTP requests to fetch referenced JSON schemas
+        monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+            validate: true,
+            allowComments: false,
+            schemas: [{
+                // If we give the model a name that matches wich this filematch
+                // monaco will use this schema file for validation
+                fileMatch: [ "config.json" ],
+                schema: schema,
+                uri: ""
+            }]
+        });
+
+        this.#model.setValue(config)
     }
     
     destroy() {
@@ -48,11 +63,11 @@ class Schema {
     }
     
     async save() {
-        const schema = this.#editor.getValue();
-        await this.#dotNetRef.invokeMethodAsync("Save", schema);
+        const config = this.#editor.getValue();
+        await this.#dotNetRef.invokeMethodAsync("Save", config);
     }
 }
 
-window.schema = new Schema();
+window.variables = new Variables();
 
 

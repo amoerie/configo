@@ -1,12 +1,14 @@
 ﻿@page "/variables"
 @using Configo.Domain
 @using Configo.Blazor
+@inject ApplicationManager ApplicationManager
 @inject TagGroupManager TagGroupManager
 @inject TagManager TagManager
 @inject VariableManager VariableManager
+@inject SchemaManager SchemaManager
 @inject IJSRuntime JsRuntime
 
-@if (_tagGroups == null)
+@if (_tagGroups == null || _applications == null)
 {
     <p>...loading</p>
     return;
@@ -16,29 +18,55 @@
     <Icon Name="FaNames.FaCog"/> Variables
 </Heading>
 
-@foreach (var batch in _tagGroups.Chunk(4))
-{
-    <Row>
-        @foreach (var tagGroup in batch)
+<Row>
+    <Column ColumnSize="ColumnSize.Is3.OnWidescreen.Is4.OnDesktop.Is5.OnTablet.Is12.OnMobile">
+        @* Applications & Tag Groups go here *@
+        <Card>
+            <CardHeader><Icon Name="IconName.Server" /> Applications</CardHeader>
+            <ListGroup>
+                @foreach (var application in _applications)
+                {
+                    <ListGroupItem>
+                        <Field>
+                            <Check TValue="bool"
+                                   Checked="SelectedApplicationIds.Contains(application.Id)"
+                                   CheckedChanged="isChecked => OnCheckApplication(isChecked, application.Id)">
+                                @application.Name
+                            </Check>
+                        </Field>
+                    </ListGroupItem>
+                }
+            </ListGroup>
+        </Card>
+        
+        @foreach (var tagGroup in _tagGroups)
         {
-            <Column Size="ColumnSize.Is3">
-                <Card>
-                    <CardHeader>@tagGroup.Name</CardHeader>
-                    <ListGroup Flush>
-                        @foreach (var tag in _tags[tagGroup.Id])
-                        {
-                            <ListGroupItem>@tag.Name</ListGroupItem>
-                        }
-                    </ListGroup>
-                </Card>
-            </Column>
+            <Card>
+                <CardHeader><Icon Name="IconName.List"/> @tagGroup.Name</CardHeader>
+                <ListGroup>
+                    @foreach (var tag in _tags[tagGroup.Id])
+                    {
+                        <ListGroupItem>
+                            <Field>
+                                <Check TValue="bool"
+                                       Checked="SelectedTagIds.Contains(tag.Id)"
+                                       CheckedChanged="isChecked => OnCheckTag(isChecked, tag.Id)">
+                                    @tag.Name
+                                </Check>
+                            </Field>
+                        </ListGroupItem>
+                    }
+                </ListGroup>
+            </Card>
         }
-    </Row>
-}
-
-<div id="editor-container" class="container-fluid" style="height: 90vh">
-
-</div>
+    </Column>
+    <Column ColumnSize="ColumnSize.Is9.OnWidescreen.Is8.OnDesktop.Is7.OnTablet.Is12.OnMobile">
+        @* Editor goes here *@
+        <div id="variables-editor-container" class="container-fluid" style="height: 90vh">
+            
+        </div>
+    </Column>
+</Row>
 
 <SnackbarStack @ref="_variablesSavedNotification" Color="SnackbarColor.Success"></SnackbarStack>
 
@@ -47,10 +75,19 @@
     private SnackbarStack? _variablesSavedNotification;
     private List<TagGroupListModel>? _tagGroups;
     private Dictionary<int, List<TagListModel>> _tags = new Dictionary<int, List<TagListModel>>();
+    private List<ApplicationListModel>? _applications;
+
+    private List<int> SelectedApplicationIds = new List<int>();
+    private List<int> SelectedTagIds = new List<int>();
 
     protected override async Task OnInitializedAsync()
     {
+        _applications = await ApplicationManager.GetAllApplicationsAsync(CancellationToken);
         _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken);
+        if (_applications.Count > 0)
+        {
+            SelectedApplicationIds.Add(_applications[0].Id);
+        }
         foreach (var tagGroup in _tagGroups)
         {
             _tags[tagGroup.Id] = await TagManager.GetTagsOfGroupAsync(tagGroup.Id, CancellationToken);
@@ -58,19 +95,27 @@
         await base.OnInitializedAsync();
     }
 
-    protected override Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             _objectReference = DotNetObjectReference.Create(this);
-    //await JsRuntime.InvokeVoidAsync("variables.initialize", CancellationToken, _objectReference, _schema);
+            var variables = "{}";
+            var schema = "{}";
+            await JsRuntime.InvokeVoidAsync("variables.initialize", CancellationToken, _objectReference, variables, schema);
         }
-        return Task.CompletedTask;
     }
 
     [JSInvokable]
     public async Task Save(string variables)
     {
+        await VariableManager.SaveAsync(new VariablesEditModel
+        {
+            Json = variables,
+            ApplicationIds = SelectedApplicationIds,
+            TagIds = SelectedTagIds
+        }, CancellationToken);
+        
         if (_variablesSavedNotification != null)
         {
             await _variablesSavedNotification.PushAsync("Variables saved successfully", SnackbarColor.Success);
@@ -83,7 +128,7 @@
         {
             try
             {
-                //await JsRuntime.InvokeVoidAsync("variables.destroy", CancellationToken);
+                await JsRuntime.InvokeVoidAsync("variables.destroy", CancellationToken);
             }
             finally
             {
@@ -91,6 +136,45 @@
             }
         }
         await base.OnDisposeAsync();
+    }
+
+    private async Task UpdateEditorAsync()
+    {
+        if (_objectReference == null)
+        {
+            return;
+        }
+        
+        var config = await VariableManager.GetConfigAsync(SelectedApplicationIds, SelectedTagIds, CancellationToken);
+        var schema = await SchemaManager.GetSchemaAsync(SelectedApplicationIds[0], CancellationToken);
+        await JsRuntime.InvokeVoidAsync("variables.update", CancellationToken, config, schema);
+    }
+
+    private async Task OnCheckApplication(bool isChecked, int applicationId)
+    {
+        if (isChecked)
+        {
+            SelectedApplicationIds.Add(applicationId);
+        }
+        else
+        {
+            SelectedApplicationIds.Remove(applicationId);
+        }
+        await UpdateEditorAsync();
+    }
+
+    private async Task OnCheckTag(bool isChecked, int tagId)
+    {
+        if (isChecked)
+        {
+            SelectedTagIds.Add(tagId);
+        }
+        else
+        {
+            SelectedTagIds.Remove(tagId);
+        }
+        
+        await UpdateEditorAsync();
     }
 
 }

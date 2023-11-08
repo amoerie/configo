@@ -83,6 +83,27 @@ public sealed class ApplicationManager
         return applications;
     }
 
+    public async Task<ApplicationListModel?> GetApplicationByNameAsync(string? name, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        _logger.LogDebug("Getting application by name {Name}", name);
+
+        var application = await dbContext.Applications
+            .Where(a => a.Name == name)
+            .Select(t => new ApplicationListModel
+            {
+                Id = t.Id,
+                Name = t.Name,
+                UpdatedAtUtc = t.UpdatedAtUtc
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        _logger.LogInformation("Found {@Application} applications", application);
+
+        return application;
+    }
+
     public async Task<ApplicationListModel> SaveApplicationAsync(ApplicationEditModel application,
         CancellationToken cancellationToken)
     {

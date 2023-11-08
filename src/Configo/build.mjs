@@ -42,7 +42,10 @@ import { dirname } from 'path';
         };
 
         const pageOptions = {
-            entryPoints: ['wwwroot/js/schema.js'],
+            entryPoints: [
+                "wwwroot/js/schema.js",
+                "wwwroot/js/variables.js",
+            ],
             bundle: true,
             platform: "browser",
             format: 'iife',
