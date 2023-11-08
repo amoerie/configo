@@ -1,12 +1,8 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using Configo.Database;
 using Configo.Database.Tables;
 using Configo.Domain;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Configo.Tests.Domain;
 
