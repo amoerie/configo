@@ -3,7 +3,7 @@
 Push-Location 
 try
 {
-    $ProjectPath = (Join-Path $PSScriptRoot "../..")
+    $ProjectPath = (Join-Path $PSScriptRoot "../../Configo")
 
     cd $ProjectPath
 
