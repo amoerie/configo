@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Configo.Database;
 
@@ -19,11 +20,25 @@ public class DatabaseMigrator : IHostedService
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
         var database = dbContext.Database;
-        var connectionString = database.GetConnectionString();
-        var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString);
-
-        _logger.LogInformation("Automatically migrating database : {Database} on server {DataSource}",
-            connectionStringBuilder.InitialCatalog, connectionStringBuilder.DataSource);
+        
+        if (database.IsSqlServer())
+        {
+            var connectionString = database.GetConnectionString();
+            var builder = new SqlConnectionStringBuilder(connectionString);
+            _logger.LogInformation("Automatically migrating SQL server database : {Database} on server {Server}",
+                builder.InitialCatalog, builder.DataSource);
+        }
+        else if (database.IsNpgsql())
+        {
+            var connectionString = database.GetConnectionString();
+            var builder = new NpgsqlConnectionStringBuilder(connectionString);
+            _logger.LogInformation("Automatically migrating PostgreSQL server database : {Database} on server {Server}:{Port}",
+                builder.Database, builder.Host, builder.Port);
+        }
+        else
+        {
+            throw new InvalidOperationException("Unsupported database engine: " + database.ProviderName);
+        }
 
         try
         {

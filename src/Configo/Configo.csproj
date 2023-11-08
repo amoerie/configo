@@ -20,6 +20,12 @@
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.13" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.4" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.11" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Configo.Migrations.NpgSql\Configo.Migrations.NpgSql.csproj" />
+    <ProjectReference Include="..\Configo.Migrations.SqlServer\Configo.Migrations.SqlServer.csproj" />
   </ItemGroup>
 
 </Project>

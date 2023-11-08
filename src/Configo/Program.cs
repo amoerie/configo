@@ -5,6 +5,8 @@ using Blazorise.Icons.FontAwesome;
 using Configo.Database;
 using Configo.Domain;
 using Configo.Endpoints;
+using Configo.Migrations.NpgSql;
+using Configo.Migrations.SqlServer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -90,7 +92,31 @@ services.AddDbContextFactory<ConfigoDbContext>(dbContextOptions =>
         warnings.Throw(RelationalEventId.MultipleCollectionIncludeWarning);
     });
 
-    dbContextOptions.UseSqlServer(configuration.GetConnectionString("ConfigoDb"));
+    /* Support both SQL server and Postgres */
+    var provider = configuration.GetValue("Provider", "SqlServer");
+
+    switch (provider)
+    {
+        case "SqlServer":
+            dbContextOptions.UseSqlServer(configuration.GetConnectionString("ConfigoDb"), sqlServerOptions =>
+            {
+                sqlServerOptions.MigrationsAssembly(typeof(SqlServerMigrations).Assembly.GetName().Name);
+            });
+            break;
+        case "Postgres":
+            dbContextOptions.UseNpgsql(configuration.GetConnectionString("ConfigoDb"), npgSqlOptions =>
+            {
+                npgSqlOptions.MigrationsAssembly(typeof(NpgSqlMigrations).Assembly.GetName().Name);
+            });
+            break;
+        default:
+            throw new InvalidOperationException("Unsupported database provider, only SqlServer and Postgres are supported: " + provider);
+    }
+
+    dbContextOptions.UseSqlServer(configuration.GetConnectionString("ConfigoDb"), sqlServerOptions =>
+    {
+        sqlServerOptions.MigrationsAssembly(typeof(SqlServerMigrations).Assembly.GetName().Name);
+    });
 });
 services.AddHostedService<DatabaseMigrator>();
 

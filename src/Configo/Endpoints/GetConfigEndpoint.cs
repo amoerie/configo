@@ -15,7 +15,6 @@ public static class GetConfigEndpoint
     {
         var apiKeyId = int.Parse(claimsIdentity.FindFirst(ApiKeyAuthenticationHandler.ApiKeyIdClaim)!.Value);
         var variables = await variableManager.GetConfigAsync(apiKeyId, cancellationToken);
-        var json = variablesJsonSerializer.SerializeToJson(variables);
-        return TypedResults.Text(json, "application/json", Encoding.UTF8);
+        return TypedResults.Text(variables, "application/json", Encoding.UTF8);
     }
 }
