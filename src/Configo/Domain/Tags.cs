@@ -28,7 +28,8 @@ public sealed record TagDeleteModel
 
 public sealed record TagDropdownModel
 {
-    public int Id { get; init; }
+    public required int Id { get; init; }
+    public required int GroupId { get; init; }
     public required string CombinedName { get; init; }
 }
 
@@ -63,6 +64,7 @@ public sealed class TagManager
         return tagRecords.Select(tagRecord => new TagDropdownModel
             {
                 Id = tagRecord.Id,
+                GroupId = tagRecord.TagGroupId,
                 CombinedName = $"{tagGroupRecordsById[tagRecord.TagGroupId].Name}:{tagRecord.Name}"
             })
             .ToList();

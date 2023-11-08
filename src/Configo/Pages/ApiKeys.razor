@@ -9,7 +9,7 @@
     <Icon Name="IconName.List"/> Api Keys
 </Heading>
 
-@if (_apiKeys == null || _applications == null || _tags == null)
+@if (_apiKeys == null || _applications == null || _availableTags == null)
 {
     <p>
         <em>Loading...</em>
@@ -60,15 +60,15 @@ else
                                     <FieldBody ColumnSize="ColumnSize.Is10">
                                         <Autocomplete TItem="TagDropdownModel"
                                                       TValue="int"
-                                                      Data="@_tags"
+                                                      Data="@_availableTags"
                                                       TextField="@(item => item.CombinedName)"
                                                       ValueField="@(item => item.Id)"
-                                                      @bind-SelectedValues="@_apiKeyBeingEdited.TagIds"
                                                       @bind-SelectedTextsText="TagNameAutoCompleteTexts"
                                                       SelectionMode="AutocompleteSelectionMode.Multiple"
                                                       Placeholder="Search tag..."
                                                       Filter="AutocompleteFilter.Contains"
-                                                      FreeTyping>
+                                                      SelectedValues="_apiKeyBeingEdited.TagIds"
+                                                      SelectedValuesChanged="OnSelectedTagsChanged">
                                             <NotFoundContent Context="searchString">No tags found that contain @searchString</NotFoundContent>
                                         </Autocomplete>
                                         <FieldHelp>You probably want to combine tags to narrow things down to a single application instance on a single machine</FieldHelp>
@@ -161,7 +161,8 @@ else
 
 @code {
     private List<ApiKeyListModel>? _apiKeys;
-    private List<TagDropdownModel>? _tags;
+    private List<TagDropdownModel>? _allTags;
+    private List<TagDropdownModel>? _availableTags;
     private Dictionary<int, TagDropdownModel>? _tagsById;
     private List<ApplicationDropdownModel>? _applications;
     private Dictionary<int, ApplicationDropdownModel>? _applicationsById;
@@ -198,9 +199,10 @@ else
     protected override async Task OnInitializedAsync()
     {
         _apiKeys = await ApiKeyManager.GetAllApiKeysAsync(CancellationToken);
-        _tags = await TagManager.GetAllTagsForDropdownAsync(CancellationToken);
+        _allTags = await TagManager.GetAllTagsForDropdownAsync(CancellationToken);
+        _tagsById = _allTags.ToDictionary(t => t.Id);
+        _availableTags = new List<TagDropdownModel>(_allTags);
         _applications = await ApplicationManager.GetAllApplicationsForDropdownAsync(CancellationToken);
-        _tagsById = _tags.ToDictionary(t => t.Id);
         _applicationsById = _applications.ToDictionary(a => a.Id);
     }
 
@@ -288,6 +290,27 @@ else
     {
         await JsRuntime.InvokeVoidAsync("clipboardHelper.copyText", apiKey.Key);
         _apiKeyCopiedNotification?.PushAsync("API key copied to clipboard", SnackbarColor.Success);
+    }
+
+    private void OnSelectedTagsChanged(List<int> selectedTagIds)
+    {
+        _apiKeyBeingEdited!.TagIds = selectedTagIds;
+        
+        // Ensure that only tag per group can be selected
+        var alreadySelectedTagGroups = new HashSet<int>();
+        foreach (var selectedTagId in selectedTagIds)
+        {
+            alreadySelectedTagGroups.Add(_tagsById![selectedTagId].GroupId);
+        }
+        
+        _availableTags!.Clear();
+        foreach (var tag in _allTags!)
+        {
+            if (!alreadySelectedTagGroups.Contains(tag.GroupId))
+            {
+                _availableTags.Add(tag);
+            }
+        }
     }
 
 }
