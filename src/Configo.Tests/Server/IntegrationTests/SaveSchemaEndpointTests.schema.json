@@ -1,0 +1,1083 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "JSON schema ASP.NET Core's appsettings.json file",
+  "type": "object",
+  "properties": {
+    "Kestrel": {
+      "$ref": "#/definitions/kestrel"
+    },
+    "AllowedHosts": {
+      "$ref": "#/definitions/allowedHosts"
+    },
+    "ConnectionStrings": {
+      "$ref": "#/definitions/AdoNetClusteringSiloOptions"
+    },
+    "LoggingConfig": {
+      "$ref": "#/definitions/LoggingConfig"
+    },
+    "Api": {
+      "$ref": "#/definitions/ApiConfig"
+    },
+    "Metrics": {
+      "$ref": "#/definitions/MetricsConfig"
+    },
+    "ThreadPool": {
+      "$ref": "#/definitions/ThreadPoolOptions"
+    },
+    "Memory": {
+      "$ref": "#/definitions/MemoryConfig"
+    },
+    "Email": {
+      "$ref": "#/definitions/EmailConfig"
+    },
+    "RabbitMQ": {
+      "$ref": "#/definitions/RabbitMqConfig"
+    },
+    "Orleans": {
+      "$ref": "#/definitions/OrleansServerConfig"
+    },
+    "EventBus": {
+      "$ref": "#/definitions/RabbitMqEventBusOptions"
+    },
+    "Storage": {
+      "$ref": "#/definitions/StorageConfig"
+    },
+    "RegisterImage": {
+      "$ref": "#/definitions/RegisterImageConfig"
+    },
+    "AiCube": {
+      "$ref": "#/definitions/AiCubeClientConfig"
+    }
+  },
+  "definitions": {
+    "protocols": {
+      "type": "string",
+      "description": "The protocols enabled on the endpoint.",
+      "enum": [
+        "None",
+        "Http1",
+        "Http2",
+        "Http1AndHttp2",
+        "Http3",
+        "Http1AndHttp2AndHttp3"
+      ]
+    },
+    "certificate": {
+      "title": "certificate",
+      "type": "object",
+      "description": "Certificate configuration.",
+      "properties": {
+        "Path": {
+          "type": "string",
+          "description": "The certificate file path. If a file path is specified then the certificate will be loaded from the file system."
+        },
+        "KeyPath": {
+          "type": "string",
+          "description": "The certificate key file path. Available in .NET 5 and later."
+        },
+        "Password": {
+          "type": "string",
+          "description": "The certificate password used to access the private key."
+        },
+        "Subject": {
+          "type": "string",
+          "description": "The certificate subject. If a subject is specified then the certificate will be loaded from the certificate store."
+        },
+        "Store": {
+          "type": "string",
+          "description": "The certificate store name. Defaults to 'My'.",
+          "default": "My"
+        },
+        "Location": {
+          "type": "string",
+          "description": "The certificate store location. Defaults to 'CurrentUser'.",
+          "default": "CurrentUser",
+          "enum": [
+            "LocalMachine",
+            "CurrentUser"
+          ]
+        },
+        "AllowInvalid": {
+          "type": "boolean",
+          "description": "A value indicating whether or not to load certificates that are considered invalid. Defaults to false.",
+          "default": false
+        }
+      }
+    },
+    "sslProtocols": {
+      "type": "array",
+      "description": "Specifies allowable SSL protocols. Defaults to 'None' which allows the operating system to choose the best protocol to use, and to block protocols that are not secure. Unless your app has a specific reason not to, you should use this default. Available in .NET 5 and later.",
+      "items": {
+        "type": "string",
+        "default": "None",
+        "enum": [
+          "None",
+          "Tls",
+          "Tls11",
+          "Tls12",
+          "Tls13"
+        ]
+      }
+    },
+    "clientCertificateMode": {
+      "type": "string",
+      "description": "Specifies the client certificate requirements for a HTTPS connection. Defaults to 'NoCertificate'. Available in .NET 5 and later.",
+      "default": "NoCertificate",
+      "enum": [
+        "NoCertificate",
+        "AllowCertificate",
+        "RequireCertificate"
+      ]
+    },
+    "kestrel": {
+      "title": "kestrel",
+      "type": "object",
+      "description": "ASP.NET Core Kestrel server configuration.",
+      "properties": {
+        "Endpoints": {
+          "title": "endpoints",
+          "type": "object",
+          "description": "Endpoints that Kestrel listens to for network requests. Each endpoint has a name specified by its JSON property name.",
+          "additionalProperties": {
+            "title": "endpoint options",
+            "type": "object",
+            "description": "Kestrel endpoint configuration.",
+            "required": [
+              "Url"
+            ],
+            "properties": {
+              "Url": {
+                "type": "string",
+                "description": "The scheme, host name, and port the endpoint will listen on. A Url is required.",
+                "format": "uri"
+              },
+              "Protocols": {
+                "$ref": "#/definitions/protocols"
+              },
+              "SslProtocols": {
+                "$ref": "#/definitions/sslProtocols"
+              },
+              "Certificate": {
+                "$ref": "#/definitions/certificate"
+              },
+              "ClientCertificateMode": {
+                "$ref": "#/definitions/clientCertificateMode"
+              },
+              "Sni": {
+                "title": "SNI",
+                "type": "object",
+                "description": "Server Name Indication (SNI) configuration. This enables the mapping of client requested host names to certificates and other TLS settings. Wildcard names prefixed with '*.', as well as a top level '*' are supported. Available in .NET 5 and later.",
+                "additionalProperties": {
+                  "title": "SNI options",
+                  "type": "object",
+                  "description": "Endpoint SNI configuration.",
+                  "properties": {
+                    "Protocols": {
+                      "$ref": "#/definitions/protocols"
+                    },
+                    "SslProtocols": {
+                      "$ref": "#/definitions/sslProtocols"
+                    },
+                    "Certificate": {
+                      "$ref": "#/definitions/certificate"
+                    },
+                    "ClientCertificateMode": {
+                      "$ref": "#/definitions/clientCertificateMode"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "EndpointDefaults": {
+          "title": "endpoint defaults",
+          "type": "object",
+          "description": "Default configuration applied to all endpoints. Named endpoint specific configuration overrides defaults.",
+          "properties": {
+            "Protocols": {
+              "$ref": "#/definitions/protocols"
+            },
+            "SslProtocols": {
+              "$ref": "#/definitions/sslProtocols"
+            },
+            "ClientCertificateMode": {
+              "$ref": "#/definitions/clientCertificateMode"
+            }
+          }
+        },
+        "Certificates": {
+          "title": "certificates",
+          "type": "object",
+          "description": "Certificates that Kestrel uses with HTTPS endpoints. Each certificate has a name specified by its JSON property name. The 'Default' certificate is used by HTTPS endpoints that haven't specified a certificate.",
+          "additionalProperties": {
+            "$ref": "#/definitions/certificate"
+          }
+        }
+      }
+    },
+    "allowedHosts": {
+      "type": "string",
+      "description": "ASP.NET Core host filtering middleware configuration. Allowed hosts is a semicolon-delimited list of host names without port numbers. Requests without a matching host name will be refused. Host names may be prefixed with a '*.' wildcard, or use '*' to allow all hosts."
+    },
+    "connectionStrings": {
+      "title": "connection string options",
+      "type": "object",
+      "description": "Connection string configuration. Get connection strings with the IConfiguration.GetConnectionString(string) extension method.",
+      "additionalProperties": {
+        "type": "string",
+        "description": "Connection string configuration. Each connection string has a name specified by its JSON property name."
+      }
+    },
+    "LoggingConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "MinimumLevel": {
+          "description": "The global default minimum level",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/LogEventLevel"
+            }
+          ]
+        },
+        "MinimumLevelOverrides": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "description": "Source context specific overrides for the minimum level",
+          "additionalProperties": {
+            "$ref": "#/definitions/LogEventLevel"
+          }
+        },
+        "Seq": {
+          "description": "Configures logging to Seq",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/SeqConfig"
+            }
+          ]
+        },
+        "Exceptionless": {
+          "description": "Configures logging to Exceptionless",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/ExceptionlessConfig"
+            }
+          ]
+        },
+        "EventLog": {
+          "description": "Configures logging to EventLog",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/EventLogConfig"
+            }
+          ]
+        },
+        "FilesDirectory": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "Configures the directory where the log files will be stored\nRelative paths will be resolved against the root directory of the application"
+        },
+        "Files": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "description": "Configures logging to files",
+          "additionalProperties": {
+            "$ref": "#/definitions/LogFileConfig"
+          }
+        },
+        "Console": {
+          "description": "Configures logging to console",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/ConsoleConfig"
+            }
+          ]
+        }
+      }
+    },
+    "LogEventLevel": {
+      "type": "string",
+      "description": "",
+      "x-enumNames": [
+        "Verbose",
+        "Debug",
+        "Information",
+        "Warning",
+        "Error",
+        "Fatal"
+      ],
+      "enum": [
+        "Verbose",
+        "Debug",
+        "Information",
+        "Warning",
+        "Error",
+        "Fatal"
+      ]
+    },
+    "SeqConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "ApiKey": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "MinimumLevel": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/LogEventLevel"
+            }
+          ]
+        }
+      }
+    },
+    "ExceptionlessConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "ApiKey": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "EventLogConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Source": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "LogFileConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Pattern": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "The pattern that the source context should match for a log entry to be included in this log file"
+        },
+        "PatternType": {
+          "description": "The type of Pattern\nThis influences how the pattern is applied",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/PatternType"
+            }
+          ]
+        },
+        "MinimumLevel": {
+          "description": "The minimum level for events passed through the sink. Options: Verbose | Debug | Information | Warning | Error | Fatal",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/LogEventLevel"
+            }
+          ]
+        },
+        "RetainedFileCountLimit": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "The maximum number of log files that will be retained, including the current log file.\nFor unlimited retention, pass null. For example, when rollingInterval = Hour, 744 (= 24 * 31) equals one month",
+          "format": "int32"
+        },
+        "RollingInterval": {
+          "description": "How often a new log file needs to be created. This also impacts the name of the log file.",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/RollingInterval"
+            }
+          ]
+        },
+        "RollOnFileSizeLimit": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "If true, a new file will be created when the file size limit is reached.\nFilenames will have a number appended in the format _NNN, with the first filename given no number."
+        },
+        "FileSizeLimitInBytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "The approximate maximum size, in bytes, to which a log file will be allowed to grow.\nFor unrestricted growth, pass null.\nThe default is 10 MB if not specified.\nTo avoid writing partial events, the last event within the limit will be written in full even if it exceeds the limit.",
+          "format": "int64"
+        },
+        "Shared": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Allow the log file to be shared by multiple processes. The default is true."
+        },
+        "Buffered": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Indicates if flushing to the output file can be buffered or not. The default is false.\nNote that a shared file cannot be buffered."
+        },
+        "OutputTemplate": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "A message template describing the format used to write to the sink"
+        }
+      }
+    },
+    "PatternType": {
+      "type": "string",
+      "description": "",
+      "x-enumNames": [
+        "StartsWith",
+        "Wildcard",
+        "Regex"
+      ],
+      "enum": [
+        "StartsWith",
+        "Wildcard",
+        "Regex"
+      ]
+    },
+    "RollingInterval": {
+      "type": "string",
+      "description": "Specifies the frequency at which the log file should roll.",
+      "x-enumNames": [
+        "Infinite",
+        "Year",
+        "Month",
+        "Day",
+        "Hour",
+        "Minute"
+      ],
+      "enum": [
+        "Infinite",
+        "Year",
+        "Month",
+        "Day",
+        "Hour",
+        "Minute"
+      ]
+    },
+    "ConsoleConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "MinimumLevel": {
+          "description": "The minimum level for events passed through the sink. Options: Verbose | Debug | Information | Warning | Error | Fatal",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/LogEventLevel"
+            }
+          ]
+        },
+        "OutputTemplate": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "The output template to use"
+        }
+      }
+    },
+    "ApiConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Port": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "HealthCheckPort": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        }
+      }
+    },
+    "MetricsConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Type": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "InfluxDbUri": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "InfluxDbDatabaseName": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "InfluxDbUsername": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "InfluxDbPassword": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "InfluxDbBatchIntervalInSeconds": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        }
+      }
+    },
+    "ThreadPoolOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "MinWorkerThreads": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        },
+        "MaxWorkerThreads": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        },
+        "MinCompletionPortThreads": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        },
+        "MaxCompletionPortThreads": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        }
+      }
+    },
+    "MemoryConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "DisableMemoryRenting": {
+          "type": "boolean",
+          "description": "Whether or not to disable renting completely.\nThe API remains the same, but instead of renting, new byte arrays / MemoryStreams will be allocated each time"
+        },
+        "EnableStackTraces": {
+          "type": "boolean",
+          "description": "Whether or not to capture the current stack trace when renting memory. This can be helpful to diagnose memory leaks"
+        },
+        "LargeArrayPoolMaximumArrayLength": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Configures how large the maximum array size is for the large array pool\nHigher values will reuse more memory when compressing/decompressing/rendering images which benefits performance by avoiding garbage collection and avoiding allocation\nThe downside is that this memory is kept alive for much longer\nThis has to be a value between 1MB (2^10) and 1GB (2^30)",
+          "format": "int32"
+        },
+        "LargeArrayPoolMaximumNumberOfArraysPerBucket": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "The maximum number of array instances that may be stored in each bucket in the large array pool.\nThe large array pool will group arrays of similar lengths into buckets, with no more than LargeArrayPoolMaximumNumberOfArraysPerBucket in each bucket,\nand with those arrays not exceeding LargeArrayPoolMaximumArrayLength in length.\nThe number of buckets is calculated dynamically based on the maximum array length, and will be a number between 16 (1MB) and 26 (1GB)",
+          "format": "int32"
+        },
+        "RecyclableMemoryStreamsBlockSize": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Size of each block that is pooled. Must be > 0",
+          "format": "int32"
+        },
+        "RecyclableMemoryStreamsLargeBufferMultiple": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Each large buffer will be a multiple/exponential of this value",
+          "format": "int32"
+        },
+        "RecyclableMemoryStreamsMaximumBufferSize": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Buffers larger than this are not pooled",
+          "format": "int32"
+        },
+        "RecyclableMemoryStreamsUseExponentialLargeBuffer": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Switch to exponential large buffer allocation strategy"
+        },
+        "RecyclableMemoryStreamsMaximumFreeLargePoolBytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "How many bytes of large free buffers to allow before we start dropping those returned to us\ni.e. if there is more than x MB of pooled memory available, don't add more freed memory to the pool and let it be garbage collected",
+          "format": "int32"
+        },
+        "RecyclableMemoryStreamsMaximumFreeSmallPoolBytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "How many bytes of small free blocks to allow before we start dropping those returned to us\ni.e. if there is more than x MB of pooled memory available, don't add more freed memory to the pool and let it be garbage collected",
+          "format": "int32"
+        }
+      }
+    },
+    "EmailConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "DefaultSenderEmailAddress": {
+          "type": "string"
+        },
+        "DefaultSenderDisplayName": {
+          "type": "string"
+        },
+        "Host": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "Port": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "UseSsl": {
+          "type": "boolean"
+        },
+        "UserName": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "Password": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "WriteEmlFilesInsteadOfSendingDirectly": {
+          "type": "boolean"
+        },
+        "EmlFilesDirectory": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "RabbitMqConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Servers": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/RabbitMqServerConfig"
+          }
+        },
+        "VHost": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "UserName": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "Password": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "NamePrefix": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "UseDbToStoreMessageData": {
+          "type": "boolean"
+        }
+      }
+    },
+    "RabbitMqServerConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Host": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "Port": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        },
+        "ManagementPort": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        }
+      }
+    },
+    "OrleansServerConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Dashboard": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/OrleansDashboardConfig"
+            }
+          ]
+        },
+        "Silo": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/OrleansSiloConfig"
+            }
+          ]
+        },
+        "Gateway": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/OrleansGatewayConfig"
+            }
+          ]
+        },
+        "Cluster": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/OrleansClusterConfig"
+            }
+          ]
+        }
+      }
+    },
+    "OrleansDashboardConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Port": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        },
+        "CounterUpdateIntervalMs": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        }
+      }
+    },
+    "OrleansSiloConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Port": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        }
+      }
+    },
+    "OrleansGatewayConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Port": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        }
+      }
+    },
+    "OrleansClusterConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ClusterId": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "ServiceId": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "AdoNetClusteringSiloOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ConnectionString": {
+          "type": "string"
+        },
+        "Invariant": {
+          "type": "string"
+        }
+      }
+    },
+    "RabbitMqEventBusOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "IsEnabled": {
+          "type": "boolean",
+          "description": "Whether or not the event bus is enabled"
+        }
+      }
+    },
+    "StorageConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "BaseDirectory": {
+          "type": "string"
+        }
+      }
+    },
+    "RegisterImageConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "MaximumNumberOfThreads": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "MaximumNumberOfThreadsPerSource": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "MaximumNumberOfThreadsPerStudy": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "AiCubeClientConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Storage": {
+          "$ref": "#/definitions/AiCubeClientStorageConfig"
+        },
+        "RabbitMq": {
+          "$ref": "#/definitions/AiCubeClientRabbitMqConfig"
+        }
+      }
+    },
+    "AiCubeClientStorageConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Url": {
+          "type": "string"
+        },
+        "AccessKey": {
+          "type": "string"
+        },
+        "SecretKey": {
+          "type": "string"
+        },
+        "Bucket": {
+          "type": "string"
+        }
+      }
+    },
+    "AiCubeClientRabbitMqConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Servers": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/AiCubeClientRabbitMqServerConfig"
+          }
+        },
+        "VHost": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "UserName": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "Password": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "NamePrefix": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "AiCubeClientRabbitMqServerConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Host": {
+          "type": "string"
+        },
+        "Port": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        },
+        "ManagementPort": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        }
+      }
+    }
+  }
+}

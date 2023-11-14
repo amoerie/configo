@@ -1,0 +1,85 @@
+﻿@using Configo.Server.Domain
+@using Configo.Server.Blazor
+@inject TagGroupManager TagGroupManager
+
+<Bar Mode="BarMode.VerticalInline"
+     CollapseMode="BarCollapseMode.Small"
+     Breakpoint="Breakpoint.Desktop"
+     NavigationBreakpoint="Breakpoint.Tablet"
+     ThemeContrast="ThemeContrast.Dark">
+    <BarBrand>
+        <BarItem>
+            <BarLink To="">
+                <BarIcon IconName="IconName.Wrench" /> Configo
+            </BarLink>
+        </BarItem>
+    </BarBrand>
+    <BarMenu>
+        <BarStart>
+            <BarItem>
+                <BarLink To="tag-groups">
+                    <BarIcon IconName="FaNames.FaTags"/> Tag Groups
+                </BarLink>
+            </BarItem>
+            @if (_tagGroups != null)
+            {
+                <BarItem>
+                    <BarDropdown>
+                        <BarDropdownToggle>
+                            <BarIcon IconName="IconName.Tag"/>
+                            Tags
+                        </BarDropdownToggle>
+                        <BarDropdownMenu>
+                            @foreach (var tagGroup in _tagGroups)
+                            {
+                                <BarDropdownItem>
+                                    <BarLink To="@($"tags/{tagGroup.Name}")">
+                                        <BarIcon IconName="@tagGroup.Icon"></BarIcon> @tagGroup.Name
+                                    </BarLink>
+                                </BarDropdownItem>
+                            }
+                        </BarDropdownMenu>
+                    </BarDropdown>
+                </BarItem>
+            }
+            <BarItem>
+                <BarLink To="applications">
+                    <BarIcon IconName="IconName.Server" /> Applications
+                </BarLink>
+            </BarItem>
+            <BarItem>
+                <BarLink To="api-keys">
+                    <BarIcon IconName="IconName.Key" /> API Keys
+                </BarLink>
+            </BarItem>
+            <BarItem>
+                <BarLink To="variables">
+                    <BarIcon IconName="FaNames.FaCog" /> Variables
+                </BarLink>
+            </BarItem>
+        </BarStart>
+    </BarMenu>
+</Bar>
+
+@code {
+    private List<TagGroupListModel>? _tagGroups;
+    private Func<CancellationToken, Task> _listener = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _listener = ReloadAsync;
+        TagGroupManager.Subscribe(_listener);
+        await ReloadAsync(CancellationToken);
+    }
+
+    private async Task ReloadAsync(CancellationToken cancellationToken)
+    {
+        _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken);
+    }
+
+    protected override ValueTask OnDisposeAsync()
+    {
+        TagGroupManager.Unsubscribe(_listener);
+        return base.OnDisposeAsync();
+    }
+}

@@ -1,0 +1,21 @@
+﻿@inherits LayoutComponentBase
+
+<Layout>
+    <LayoutHeader Fixed>
+        <PageTitle>Configo</PageTitle>
+    </LayoutHeader>
+    <Layout Sider>
+        <LayoutSider>
+            <LayoutSiderContent>
+                <NavMenu />
+            </LayoutSiderContent>
+        </LayoutSider>
+        <Layout>
+            <LayoutContent>
+                <Container Fluid>
+                    @Body
+                </Container>
+            </LayoutContent>
+        </Layout>
+    </Layout>
+</Layout>

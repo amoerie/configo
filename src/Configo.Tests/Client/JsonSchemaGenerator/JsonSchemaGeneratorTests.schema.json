@@ -1,0 +1,438 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "JSON schema ASP.NET Core\u0027s appsettings.json file",
+  "type": "object",
+  "properties": {
+    "Kestrel": {
+      "$ref": "#/definitions/kestrel"
+    },
+    "AllowedHosts": {
+      "$ref": "#/definitions/allowedHosts"
+    },
+    "ConnectionStrings": {
+      "$ref": "#/definitions/connectionStrings"
+    },
+    "Seq": {
+      "$ref": "#/definitions/SeqOptions"
+    },
+    "RabbitMq": {
+      "$ref": "#/definitions/RabbitMqOptions"
+    },
+    "Other": {
+      "$ref": "#/definitions/OtherOptions"
+    },
+    "Configo": {
+      "$ref": "#/definitions/ConfigoOptions"
+    }
+  },
+  "definitions": {
+    "protocols": {
+      "type": "string",
+      "description": "The protocols enabled on the endpoint.",
+      "enum": [
+        "None",
+        "Http1",
+        "Http2",
+        "Http1AndHttp2",
+        "Http3",
+        "Http1AndHttp2AndHttp3"
+      ]
+    },
+    "certificate": {
+      "title": "certificate",
+      "type": "object",
+      "description": "Certificate configuration.",
+      "properties": {
+        "Path": {
+          "type": "string",
+          "description": "The certificate file path. If a file path is specified then the certificate will be loaded from the file system."
+        },
+        "KeyPath": {
+          "type": "string",
+          "description": "The certificate key file path. Available in .NET 5 and later."
+        },
+        "Password": {
+          "type": "string",
+          "description": "The certificate password used to access the private key."
+        },
+        "Subject": {
+          "type": "string",
+          "description": "The certificate subject. If a subject is specified then the certificate will be loaded from the certificate store."
+        },
+        "Store": {
+          "type": "string",
+          "description": "The certificate store name. Defaults to \u0027My\u0027.",
+          "default": "My"
+        },
+        "Location": {
+          "type": "string",
+          "description": "The certificate store location. Defaults to \u0027CurrentUser\u0027.",
+          "default": "CurrentUser",
+          "enum": [
+            "LocalMachine",
+            "CurrentUser"
+          ]
+        },
+        "AllowInvalid": {
+          "type": "boolean",
+          "description": "A value indicating whether or not to load certificates that are considered invalid. Defaults to false.",
+          "default": false
+        }
+      }
+    },
+    "sslProtocols": {
+      "type": "array",
+      "description": "Specifies allowable SSL protocols. Defaults to \u0027None\u0027 which allows the operating system to choose the best protocol to use, and to block protocols that are not secure. Unless your app has a specific reason not to, you should use this default. Available in .NET 5 and later.",
+      "items": {
+        "type": "string",
+        "default": "None",
+        "enum": [
+          "None",
+          "Tls",
+          "Tls11",
+          "Tls12",
+          "Tls13"
+        ]
+      }
+    },
+    "clientCertificateMode": {
+      "type": "string",
+      "description": "Specifies the client certificate requirements for a HTTPS connection. Defaults to \u0027NoCertificate\u0027. Available in .NET 5 and later.",
+      "default": "NoCertificate",
+      "enum": [
+        "NoCertificate",
+        "AllowCertificate",
+        "RequireCertificate"
+      ]
+    },
+    "kestrel": {
+      "title": "kestrel",
+      "type": "object",
+      "description": "ASP.NET Core Kestrel server configuration.",
+      "properties": {
+        "Endpoints": {
+          "title": "endpoints",
+          "type": "object",
+          "description": "Endpoints that Kestrel listens to for network requests. Each endpoint has a name specified by its JSON property name.",
+          "additionalProperties": {
+            "title": "endpoint options",
+            "type": "object",
+            "description": "Kestrel endpoint configuration.",
+            "required": [
+              "Url"
+            ],
+            "properties": {
+              "Url": {
+                "type": "string",
+                "description": "The scheme, host name, and port the endpoint will listen on. A Url is required.",
+                "format": "uri"
+              },
+              "Protocols": {
+                "$ref": "#/definitions/protocols"
+              },
+              "SslProtocols": {
+                "$ref": "#/definitions/sslProtocols"
+              },
+              "Certificate": {
+                "$ref": "#/definitions/certificate"
+              },
+              "ClientCertificateMode": {
+                "$ref": "#/definitions/clientCertificateMode"
+              },
+              "Sni": {
+                "title": "SNI",
+                "type": "object",
+                "description": "Server Name Indication (SNI) configuration. This enables the mapping of client requested host names to certificates and other TLS settings. Wildcard names prefixed with \u0027*.\u0027, as well as a top level \u0027*\u0027 are supported. Available in .NET 5 and later.",
+                "additionalProperties": {
+                  "title": "SNI options",
+                  "type": "object",
+                  "description": "Endpoint SNI configuration.",
+                  "properties": {
+                    "Protocols": {
+                      "$ref": "#/definitions/protocols"
+                    },
+                    "SslProtocols": {
+                      "$ref": "#/definitions/sslProtocols"
+                    },
+                    "Certificate": {
+                      "$ref": "#/definitions/certificate"
+                    },
+                    "ClientCertificateMode": {
+                      "$ref": "#/definitions/clientCertificateMode"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "EndpointDefaults": {
+          "title": "endpoint defaults",
+          "type": "object",
+          "description": "Default configuration applied to all endpoints. Named endpoint specific configuration overrides defaults.",
+          "properties": {
+            "Protocols": {
+              "$ref": "#/definitions/protocols"
+            },
+            "SslProtocols": {
+              "$ref": "#/definitions/sslProtocols"
+            },
+            "ClientCertificateMode": {
+              "$ref": "#/definitions/clientCertificateMode"
+            }
+          }
+        },
+        "Certificates": {
+          "title": "certificates",
+          "type": "object",
+          "description": "Certificates that Kestrel uses with HTTPS endpoints. Each certificate has a name specified by its JSON property name. The \u0027Default\u0027 certificate is used by HTTPS endpoints that haven\u0027t specified a certificate.",
+          "additionalProperties": {
+            "$ref": "#/definitions/certificate"
+          }
+        }
+      }
+    },
+    "allowedHosts": {
+      "type": "string",
+      "description": "ASP.NET Core host filtering middleware configuration. Allowed hosts is a semicolon-delimited list of host names without port numbers. Requests without a matching host name will be refused. Host names may be prefixed with a \u0027*.\u0027 wildcard, or use \u0027*\u0027 to allow all hosts."
+    },
+    "connectionStrings": {
+      "title": "connection string options",
+      "type": "object",
+      "description": "Connection string configuration. Get connection strings with the IConfiguration.GetConnectionString(string) extension method.",
+      "additionalProperties": {
+        "type": "string",
+        "description": "Connection string configuration. Each connection string has a name specified by its JSON property name."
+      },
+      "properties": {
+        "Configo": {
+          "type": "string",
+          "description": "A valid connection string to the Configo database. See https://www.connectionstrings.com on how to make one for your database"
+        }
+      }
+    },
+    "SeqOptions": {
+      "type": "object",
+      "description": "Configures Seq logging",
+      "additionalProperties": false,
+      "properties": {
+        "Url": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "The URL to Seq"
+        },
+        "ApiKey": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "The API key to Seq"
+        }
+      }
+    },
+    "RabbitMqOptions": {
+      "type": "object",
+      "description": "Configures Rabbit MQ connectivity",
+      "additionalProperties": false,
+      "properties": {
+        "Servers": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "The RabbitMq servers\nSpecify more than one server to support one node in the cluster going offline",
+          "items": {
+            "$ref": "#/definitions/RabbitMqServerConfig"
+          }
+        },
+        "VHost": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "The virtual host"
+        },
+        "UserName": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "The username to authenticate with"
+        },
+        "Password": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "The password to authenticate with"
+        }
+      }
+    },
+    "RabbitMqServerConfig": {
+      "type": "object",
+      "description": "Configures a specific Rabbit MQ server",
+      "additionalProperties": false,
+      "properties": {
+        "Host": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "The host name of the machine running Rabbit MQ"
+        },
+        "Port": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "The port where Rabbit MQ is reachable",
+          "format": "int32"
+        },
+        "ManagementPort": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "The management port where Rabbit MQ can be dynamically managed",
+          "format": "int32"
+        }
+      }
+    },
+    "OtherOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "DateTime": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "A date time",
+          "format": "date-time"
+        },
+        "TimeSpan": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "A time span",
+          "format": "duration"
+        },
+        "DateOnly": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "A date only",
+          "format": "date"
+        },
+        "TimeOnly": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "A time only",
+          "format": "time"
+        },
+        "StringsEnumerable": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "Some strings in an IEnumerable",
+          "items": {
+            "type": "string"
+          }
+        },
+        "StringsArray": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "Some strings in an array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "StringsIList": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "Some strings in an IList",
+          "items": {
+            "type": "string"
+          }
+        },
+        "StringsList": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "Some strings in an IList",
+          "items": {
+            "type": "string"
+          }
+        },
+        "StringsDictionary": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "description": "Some strings in a Dictionary",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "StringsIDictionary": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "description": "Some strings in an IDictionary",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ConfigoOptions": {
+      "type": "object",
+      "description": "Configures how to use Configo as a configuration source",
+      "additionalProperties": false,
+      "properties": {
+        "Url": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "The Configo url"
+        },
+        "ApiKey": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "The Configo API key to use for authentication"
+        },
+        "ReloadInterval": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "Gets or sets the timespan to wait between attempts at polling Configo for changes. null to disable reloading.",
+          "format": "duration"
+        },
+        "CacheFileName": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "description": "Gets or sets the file name where configuration retrieved from Configo will be cached.\nThis allows Configo to be offline from time to time, without hindering application startup."
+        }
+      }
+    }
+  }
+}

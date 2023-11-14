@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Configo.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Blazorise.Bootstrap5" />
+    <PackageReference Include="Blazorise.Components" />
+    <PackageReference Include="Blazorise.Icons.FontAwesome" />
+    <PackageReference Include="Blazorise.Snackbar" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Configo.Database\Configo.Database.csproj" />
+    <ProjectReference Include="..\Configo.Database.NpgSql\Configo.Database.NpgSql.csproj" />
+    <ProjectReference Include="..\Configo.Database.SqlServer\Configo.Database.SqlServer.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="wwwroot\dist\codicon-5T574S7B.ttf" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\schema.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\schema.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\variables.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\variables.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\vs\editor\editor.worker.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\vs\language\css\css.worker.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\vs\language\html\html.worker.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\vs\language\json\json.worker.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\dist\vs\language\typescript\ts.worker.js" />
+  </ItemGroup>
+
+</Project>

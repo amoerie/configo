@@ -1,0 +1,19 @@
+{
+  "name": "configo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "node ./build.mjs",
+    "watch": "node ./build.mjs --watch"
+  },
+  "author": "Alexander Moerman",
+  "license": "MIT",
+  "devDependencies": {
+    "chalk": "^5.3.0",
+    "esbuild": "^0.19.5"
+  },
+  "dependencies": {
+    "monaco-editor": "^0.44.0"
+  }
+}
