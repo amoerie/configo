@@ -1,7 +1,4 @@
 using System.IO.Compression;
-using Blazorise;
-using Blazorise.Bootstrap5;
-using Blazorise.Icons.FontAwesome;
 using Configo.Database;
 using Configo.Database.NpgSql;
 using Configo.Database.SqlServer;
@@ -13,6 +10,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -36,9 +34,7 @@ services.AddRazorPages();
 services.AddServerSideBlazor();
 
 // Theming
-services.AddBlazorise(o => { o.Immediate = true; });
-services.AddBootstrap5Providers();
-services.AddFontAwesomeIcons();
+services.AddMudServices();
 
 // Reverse proxy support
 services.Configure<ForwardedHeadersOptions>(options =>

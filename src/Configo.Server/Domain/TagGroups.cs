@@ -1,28 +1,19 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Configo.Database;
 using Configo.Database.Tables;
+using Configo.Server.Blazor;
 using Microsoft.EntityFrameworkCore;
 
 namespace Configo.Server.Domain;
 
 public sealed record TagGroupListModel
 {
-    public required int Id { get; init; }
-    public required string Name { get; init; }
+    public required int Id { get; set; }
+    public required string Name { get; set; }
     
-    public required string Icon { get; init; }
-    public required DateTime UpdatedAtUtc { get; init; }
-    public required int NumberOfTags { get; init; }
-}
-
-public sealed record TagGroupEditModel
-{
-    public int? Id { get; init; }
-
-    [Required] [MaxLength(256)] public string? Name { get; set; }
-    
-    [Required] [MaxLength(64)]
-    public string? Icon { get; set; }
+    public required TagIcon Icon { get; set; }
+    public required DateTime UpdatedAtUtc { get; set; }
+    public required int NumberOfTags { get; set; }
 }
 
 public sealed record TagGroupDeleteModel
@@ -87,7 +78,7 @@ public sealed class TagGroupManager
                 {
                     Id = tagGroup.Id,
                     Name = tagGroup.Name,
-                    Icon = tagGroup.Icon,
+                    Icon = TagIcon.GetByName(tagGroup.Icon),
                     UpdatedAtUtc = tagGroup.UpdatedAtUtc,
                     NumberOfTags = tags.Count()
                 })
@@ -113,7 +104,7 @@ public sealed class TagGroupManager
                 {
                     Id = tagGroup.Id,
                     Name = tagGroup.Name,
-                    Icon = tagGroup.Icon,
+                    Icon = TagIcon.GetByName(tagGroup.Icon),
                     UpdatedAtUtc = tagGroup.UpdatedAtUtc,
                     NumberOfTags = tags.Count()
                 })
@@ -125,15 +116,15 @@ public sealed class TagGroupManager
         return tagGroups;
     }
 
-    public async Task<TagGroupListModel> SaveTagGroupAsync(TagGroupEditModel tagGroup,
+    public async Task SaveTagGroupAsync(TagGroupListModel tagGroup,
         CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-
+    
         _logger.LogDebug("Saving tag group {@TagGroup}", tagGroup);
-
+    
         TagGroupRecord tagGroupRecord;
-        if (tagGroup.Id is null or 0)
+        if (tagGroup.Id is 0)
         {
             if (await dbContext.TagGroups.AnyAsync(t => t.Name == tagGroup.Name, cancellationToken))
             {
@@ -143,7 +134,7 @@ public sealed class TagGroupManager
             tagGroupRecord = new TagGroupRecord
             {
                 Name = tagGroup.Name!,
-                Icon = tagGroup.Icon!,
+                Icon = tagGroup.Icon.Name,
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
             };
@@ -151,40 +142,33 @@ public sealed class TagGroupManager
             await dbContext.SaveChangesAsync(cancellationToken);
             await NotifyListenersAsync(cancellationToken);
             _logger.LogInformation("Saved {@TagGroup}", tagGroupRecord);
-            return new TagGroupListModel
-            {
-                Id = tagGroupRecord.Id,
-                Name = tagGroupRecord.Name,
-                Icon = tagGroupRecord.Icon,
-                UpdatedAtUtc = tagGroupRecord.UpdatedAtUtc,
-                NumberOfTags = 0,
-            };
+            tagGroup.Id = tagGroupRecord.Id;
+            tagGroup.Name = tagGroupRecord.Name;
+            tagGroup.Icon = TagIcon.GetByName(tagGroupRecord.Icon);
+            tagGroup.UpdatedAtUtc = tagGroupRecord.UpdatedAtUtc;
+            tagGroup.NumberOfTags = 0;
         }
-
+    
         if (await dbContext.TagGroups.AnyAsync(t => t.Id != tagGroup.Id && t.Name == tagGroup.Name, cancellationToken))
         {
             throw new ArgumentException("Tag group name already in use");
         }
-
+    
         tagGroupRecord = await dbContext.TagGroups
             .AsTracking()
             .SingleAsync(t => t.Id == tagGroup.Id, cancellationToken);
         tagGroupRecord.Name = tagGroup.Name!;
-        tagGroupRecord.Icon = tagGroup.Icon!;
+        tagGroupRecord.Icon = tagGroup.Icon.Name;
         tagGroupRecord.UpdatedAtUtc = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
         await NotifyListenersAsync(cancellationToken);
         _logger.LogInformation("Saved {@TagGroup}", tagGroupRecord);
-
-        return new TagGroupListModel
-        {
-            Id = tagGroupRecord.Id,
-            Name = tagGroupRecord.Name,
-            Icon = tagGroupRecord.Icon,
-            UpdatedAtUtc = tagGroupRecord.UpdatedAtUtc,
-            NumberOfTags = await dbContext.Tags.CountAsync(t => t.TagGroupId == tagGroupRecord.Id,
-                cancellationToken)
-        };
+    
+        tagGroup.Id = tagGroupRecord.Id;
+        tagGroup.Name = tagGroupRecord.Name;
+        tagGroup.Icon = TagIcon.GetByName(tagGroupRecord.Icon);
+        tagGroup.UpdatedAtUtc = tagGroupRecord.UpdatedAtUtc;
+        tagGroup.NumberOfTags = await dbContext.Tags.CountAsync(t => t.TagGroupId == tagGroupRecord.Id, cancellationToken);
     }
 
     public async Task DeleteTagGroupAsync(TagGroupDeleteModel tagGroup, CancellationToken cancellationToken)

@@ -1,21 +1,30 @@
 ﻿@inherits LayoutComponentBase
 
-<Layout>
-    <LayoutHeader Fixed>
-        <PageTitle>Configo</PageTitle>
-    </LayoutHeader>
-    <Layout Sider>
-        <LayoutSider>
-            <LayoutSiderContent>
-                <NavMenu />
-            </LayoutSiderContent>
-        </LayoutSider>
-        <Layout>
-            <LayoutContent>
-                <Container Fluid>
-                    @Body
-                </Container>
-            </LayoutContent>
-        </Layout>
-    </Layout>
-</Layout>
+<MudThemeProvider IsDarkMode="true"/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
+
+<MudLayout>
+    <MudAppBar Color="Color.Transparent" Elevation="0" Fixed="false">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit"
+                       Edge="Edge.Start" OnClick="@(_ => DrawerToggle())"/>
+    </MudAppBar>
+    <MudDrawer @bind-Open="@_drawerOpen" Color="Color.Transparent">
+        <NavMenu/>
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer Fixed="true">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    bool _drawerOpen = true;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+}

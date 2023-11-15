@@ -2,64 +2,22 @@
 @using Configo.Server.Blazor
 @inject TagGroupManager TagGroupManager
 
-<Bar Mode="BarMode.VerticalInline"
-     CollapseMode="BarCollapseMode.Small"
-     Breakpoint="Breakpoint.Desktop"
-     NavigationBreakpoint="Breakpoint.Tablet"
-     ThemeContrast="ThemeContrast.Dark">
-    <BarBrand>
-        <BarItem>
-            <BarLink To="">
-                <BarIcon IconName="IconName.Wrench" /> Configo
-            </BarLink>
-        </BarItem>
-    </BarBrand>
-    <BarMenu>
-        <BarStart>
-            <BarItem>
-                <BarLink To="tag-groups">
-                    <BarIcon IconName="FaNames.FaTags"/> Tag Groups
-                </BarLink>
-            </BarItem>
-            @if (_tagGroups != null)
+<MudNavMenu>
+    <MudImage Src="configo.png" Alt="Logo" Height="160"></MudImage>
+    <MudNavLink Href="/tag-groups" Icon="@Icons.Material.Filled.Category" Match="NavLinkMatch.Prefix">Tag Groups</MudNavLink>
+    @if (_tagGroups != null)
+    {
+        <MudNavGroup Title="Tags" Expanded="true" Icon="@Icons.Material.Filled.Label">
+            @foreach (var tagGroup in _tagGroups)
             {
-                <BarItem>
-                    <BarDropdown>
-                        <BarDropdownToggle>
-                            <BarIcon IconName="IconName.Tag"/>
-                            Tags
-                        </BarDropdownToggle>
-                        <BarDropdownMenu>
-                            @foreach (var tagGroup in _tagGroups)
-                            {
-                                <BarDropdownItem>
-                                    <BarLink To="@($"tags/{tagGroup.Name}")">
-                                        <BarIcon IconName="@tagGroup.Icon"></BarIcon> @tagGroup.Name
-                                    </BarLink>
-                                </BarDropdownItem>
-                            }
-                        </BarDropdownMenu>
-                    </BarDropdown>
-                </BarItem>
+                <MudNavLink Href="@tagGroup.Name" Icon="@tagGroup.Icon.Value" Match="@NavLinkMatch.Prefix">@tagGroup.Name</MudNavLink>
             }
-            <BarItem>
-                <BarLink To="applications">
-                    <BarIcon IconName="IconName.Server" /> Applications
-                </BarLink>
-            </BarItem>
-            <BarItem>
-                <BarLink To="api-keys">
-                    <BarIcon IconName="IconName.Key" /> API Keys
-                </BarLink>
-            </BarItem>
-            <BarItem>
-                <BarLink To="variables">
-                    <BarIcon IconName="FaNames.FaCog" /> Variables
-                </BarLink>
-            </BarItem>
-        </BarStart>
-    </BarMenu>
-</Bar>
+        </MudNavGroup>
+    }
+    <MudNavLink Href="/applications" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Cloud">Applications</MudNavLink>
+    <MudNavLink Href="/api-keys" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Key">API Keys</MudNavLink>
+    <MudNavLink Href="/variables" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.SettingsSuggest">Variables</MudNavLink>
+</MudNavMenu>
 
 @code {
     private List<TagGroupListModel>? _tagGroups;

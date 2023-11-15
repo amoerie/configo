@@ -1,247 +1,247 @@
 ﻿@page "/variables"
-@using Configo.Server.Domain
-@using Configo.Server.Blazor
-@inject ApplicationManager ApplicationManager
-@inject TagGroupManager TagGroupManager
-@inject TagManager TagManager
-@inject VariableManager VariableManager
-@inject SchemaManager SchemaManager
-@inject IJSRuntime JsRuntime
-
-@if (_tagGroups == null || _applications == null)
-{
-    <p>...loading</p>
-    return;
-}
-
-<Heading Size="HeadingSize.Is1">
-    <Icon Name="FaNames.FaCog"/> Variables
-</Heading>
-
-<Row>
-    <Column ColumnSize="ColumnSize.Is3.OnWidescreen.Is4.OnDesktop.Is5.OnTablet.Is12.OnMobile">
-        <Card Background="Background.Dark" TextColor="TextColor.White50" Margin="Margin.Is2.FromBottom">
-            <CardHeader Border="Border.Is0">
-                <Icon Name="FaNames.FaWrench"></Icon> Settings
-            </CardHeader>
-            <CardBody>
-                <Switch TValue="bool" Checked="@_showMerged" CheckedChanged="@OnShowMerged">Show merged config</Switch>
-            </CardBody>
-        </Card>
-
-        @* Applications & Tag Groups go here *@
-        <Card Background="Background.Dark" TextColor="TextColor.White50" Margin="Margin.Is2.FromBottom">
-            <CardHeader Border="Border.Is0">
-                <Icon Name="IconName.Server"/> Applications
-            </CardHeader>
-            <ListGroup Background="Background.Dark" TextColor="TextColor.White50">
-                @foreach (var application in _applications)
-                {
-                    <ListGroupItem Background="Background.Dark" TextColor="TextColor.White" Border="Border.Is0">
-                        <Field Margin="Margin.Is0">
-                            <Check TValue="bool"
-                                   Checked="_selectedApplicationIds.Contains(application.Id)"
-                                   CheckedChanged="isChecked => OnCheckApplication(isChecked, application.Id)">
-                                @application.Name
-                            </Check>
-                        </Field>
-                    </ListGroupItem>
-                }
-            </ListGroup>
-        </Card>
-
-        @foreach (var tagGroup in _tagGroups)
-        {
-            <Card Background="Background.Dark" TextColor="TextColor.White50" Margin="Margin.Is2.FromBottom">
-                <CardHeader Border="Border.Is0">
-                    <Icon Name="@tagGroup.Icon"/> @tagGroup.Name
-                </CardHeader>
-                <ListGroup Background="Background.Dark" TextColor="TextColor.White50">
-                    @foreach (var tag in _tagsByGroupId[tagGroup.Id])
-                    {
-                        <ListGroupItem Background="Background.Dark" TextColor="TextColor.White" Border="Border.Is0">
-                            <Field Margin="Margin.Is0">
-                                <Check TValue="bool"
-                                       Checked="_selectedTagIds.Contains(tag.Id)"
-                                       CheckedChanged="isChecked => OnCheckTag(isChecked, tag.Id)">
-                                    @tag.Name
-                                </Check>
-                            </Field>
-                        </ListGroupItem>
-                    }
-                </ListGroup>
-            </Card>
-        }
-    </Column>
-    <Column ColumnSize="ColumnSize.Is9.OnWidescreen.Is8.OnDesktop.Is7.OnTablet.Is12.OnMobile">
-        <Card Background="Background.Dark" TextColor="TextColor.White50">
-            <CardHeader Border="Border.Is0">
-                @if (_selectedApplicationIds.Count == 0 && _selectedTagIds.Count == 0)
-                {
-                    <Paragraph><Icon Name="FaNames.FaInfoCircle"></Icon> Select applications and/or tags to edit their configuration</Paragraph>
-                }
-                else
-                {
-                    @foreach (var application in _selectedApplications)
-                    {
-                        <Badge Color="Color.Primary" Margin="Margin.Is1.FromEnd">
-                            <Icon Name="IconName.Server"/> @application.Name
-                        </Badge>
-                    }
-                    @foreach (var tag in _selectedTags)
-                    {
-                        <Badge Color="Color.Primary" Margin="Margin.Is1.FromEnd">
-                            <Icon Name="@tag.GroupIcon"/> @tag.Name
-                        </Badge>
-                    }
-                }
-            </CardHeader>
-            <CardBody TextColor="TextColor.White">
-
-                @* Editor goes here *@
-                <div id="variables-editor-container" class="container-fluid" style="min-height: 70vh">
-
-                </div>
-            </CardBody>
-        </Card>
-
-    </Column>
-</Row>
-
-<SnackbarStack @ref="_variablesSavedNotification" Color="SnackbarColor.Success"></SnackbarStack>
-
-@code {
-    private DotNetObjectReference<Variables>? _objectReference;
-    private SnackbarStack? _variablesSavedNotification;
-    private List<TagGroupListModel>? _tagGroups;
-    private List<ApplicationListModel>? _applications;
-    private bool _showMerged;
-
-    private readonly List<int> _selectedApplicationIds = new List<int>();
-    private readonly List<int> _selectedTagIds = new List<int>();
-    private readonly List<ApplicationListModel> _selectedApplications = new List<ApplicationListModel>();
-    private readonly List<TagListModel> _selectedTags = new List<TagListModel>();
-    private readonly Dictionary<int, List<TagListModel>> _tagsByGroupId = new Dictionary<int, List<TagListModel>>();
-    private Dictionary<int, ApplicationListModel> _applicationsById = new Dictionary<int, ApplicationListModel>();
-    private Dictionary<int, TagListModel> _tagsById = new Dictionary<int, TagListModel>();
-    private Dictionary<int, TagGroupListModel> _tagGroupsById = new Dictionary<int, TagGroupListModel>();
-
-    protected override async Task OnInitializedAsync()
-    {
-        _applications = await ApplicationManager.GetAllApplicationsAsync(CancellationToken);
-        _applicationsById = _applications.ToDictionary(a => a.Id);
-        _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken);
-        _tagGroupsById = _tagGroups.ToDictionary(g => g.Id);
-        foreach (var tagGroup in _tagGroups)
-        {
-            _tagsByGroupId[tagGroup.Id] = await TagManager.GetTagsOfGroupAsync(tagGroup.Id, CancellationToken);
-        }
-        _tagsById = _tagsByGroupId.Values.SelectMany(t => t).ToDictionary(t => t.Id);
-        await base.OnInitializedAsync();
-    }
-
-    [JSInvokable]
-    public async Task Save(string variables)
-    {
-        await VariableManager.SaveAsync(new VariablesEditModel
-        {
-            Json = variables,
-            ApplicationIds = _selectedApplicationIds,
-            TagIds = _selectedTagIds
-        }, CancellationToken);
-
-        if (_variablesSavedNotification != null)
-        {
-            await _variablesSavedNotification.PushAsync("Variables saved successfully", SnackbarColor.Success);
-        }
-    }
-
-    protected override async ValueTask OnDisposeAsync()
-    {
-        if (_objectReference != null)
-        {
-            try
-            {
-                await JsRuntime.InvokeVoidAsync("variables.destroy", CancellationToken);
-            }
-            catch (JSDisconnectedException)
-            {
-                // Ignore
-            }
-            finally
-            {
-                _objectReference?.Dispose();
-            }
-        }
-        await base.OnDisposeAsync();
-    }
-
-    private async Task UpdateEditorAsync()
-    {
-        _selectedApplications.Clear();
-        _selectedApplications.AddRange(_selectedApplicationIds.Select(id => _applicationsById[id]));
-        _selectedTags.Clear();
-        _selectedTags.AddRange(_selectedTagIds.Select(id => _tagsById[id]));
-
-        var config = _showMerged
-            ? await VariableManager.GetMergedConfigAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken)
-            : await VariableManager.GetConfigAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken);
-        var schema = await SchemaManager.GetSchemaAsync(_selectedApplicationIds, CancellationToken);
-        var isReadonly = _showMerged;
-        if (_objectReference == null)
-        {
-            _objectReference = DotNetObjectReference.Create(this);
-            await JsRuntime.InvokeVoidAsync("variables.initialize", CancellationToken, _objectReference, config, schema, isReadonly);
-        }
-        else
-        {
-            await JsRuntime.InvokeVoidAsync("variables.update", CancellationToken, config, schema, isReadonly);
-        }
-    }
-
-    private async Task OnCheckApplication(bool isChecked, int applicationId)
-    {
-        if (isChecked)
-        {
-            _selectedApplicationIds.Add(applicationId);
-        }
-        else
-        {
-            _selectedApplicationIds.Remove(applicationId);
-        }
-        await UpdateEditorAsync();
-    }
-
-    private async Task OnCheckTag(bool isChecked, int tagId)
-    {
-        if (isChecked)
-        {
-            // Automatically uncheck other tags of the same group
-            var groupId = _tagsById[tagId].GroupId;
-            for (var i = _selectedTagIds.Count - 1; i >= 0; i--)
-            {
-                var selectedTagId = _selectedTagIds[i];
-                if (_tagsById[selectedTagId].GroupId == groupId)
-                {
-                    _selectedTagIds.RemoveAt(i);
-                }
-            }
-
-            _selectedTagIds.Add(tagId);
-            _selectedTagIds.Sort((a, b) => string.CompareOrdinal(_tagGroupsById[_tagsById[a].GroupId].Name, _tagGroupsById[_tagsById[b].GroupId].Name));
-        }
-        else
-        {
-            _selectedTagIds.Remove(tagId);
-        }
-        await UpdateEditorAsync();
-    }
-
-    private async Task OnShowMerged(bool value)
-    {
-        _showMerged = value;
-
-        await UpdateEditorAsync();
-    }
-
-}
+@* @using Configo.Server.Domain *@
+@* @using Configo.Server.Blazor *@
+@* @inject ApplicationManager ApplicationManager *@
+@* @inject TagGroupManager TagGroupManager *@
+@* @inject TagManager TagManager *@
+@* @inject VariableManager VariableManager *@
+@* @inject SchemaManager SchemaManager *@
+@* @inject IJSRuntime JsRuntime *@
+@* *@
+@* @if (_tagGroups == null || _applications == null) *@
+@* { *@
+@*     <p>...loading</p> *@
+@*     return; *@
+@* } *@
+@* *@
+@* <Heading Size="HeadingSize.Is1"> *@
+@*     <Icon Name="FaNames.FaCog"/> Variables *@
+@* </Heading> *@
+@* *@
+@* <Row> *@
+@*     <Column ColumnSize="ColumnSize.Is3.OnWidescreen.Is4.OnDesktop.Is5.OnTablet.Is12.OnMobile"> *@
+@*         <Card Background="Background.Dark" TextColor="TextColor.White50" Margin="Margin.Is2.FromBottom"> *@
+@*             <CardHeader Border="Border.Is0"> *@
+@*                 <Icon Name="FaNames.FaWrench"></Icon> Settings *@
+@*             </CardHeader> *@
+@*             <CardBody> *@
+@*                 <Switch TValue="bool" Checked="@_showMerged" CheckedChanged="@OnShowMerged">Show merged config</Switch> *@
+@*             </CardBody> *@
+@*         </Card> *@
+@* *@
+@*         $1$ Applications & Tag Groups go here #1# *@
+@*         <Card Background="Background.Dark" TextColor="TextColor.White50" Margin="Margin.Is2.FromBottom"> *@
+@*             <CardHeader Border="Border.Is0"> *@
+@*                 <Icon Name="IconName.Server"/> Applications *@
+@*             </CardHeader> *@
+@*             <ListGroup Background="Background.Dark" TextColor="TextColor.White50"> *@
+@*                 @foreach (var application in _applications) *@
+@*                 { *@
+@*                     <ListGroupItem Background="Background.Dark" TextColor="TextColor.White" Border="Border.Is0"> *@
+@*                         <Field Margin="Margin.Is0"> *@
+@*                             <Check TValue="bool" *@
+@*                                    Checked="_selectedApplicationIds.Contains(application.Id)" *@
+@*                                    CheckedChanged="isChecked => OnCheckApplication(isChecked, application.Id)"> *@
+@*                                 @application.Name *@
+@*                             </Check> *@
+@*                         </Field> *@
+@*                     </ListGroupItem> *@
+@*                 } *@
+@*             </ListGroup> *@
+@*         </Card> *@
+@* *@
+@*         @foreach (var tagGroup in _tagGroups) *@
+@*         { *@
+@*             <Card Background="Background.Dark" TextColor="TextColor.White50" Margin="Margin.Is2.FromBottom"> *@
+@*                 <CardHeader Border="Border.Is0"> *@
+@*                     <Icon Name="@tagGroup.Icon"/> @tagGroup.Name *@
+@*                 </CardHeader> *@
+@*                 <ListGroup Background="Background.Dark" TextColor="TextColor.White50"> *@
+@*                     @foreach (var tag in _tagsByGroupId[tagGroup.Id]) *@
+@*                     { *@
+@*                         <ListGroupItem Background="Background.Dark" TextColor="TextColor.White" Border="Border.Is0"> *@
+@*                             <Field Margin="Margin.Is0"> *@
+@*                                 <Check TValue="bool" *@
+@*                                        Checked="_selectedTagIds.Contains(tag.Id)" *@
+@*                                        CheckedChanged="isChecked => OnCheckTag(isChecked, tag.Id)"> *@
+@*                                     @tag.Name *@
+@*                                 </Check> *@
+@*                             </Field> *@
+@*                         </ListGroupItem> *@
+@*                     } *@
+@*                 </ListGroup> *@
+@*             </Card> *@
+@*         } *@
+@*     </Column> *@
+@*     <Column ColumnSize="ColumnSize.Is9.OnWidescreen.Is8.OnDesktop.Is7.OnTablet.Is12.OnMobile"> *@
+@*         <Card Background="Background.Dark" TextColor="TextColor.White50"> *@
+@*             <CardHeader Border="Border.Is0"> *@
+@*                 @if (_selectedApplicationIds.Count == 0 && _selectedTagIds.Count == 0) *@
+@*                 { *@
+@*                     <Paragraph><Icon Name="FaNames.FaInfoCircle"></Icon> Select applications and/or tags to edit their configuration</Paragraph> *@
+@*                 } *@
+@*                 else *@
+@*                 { *@
+@*                     @foreach (var application in _selectedApplications) *@
+@*                     { *@
+@*                         <Badge Color="Color.Primary" Margin="Margin.Is1.FromEnd"> *@
+@*                             <Icon Name="IconName.Server"/> @application.Name *@
+@*                         </Badge> *@
+@*                     } *@
+@*                     @foreach (var tag in _selectedTags) *@
+@*                     { *@
+@*                         <Badge Color="Color.Primary" Margin="Margin.Is1.FromEnd"> *@
+@*                             <Icon Name="@tag.GroupIcon"/> @tag.Name *@
+@*                         </Badge> *@
+@*                     } *@
+@*                 } *@
+@*             </CardHeader> *@
+@*             <CardBody TextColor="TextColor.White"> *@
+@* *@
+@*                 $1$ Editor goes here #1# *@
+@*                 <div id="variables-editor-container" class="container-fluid" style="min-height: 70vh"> *@
+@* *@
+@*                 </div> *@
+@*             </CardBody> *@
+@*         </Card> *@
+@* *@
+@*     </Column> *@
+@* </Row> *@
+@* *@
+@* <SnackbarStack @ref="_variablesSavedNotification" Color="SnackbarColor.Success"></SnackbarStack> *@
+@* *@
+@* @code { *@
+@*     private DotNetObjectReference<Variables>? _objectReference; *@
+@*     private SnackbarStack? _variablesSavedNotification; *@
+@*     private List<TagGroupListModel>? _tagGroups; *@
+@*     private List<ApplicationListModel>? _applications; *@
+@*     private bool _showMerged; *@
+@* *@
+@*     private readonly List<int> _selectedApplicationIds = new List<int>(); *@
+@*     private readonly List<int> _selectedTagIds = new List<int>(); *@
+@*     private readonly List<ApplicationListModel> _selectedApplications = new List<ApplicationListModel>(); *@
+@*     private readonly List<TagListModel> _selectedTags = new List<TagListModel>(); *@
+@*     private readonly Dictionary<int, List<TagListModel>> _tagsByGroupId = new Dictionary<int, List<TagListModel>>(); *@
+@*     private Dictionary<int, ApplicationListModel> _applicationsById = new Dictionary<int, ApplicationListModel>(); *@
+@*     private Dictionary<int, TagListModel> _tagsById = new Dictionary<int, TagListModel>(); *@
+@*     private Dictionary<int, TagGroupListModel> _tagGroupsById = new Dictionary<int, TagGroupListModel>(); *@
+@* *@
+@*     protected override async Task OnInitializedAsync() *@
+@*     { *@
+@*         _applications = await ApplicationManager.GetAllApplicationsAsync(CancellationToken); *@
+@*         _applicationsById = _applications.ToDictionary(a => a.Id); *@
+@*         _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken); *@
+@*         _tagGroupsById = _tagGroups.ToDictionary(g => g.Id); *@
+@*         foreach (var tagGroup in _tagGroups) *@
+@*         { *@
+@*             _tagsByGroupId[tagGroup.Id] = await TagManager.GetTagsOfGroupAsync(tagGroup.Id, CancellationToken); *@
+@*         } *@
+@*         _tagsById = _tagsByGroupId.Values.SelectMany(t => t).ToDictionary(t => t.Id); *@
+@*         await base.OnInitializedAsync(); *@
+@*     } *@
+@* *@
+@*     [JSInvokable] *@
+@*     public async Task Save(string variables) *@
+@*     { *@
+@*         await VariableManager.SaveAsync(new VariablesEditModel *@
+@*         { *@
+@*             Json = variables, *@
+@*             ApplicationIds = _selectedApplicationIds, *@
+@*             TagIds = _selectedTagIds *@
+@*         }, CancellationToken); *@
+@* *@
+@*         if (_variablesSavedNotification != null) *@
+@*         { *@
+@*             await _variablesSavedNotification.PushAsync("Variables saved successfully", SnackbarColor.Success); *@
+@*         } *@
+@*     } *@
+@* *@
+@*     protected override async ValueTask OnDisposeAsync() *@
+@*     { *@
+@*         if (_objectReference != null) *@
+@*         { *@
+@*             try *@
+@*             { *@
+@*                 await JsRuntime.InvokeVoidAsync("variables.destroy", CancellationToken); *@
+@*             } *@
+@*             catch (JSDisconnectedException) *@
+@*             { *@
+@*                 // Ignore *@
+@*             } *@
+@*             finally *@
+@*             { *@
+@*                 _objectReference?.Dispose(); *@
+@*             } *@
+@*         } *@
+@*         await base.OnDisposeAsync(); *@
+@*     } *@
+@* *@
+@*     private async Task UpdateEditorAsync() *@
+@*     { *@
+@*         _selectedApplications.Clear(); *@
+@*         _selectedApplications.AddRange(_selectedApplicationIds.Select(id => _applicationsById[id])); *@
+@*         _selectedTags.Clear(); *@
+@*         _selectedTags.AddRange(_selectedTagIds.Select(id => _tagsById[id])); *@
+@* *@
+@*         var config = _showMerged *@
+@*             ? await VariableManager.GetMergedConfigAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken) *@
+@*             : await VariableManager.GetConfigAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken); *@
+@*         var schema = await SchemaManager.GetSchemaAsync(_selectedApplicationIds, CancellationToken); *@
+@*         var isReadonly = _showMerged; *@
+@*         if (_objectReference == null) *@
+@*         { *@
+@*             _objectReference = DotNetObjectReference.Create(this); *@
+@*             await JsRuntime.InvokeVoidAsync("variables.initialize", CancellationToken, _objectReference, config, schema, isReadonly); *@
+@*         } *@
+@*         else *@
+@*         { *@
+@*             await JsRuntime.InvokeVoidAsync("variables.update", CancellationToken, config, schema, isReadonly); *@
+@*         } *@
+@*     } *@
+@* *@
+@*     private async Task OnCheckApplication(bool isChecked, int applicationId) *@
+@*     { *@
+@*         if (isChecked) *@
+@*         { *@
+@*             _selectedApplicationIds.Add(applicationId); *@
+@*         } *@
+@*         else *@
+@*         { *@
+@*             _selectedApplicationIds.Remove(applicationId); *@
+@*         } *@
+@*         await UpdateEditorAsync(); *@
+@*     } *@
+@* *@
+@*     private async Task OnCheckTag(bool isChecked, int tagId) *@
+@*     { *@
+@*         if (isChecked) *@
+@*         { *@
+@*             // Automatically uncheck other tags of the same group *@
+@*             var groupId = _tagsById[tagId].GroupId; *@
+@*             for (var i = _selectedTagIds.Count - 1; i >= 0; i--) *@
+@*             { *@
+@*                 var selectedTagId = _selectedTagIds[i]; *@
+@*                 if (_tagsById[selectedTagId].GroupId == groupId) *@
+@*                 { *@
+@*                     _selectedTagIds.RemoveAt(i); *@
+@*                 } *@
+@*             } *@
+@* *@
+@*             _selectedTagIds.Add(tagId); *@
+@*             _selectedTagIds.Sort((a, b) => string.CompareOrdinal(_tagGroupsById[_tagsById[a].GroupId].Name, _tagGroupsById[_tagsById[b].GroupId].Name)); *@
+@*         } *@
+@*         else *@
+@*         { *@
+@*             _selectedTagIds.Remove(tagId); *@
+@*         } *@
+@*         await UpdateEditorAsync(); *@
+@*     } *@
+@* *@
+@*     private async Task OnShowMerged(bool value) *@
+@*     { *@
+@*         _showMerged = value; *@
+@* *@
+@*         await UpdateEditorAsync(); *@
+@*     } *@
+@* *@
+@* } *@

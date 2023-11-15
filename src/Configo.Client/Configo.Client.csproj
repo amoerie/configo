@@ -2,7 +2,7 @@
     <PropertyGroup>
         <IsPackable>true</IsPackable>
         <PackageId>Configo.Client</PackageId>
-        <PackageIcon>configo.jpg</PackageIcon>
+        <PackageIcon>configo.png</PackageIcon>
         <Description>The Configo client. This can be used to retrieve configuration from Configo.</Description>
         <RootNamespace>Configo.Client</RootNamespace>
     </PropertyGroup>
@@ -28,7 +28,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="..\configo.jpg">
+        <None Include="..\configo.png">
             <Pack>True</Pack>
             <PackagePath>.</PackagePath>
         </None>

@@ -1,4 +1,4 @@
-![alt text](configo.jpg "Logo")
+![alt text](configo.png "Logo")
 
 # Changelog
 

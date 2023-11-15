@@ -1,4 +1,4 @@
-# ![alt text](configo.jpg "Title")
+# ![alt text](configo.png "Title")
 
 # Configo
 _________
