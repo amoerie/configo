@@ -1,12 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Configo.Database;
+﻿using Configo.Database;
 using Configo.Database.Tables;
 using Configo.Server.Blazor;
 using Microsoft.EntityFrameworkCore;
 
 namespace Configo.Server.Domain;
 
-public sealed record TagGroupListModel
+public sealed record TagGroupModel
 {
     public required int Id { get; set; }
     public required string Name { get; set; }
@@ -14,11 +13,6 @@ public sealed record TagGroupListModel
     public required TagIcon Icon { get; set; }
     public required DateTime UpdatedAtUtc { get; set; }
     public required int NumberOfTags { get; set; }
-}
-
-public sealed record TagGroupDeleteModel
-{
-    [Required] public int? Id { get; set; }
 }
 
 public sealed class TagGroupManager
@@ -63,7 +57,7 @@ public sealed class TagGroupManager
         }
     }
 
-    public async Task<TagGroupListModel> GetTagGroupAsync(string group, CancellationToken cancellationToken)
+    public async Task<TagGroupModel> GetTagGroupAsync(string group, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -74,7 +68,7 @@ public sealed class TagGroupManager
                 dbContext.Tags,
                 tagGroup => tagGroup.Id,
                 tag => tag.TagGroupId,
-                (tagGroup, tags) => new TagGroupListModel
+                (tagGroup, tags) => new TagGroupModel
                 {
                     Id = tagGroup.Id,
                     Name = tagGroup.Name,
@@ -89,7 +83,7 @@ public sealed class TagGroupManager
         return tagGroups;
     }
 
-    public async Task<List<TagGroupListModel>> GetAllTagGroupsAsync(CancellationToken cancellationToken)
+    public async Task<List<TagGroupModel>> GetAllTagGroupsAsync(CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -100,7 +94,7 @@ public sealed class TagGroupManager
                 dbContext.Tags,
                 tagGroup => tagGroup.Id,
                 tag => tag.TagGroupId,
-                (tagGroup, tags) => new TagGroupListModel
+                (tagGroup, tags) => new TagGroupModel
                 {
                     Id = tagGroup.Id,
                     Name = tagGroup.Name,
@@ -116,7 +110,7 @@ public sealed class TagGroupManager
         return tagGroups;
     }
 
-    public async Task SaveTagGroupAsync(TagGroupListModel tagGroup,
+    public async Task SaveTagGroupAsync(TagGroupModel tagGroup,
         CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -171,7 +165,7 @@ public sealed class TagGroupManager
         tagGroup.NumberOfTags = await dbContext.Tags.CountAsync(t => t.TagGroupId == tagGroupRecord.Id, cancellationToken);
     }
 
-    public async Task DeleteTagGroupAsync(TagGroupDeleteModel tagGroup, CancellationToken cancellationToken)
+    public async Task DeleteTagGroupAsync(TagGroupModel tagGroup, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 

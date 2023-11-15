@@ -1,0 +1,34 @@
+<MudDialog>
+    <DialogContent>
+        <MudText GutterBottom="true">
+            Are you sure you want to delete <strong>@ThingThatWillBeDeleted</strong>?
+        </MudText>
+        <MudAlert Severity="Severity.Warning">
+            This cannot be undone!
+        </MudAlert>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">No, I changed my mind</MudButton>
+        <MudButton Color="Color.Error" OnClick="Submit">Yes, delete it forever</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter]
+    MudDialogInstance? MudDialog { get; set; }
+
+    [Parameter]
+    public string? ThingThatWillBeDeleted { get; set; }
+
+    void Submit()
+    {
+        MudDialog!.Close(DialogResult.Ok(true));
+    }
+
+    void Cancel()
+    {
+        MudDialog!.Cancel();
+    }
+
+}

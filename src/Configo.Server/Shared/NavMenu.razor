@@ -20,7 +20,7 @@
 </MudNavMenu>
 
 @code {
-    private List<TagGroupListModel>? _tagGroups;
+    private List<TagGroupModel>? _tagGroups;
     private Func<CancellationToken, Task> _listener = default!;
 
     protected override async Task OnInitializedAsync()

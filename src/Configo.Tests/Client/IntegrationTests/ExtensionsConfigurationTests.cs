@@ -10,7 +10,7 @@ namespace Configo.Tests.Client.IntegrationTests;
 public class ExtensionsConfigurationTests : IAsyncLifetime
 {
     private readonly IntegrationTestFixture _fixture;
-    private TagGroupListModel _environments = default!;
+    private TagGroupModel _environments = default!;
     private TagListModel _benelux = default!;
     private ApplicationListModel _processor = default!;
     private string _beneluxVariables = default!;

@@ -1,9 +1,11 @@
 ﻿@page "/tag-groups"
 @using Configo.Server.Blazor
 @using Configo.Server.Domain
+@using System.Collections.ObjectModel
 @inject TagGroupManager TagGroupManager
+@inject IDialogService DialogService
 
-<MudText Typo="Typo.h1">
+<MudText Typo="Typo.h1" GutterBottom="true">
     Tag Groups
 </MudText>
 
@@ -13,16 +15,26 @@
 }
 else
 {
-    <MudDataGrid Items="@_tagGroups"
+    <MudButton
+        Variant="Variant.Filled"
+        Size="Size.Large"
+        OnClick="@AddNew" Color="@Color.Success" Class="add-item-btn" StartIcon="@Icons.Material.Filled.Add">
+        Add new
+    </MudButton>
+
+    <MudDataGrid @ref="_dataGrid"
+                 Items="@_tagGroups"
                  Filterable="true"
                  FilterMode="DataGridFilterMode.ColumnFilterRow"
+                 FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
                  ReadOnly="false"
                  EditMode="DataGridEditMode.Form"
                  EditTrigger="DataGridEditTrigger.OnRowClick"
-                 CommittedItemChanges="(TagGroupListModel model) => SaveTagGroup(model)">
+                 CanceledEditingItem="(TagGroupModel model) => DoNotSaveTagGroup(model)"
+                 CommittedItemChanges="(TagGroupModel model) => SaveTagGroup(model)">
         <Columns>
-            <PropertyColumn Property="(TagGroupListModel x) => x.Name" Title="Name"/>
-            <TemplateColumn T="TagGroupListModel"
+            <PropertyColumn Property="(TagGroupModel x) => x.Name" Title="Name"/>
+            <TemplateColumn T="TagGroupModel"
                             Title="Icon"
                             IsEditable="true" Filterable="false" Sortable="false">
                 <CellTemplate>
@@ -41,151 +53,70 @@ else
                 </EditTemplate>
             </TemplateColumn>
             <TemplateColumn Title="# Tags" IsEditable="false" Filterable="false" 
-                            Sortable="true" SortBy="(TagGroupListModel model) => model.NumberOfTags">
+                            Sortable="true" SortBy="(TagGroupModel model) => model.NumberOfTags">
                 <CellTemplate>
                     <MudChip Color="Color.Primary">@context.Item.NumberOfTags</MudChip> 
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="(TagGroupListModel x) => x.UpdatedAtUtc" Title="Updated" IsEditable="false" />
-            <TemplateColumn CellClass="d-flex justify-end" IsEditable="false" Filterable="false" Sortable="false">
+            <PropertyColumn Property="(TagGroupModel x) => x.UpdatedAtUtc" Title="Updated" IsEditable="false" />
+            <TemplateColumn IsEditable="false" Filterable="false" Sortable="false">
                 <CellTemplate>
                     <MudStack Row>
                         <MudIconButton Size="@Size.Small"
                                        Icon="@Icons.Material.Filled.Delete"
                                        Variant="@Variant.Filled"
-                                       Color="@Color.Error">
-                            Delete
+                                       Color="@Color.Error"
+                                       @onclick="() => OpenDeleteDialogAsync(context.Item)">
                         </MudIconButton>
                     </MudStack>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
         <PagerContent>
-            <MudDataGridPager T="TagGroupListModel"/>
+            <MudDataGridPager T="TagGroupModel"/>
         </PagerContent>
     </MudDataGrid>
-
-    @* <Table Hoverable> *@
-    @*     <TableHeader ThemeContrast="ThemeContrast.Light"> *@
-    @*         <TableRow> *@
-    @*             <TableHeaderCell Style="width: 5%">Name</TableHeaderCell> *@
-    @*             <TableHeaderCell Style="width: 10%">Icon</TableHeaderCell> *@
-    @*             <TableHeaderCell Style="width: 20%"># Tags</TableHeaderCell> *@
-    @*             <TableHeaderCell Style="width: 20%">Updated UTC</TableHeaderCell> *@
-    @*             <TableHeaderCell Style="width: 20%"></TableHeaderCell> *@
-    @*         </TableRow> *@
-    @*     </TableHeader> *@
-    @*     <TableBody> *@
-    @*         @foreach (var tagGroup in TagGroupsToShow) *@
-    @*         { *@
-    @*             @if (_tagGroupBeingEdited?.Id == tagGroup.Id) *@
-    @*             { *@
-    @*                 <TableRow> *@
-    @*                     <TableRowCell ColumnSpan="5"> *@
-    @*                         <EditForm Model="@_tagGroupBeingEdited" OnSubmit="@SaveTagGroup"> *@
-    @*                             <Row> *@
-    @*                                 <Field ColumnSize="ColumnSize.Is3" > *@
-    @*                                     <TextEdit Placeholder="Name" @bind-Text="_tagGroupBeingEdited.Name" @ref=_tagGroupNameInput> *@
-    @*                                         <FieldHelp>Tag group names must be unique</FieldHelp> *@
-    @*                                     </TextEdit> *@
-    @*                                 </Field> *@
-    @*                                 <Field ColumnSize="ColumnSize.Is4"> *@
-    @*                                     <Autocomplete TItem="string" *@
-    @*                                                   TValue="string" *@
-    @*                                                   Data="@IconNames" *@
-    @*                                                   TextField="@(item => item)" *@
-    @*                                                   ValueField="@(item => item)" *@
-    @*                                                   @bind-SelectedValue="@_tagGroupBeingEdited.Icon" *@
-    @*                                                   @bind-SelectedText="IconNameAutoCompleteText" *@
-    @*                                                   Placeholder="Search icons..." *@
-    @*                                                   Filter="AutocompleteFilter.Contains"> *@
-    @*                                         <NotFoundContent Context="searchString">No applications found that contain @searchString</NotFoundContent> *@
-    @*                                         <ItemContent Context="iconName"> *@
-    @*                                             <Icon Name="@iconName.Value"></Icon> @iconName.Text *@
-    @*                                         </ItemContent> *@
-    @*                                     </Autocomplete> *@
-    @*                                 </Field> *@
-    @*                                 <Field ColumnSize="ColumnSize.IsAuto" TextAlignment="TextAlignment.Start"> *@
-    @*                                     <Button Color="Color.Success" Clicked="SaveTagGroup"><Icon Name="IconName.Check"/> Save</Button> *@
-    @*                                     <Button Color="Color.Secondary" Clicked="StopEditing"><Icon Name="IconName.Times"/> Cancel</Button> *@
-    @*                                 </Field> *@
-    @*                             </Row> *@
-    @*                         </EditForm> *@
-    @*                     </TableRowCell> *@
-    @*                 </TableRow> *@
-    @*             } *@
-    @*             else if (_tagGroupBeingDeleted?.Id == tagGroup.Id) *@
-    @*             { *@
-    @*                 <TableRow> *@
-    @*                     <TableRowCell ColumnSpan="5"> *@
-    @*                         <EditForm Model="@_tagGroupBeingDeleted" OnSubmit="@ConfirmDeleteTagGroup" class="grid-table-row"> *@
-    @*                             <InputNumber @bind-Value="_tagGroupBeingDeleted!.Id" hidden="hidden"/> *@
-    @*                             <Alert Color="Color.Warning" Visible> *@
-    @*                                 <AlertMessage>Are you sure?</AlertMessage> *@
-    @*                                 <AlertDescription>Deleting <Icon Name="@tagGroup.Icon"></Icon> @tagGroup.Name cannot be undone</AlertDescription> *@
-    @*                             </Alert> *@
-    @*                             <Button Color="Color.Danger" Clicked="ConfirmDeleteTagGroup"><Icon Name="IconName.Delete"/> Yes, delete it</Button> *@
-    @*                             <Button Color="Color.Secondary" Clicked="StopDeleting"><Icon Name="IconName.Times"/> No, keep it</Button> *@
-    @*                         </EditForm> *@
-    @*                     </TableRowCell> *@
-    @*                 </TableRow> *@
-    @*             } *@
-    @*             else *@
-    @*             { *@
-    @*                 <TableRow> *@
-    @*                     <TableRowHeader Style="cursor:pointer" Clicked="() => EditTagGroup(tagGroup)"> *@
-    @*                         @tagGroup.Name *@
-    @*                     </TableRowHeader> *@
-    @*                     <TableRowCell Clicked="() => EditTagGroup(tagGroup)"> *@
-    @*                         <Icon Name="@tagGroup.Icon"></Icon> *@
-    @*                     </TableRowCell> *@
-    @*                     <TableRowCell> *@
-    @*                         <Badge Color="Color.Primary" Pill Background="Background.Secondary">@tagGroup.NumberOfTags</Badge> *@
-    @*                     </TableRowCell> *@
-    @*                     <TableRowCell>@tagGroup.UpdatedAtUtc.ToString("g")</TableRowCell> *@
-    @*                     <TableRowCell> *@
-    @*                         <Button Color="Color.Danger" Clicked="() => DeleteTagGroup(tagGroup)"><Icon Name="IconName.Delete"/> Delete</Button> *@
-    @*                     </TableRowCell> *@
-    @*                 </TableRow> *@
-    @*             } *@
-    @*         } *@
-    @*     </TableBody> *@
-    @* </Table> *@
-
-    @* <div> *@
-    @*     <Button Color="Color.Success" Clicked="AddTagGroup"><Icon Name="IconName.PlusSquare"/> Add new tag group</Button> *@
-    @* </div> *@
 }
 
 @code {
-    private List<TagGroupListModel>? _tagGroups;
-    private TagGroupDeleteModel? _tagGroupBeingDeleted;
+    private ObservableCollection<TagGroupModel>? _tagGroups;
+    private MudDataGrid<TagGroupModel>? _dataGrid;
 
     protected override async Task OnInitializedAsync()
     {
-        _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken);
+        _tagGroups = new ObservableCollection<TagGroupModel>(await TagGroupManager.GetAllTagGroupsAsync(CancellationToken));
     }
 
-    private void DeleteTagGroup(TagGroupListModel tagGroup)
+    private async Task OpenDeleteDialogAsync(TagGroupModel tagGroup)
     {
-        _tagGroupBeingDeleted = new TagGroupDeleteModel { Id = tagGroup.Id };
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var parameters = new DialogParameters<DeleteDialog> { { x => x.ThingThatWillBeDeleted, tagGroup.Name } };
+        var dialog = await DialogService.ShowAsync<DeleteDialog>("Delete", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            await TagGroupManager.DeleteTagGroupAsync(tagGroup, CancellationToken);
+            _tagGroups!.Remove(tagGroup);
+        }
     }
 
-    private async Task SaveTagGroup(TagGroupListModel model)
+    private async Task SaveTagGroup(TagGroupModel model)
     {
         await TagGroupManager.SaveTagGroupAsync(model, CancellationToken);
     }
 
-    private async Task ConfirmDeleteTagGroup()
+    private void DoNotSaveTagGroup(TagGroupModel model)
     {
-        await TagGroupManager.DeleteTagGroupAsync(_tagGroupBeingDeleted!, CancellationToken);
-        for (var i = 0; i < _tagGroups!.Count; i++)
+        if (model.Id == 0)
         {
-            if (_tagGroups[i].Id != _tagGroupBeingDeleted!.Id) continue;
-            _tagGroups.RemoveAt(i);
-            break;
+            _tagGroups!.Remove(model);
         }
-        _tagGroupBeingDeleted = null;
     }
 
+    private async Task AddNew()
+    {
+        var tagGroupModel = new TagGroupModel { Id = 0, Name = "", Icon = TagIcon.Default, NumberOfTags = 0, UpdatedAtUtc = DateTime.UtcNow };
+        _tagGroups!.Add(tagGroupModel);
+        await _dataGrid!.SetEditingItemAsync(tagGroupModel);
+    }
 }

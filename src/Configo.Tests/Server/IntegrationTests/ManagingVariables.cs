@@ -7,8 +7,8 @@ namespace Configo.Tests.Server.IntegrationTests;
 public class ManagingVariables : IAsyncLifetime
 {
     private readonly IntegrationTestFixture _fixture;
-    private TagGroupListModel _environments = default!;
-    private TagGroupListModel _machines = default!;
+    private TagGroupModel _environments = default!;
+    private TagGroupModel _machines = default!;
     private TagListModel _benelux = default!;
     private TagListModel _nordics = default!;
     private TagListModel _blade1 = default!;
