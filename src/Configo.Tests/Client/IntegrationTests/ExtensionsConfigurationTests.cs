@@ -85,7 +85,7 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         using var httpClient = _fixture.CreateClient();
         
         // Processor runs in benelux
-        var apiKeyModel = new ApiKeyEditModel
+        var apiKeyModel = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
             TagIds = new List<int> { _benelux.Id },
@@ -116,7 +116,7 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         using var httpClient = _fixture.CreateClient();
         
         // Processor runs in benelux
-        var apiKeyModel = new ApiKeyEditModel
+        var apiKeyModel = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
             TagIds = new List<int> { _benelux.Id },
@@ -170,7 +170,7 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         using var httpClient = _fixture.CreateClient();
         
         // Processor runs in benelux
-        var apiKeyModel = new ApiKeyEditModel
+        var apiKeyModel = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
             TagIds = new List<int> { _benelux.Id },

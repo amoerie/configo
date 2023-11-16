@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -11,39 +10,17 @@ using Microsoft.Extensions.Options;
 
 namespace Configo.Server.Domain;
 
-public sealed record ApiKeyListModel
+public sealed record ApiKeyModel
 {
-    public required int Id { get; init; }
-    public required int ApplicationId { get; init; }
-    public required string Key { get; init; }
-    public required List<int> TagIds { get; init; }
-    public required DateTime ActiveSinceUtc { get; init; }
-    public required DateTime ActiveUntilUtc { get; init; }
-    public required DateTime UpdatedAtUtc { get; init; }
-}
-
-public sealed record ApiKeyEditModel
-{
-    public int? Id { get; init; }
-    
-    [Required]
+    public required int Id { get; set; }
     public required int ApplicationId { get; set; }
-    
-    [Required]
-    public required List<int> TagIds { get; set; }
-    
-    [Required]
+    public required string Key { get; set; }
+    public required IEnumerable<int> TagIds { get; set; }
     public required DateTime ActiveSinceUtc { get; set; }
-    
-    [Required]
     public required DateTime ActiveUntilUtc { get; set; }
+    public required DateTime UpdatedAtUtc { get; set; }
 }
-
-public sealed record ApiKeyDeleteModel
-{
-    [Required] public int? Id { get; set; }
-}
-
+  
 public sealed record ApiKeyValidationModel
 {
     public required int Id { get; set; }
@@ -66,13 +43,13 @@ public sealed class ApiKeyManager
         _apiKeyGenerator = apiKeyGenerator ?? throw new ArgumentNullException(nameof(apiKeyGenerator));
     }
     
-    public async Task<List<ApiKeyListModel>> GetAllApiKeysAsync(CancellationToken cancellationToken)
+    public async Task<List<ApiKeyModel>> GetAllApiKeysAsync(CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         _logger.LogDebug("Getting all apiKeys");
 
-        var apiKeys = new List<ApiKeyListModel>();
+        var apiKeys = new List<ApiKeyModel>();
         var apiKeyRecords = await dbContext.ApiKeys.ToListAsync(cancellationToken);
 
         foreach (var apiKeyRecord in apiKeyRecords)
@@ -85,7 +62,7 @@ public sealed class ApiKeyManager
                 .Select(result => result.Tag.Id)
                 .ToListAsync(cancellationToken);
 
-            var apiKey = new ApiKeyListModel
+            var apiKey = new ApiKeyModel
             {
                 Id = apiKeyRecord.Id,
                 ApplicationId = apiKeyRecord.ApplicationId,
@@ -127,21 +104,21 @@ public sealed class ApiKeyManager
         };
     }
 
-    public async Task<ApiKeyListModel> SaveApiKeyAsync(ApiKeyEditModel apiKey, CancellationToken cancellationToken)
+    public async Task SaveApiKeyAsync(ApiKeyModel model, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        _logger.LogDebug("Saving apiKey {@ApiKey}", apiKey);
+        _logger.LogDebug("Saving apiKey {@ApiKey}", model);
 
         ApiKeyRecord apiKeyRecord;
-        if (apiKey.Id is null or 0)
+        if (model.Id is 0)
         {
             apiKeyRecord = new ApiKeyRecord
             {
-                ApplicationId = apiKey.ApplicationId,
+                ApplicationId = model.ApplicationId,
                 Key = _apiKeyGenerator.Generate(64),
-                ActiveSinceUtc = apiKey.ActiveSinceUtc,
-                ActiveUntilUtc = apiKey.ActiveUntilUtc,
+                ActiveSinceUtc = model.ActiveSinceUtc,
+                ActiveUntilUtc = model.ActiveUntilUtc,
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow,
             };
@@ -152,10 +129,10 @@ public sealed class ApiKeyManager
         {
             apiKeyRecord = await dbContext.ApiKeys
                 .AsTracking()
-                .SingleAsync(t => t.Id == apiKey.Id, cancellationToken);
-            apiKeyRecord.ApplicationId = apiKey.ApplicationId;
-            apiKeyRecord.ActiveSinceUtc = apiKey.ActiveSinceUtc;
-            apiKeyRecord.ActiveUntilUtc = apiKey.ActiveUntilUtc;
+                .SingleAsync(t => t.Id == model.Id, cancellationToken);
+            apiKeyRecord.ApplicationId = model.ApplicationId;
+            apiKeyRecord.ActiveSinceUtc = model.ActiveSinceUtc;
+            apiKeyRecord.ActiveUntilUtc = model.ActiveUntilUtc;
             apiKeyRecord.UpdatedAtUtc = DateTime.UtcNow;
             await dbContext.SaveChangesAsync(cancellationToken);
             await dbContext.ApiKeyTags
@@ -165,7 +142,7 @@ public sealed class ApiKeyManager
 
         _logger.LogInformation("Saved {@ApiKey}", apiKeyRecord);
 
-        foreach (var tagId in apiKey.TagIds)
+        foreach (var tagId in model.TagIds)
         {
             var apiKeyTagRecord = new ApiKeyTagRecord
             {
@@ -177,25 +154,22 @@ public sealed class ApiKeyManager
         await dbContext.SaveChangesAsync(cancellationToken);
         
         var tagIds = await dbContext.Tags
-            .Where(t => apiKey.TagIds.Contains(t.Id))
+            .Where(t => model.TagIds.Contains(t.Id))
             .Join(dbContext.TagGroups, t => t.TagGroupId, g => g.Id, (tag, group) => new { Tag = tag, Group = group })
             .OrderBy(result => result.Group.Name)
             .Select(result => result.Tag.Id)
             .ToListAsync(cancellationToken);
 
-        return new ApiKeyListModel
-        {
-            Id = apiKeyRecord.Id,
-            Key = apiKeyRecord.Key,
-            ActiveSinceUtc = apiKeyRecord.ActiveSinceUtc,
-            ActiveUntilUtc = apiKeyRecord.ActiveUntilUtc,
-            UpdatedAtUtc = apiKeyRecord.UpdatedAtUtc,
-            ApplicationId = apiKeyRecord.ApplicationId,
-            TagIds = tagIds
-        };
+        model.Id = apiKeyRecord.Id;
+        model.Key = apiKeyRecord.Key;
+        model.ActiveSinceUtc = apiKeyRecord.ActiveSinceUtc;
+        model.ActiveUntilUtc = apiKeyRecord.ActiveUntilUtc;
+        model.UpdatedAtUtc = apiKeyRecord.UpdatedAtUtc;
+        model.ApplicationId = apiKeyRecord.ApplicationId;
+        model.TagIds = tagIds;
     }
 
-    public async Task DeleteApiKeyAsync(ApiKeyDeleteModel apiKey, CancellationToken cancellationToken)
+    public async Task DeleteApiKeyAsync(ApiKeyModel apiKey, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 

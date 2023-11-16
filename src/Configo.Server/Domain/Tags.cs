@@ -22,7 +22,7 @@ public sealed record TagDropdownModel
     public required int Id { get; init; }
     public required int GroupId { get; init; }
     
-    public required string GroupIcon { get; init; }
+    public required TagGroupIcon GroupIcon { get; init; }
     public required string Name { get; init; }
 }
 
@@ -60,7 +60,7 @@ public sealed class TagManager
                 return new TagDropdownModel
                 {
                     Id = tagRecord.Id,
-                    GroupIcon = group.Icon,
+                    GroupIcon = TagGroupIcon.GetByName(group.Icon),
                     GroupId = tagRecord.TagGroupId,
                     Name = tagRecord.Name
                 };

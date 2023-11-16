@@ -464,49 +464,49 @@ public class ManagingVariables : IAsyncLifetime
         
         // Processor runs on both blades for both environments
         // Router runs on blade 1 for benelux and on blade 2 for nordics
-        var processorBlade1BeneluxApiKeyModel = new ApiKeyEditModel
+        var processorBlade1BeneluxApiKeyModel = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
             TagIds = new List<int> { _benelux.Id, _blade1.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var processorBlade2BeneluxApiKeyModel = new ApiKeyEditModel
+        var processorBlade2BeneluxApiKeyModel = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
             TagIds = new List<int> { _benelux.Id, _blade2.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var processorBlade1NordicsApiKeyModel = new ApiKeyEditModel
+        var processorBlade1NordicsApiKeyModel = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
             TagIds = new List<int> { _nordics.Id, _blade1.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var processorBlade2NordicsApiKeyModel = new ApiKeyEditModel
+        var processorBlade2NordicsApiKeyModel = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
             TagIds = new List<int> { _nordics.Id, _blade2.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var routerBlade1BeneluxApiKeyModel = new ApiKeyEditModel
+        var routerBlade1BeneluxApiKeyModel = new ApiKeyModel
         {
             ApplicationId = _router.Id,
             TagIds = new List<int> { _benelux.Id, _blade1.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var routerBlade2NordicsApiKeyModel = new ApiKeyEditModel
+        var routerBlade2NordicsApiKeyModel = new ApiKeyModel
         {
             ApplicationId = _router.Id,
             TagIds = new List<int> { _nordics.Id, _blade2.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var otherApiKeyModel = new ApiKeyEditModel
+        var otherApiKeyModel = new ApiKeyModel
         {
             ApplicationId = _otherApplication.Id,
             TagIds = new List<int> { _otherTag.Id },
