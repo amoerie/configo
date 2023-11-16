@@ -1,33 +1,20 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Configo.Database;
+﻿using Configo.Database;
 using Configo.Database.Tables;
+using Configo.Server.Blazor;
 using Microsoft.EntityFrameworkCore;
 
 namespace Configo.Server.Domain;
 
-public sealed record TagListModel
+public sealed record TagModel
 {
-    public required int Id { get; init; }
+    public required int Id { get; set; }
     
-    public required int GroupId { get; init; }
+    public required int GroupId { get; set; }
     
-    public required string GroupIcon { get; init; }
-    public required string Name { get; init; }
-    public required DateTime UpdatedAtUtc { get; init; }
-    public required int NumberOfVariables { get; init; }
-}
-
-public sealed record TagEditModel
-{
-    public int? Id { get; init; }
-    public required int TagGroupId { get; init; }
-
-    [Required] [MaxLength(256)] public string? Name { get; set; }
-}
-
-public sealed record TagDeleteModel
-{
-    [Required] public int? Id { get; set; }
+    public required TagGroupIcon GroupIcon { get; set; }
+    public required string Name { get; set; }
+    public required DateTime UpdatedAtUtc { get; set; }
+    public required int NumberOfVariables { get; set; }
 }
 
 public sealed record TagDropdownModel
@@ -81,7 +68,7 @@ public sealed class TagManager
             .ToList();
     }
     
-    public async Task<List<TagListModel>> GetTagsOfGroupAsync(int tagGroupId, CancellationToken cancellationToken)
+    public async Task<List<TagModel>> GetTagsOfGroupAsync(int tagGroupId, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -95,11 +82,11 @@ public sealed class TagManager
                 dbContext.TagVariables,
                 tag => tag.Id,
                 tagVariable => tagVariable.TagId,
-                (tag, tagVariables) => new TagListModel
+                (tag, tagVariables) => new TagModel
                 {
                     Id = tag.Id,
-                    GroupId = tag.TagGroupId,
-                    GroupIcon = group.Icon,
+                    GroupId = group.Id,
+                    GroupIcon = TagGroupIcon.GetByName(group.Icon),
                     Name = tag.Name,
                     UpdatedAtUtc = tag.UpdatedAtUtc,
                     NumberOfVariables = tagVariables.Count()
@@ -112,69 +99,63 @@ public sealed class TagManager
         return tags;
     }
 
-    public async Task<TagListModel> SaveTagAsync(TagEditModel tag, CancellationToken cancellationToken)
+    public async Task SaveTagAsync(TagModel model, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        _logger.LogDebug("Saving tag {@Tag}", tag);
+        _logger.LogDebug("Saving tag {@Tag}", model);
 
-        var group = await dbContext.TagGroups.SingleAsync(g => g.Id == tag.TagGroupId, cancellationToken);
+        var group = await dbContext.TagGroups.SingleAsync(g => g.Id == model.GroupId, cancellationToken);
 
         TagRecord tagRecord;
-        if (tag.Id is null or 0)
+        if (model.Id is 0)
         {
-            if (await dbContext.Tags.AnyAsync(t => t.Name == tag.Name, cancellationToken))
+            if (await dbContext.Tags.AnyAsync(t => t.Name == model.Name, cancellationToken))
             {
                 throw new ArgumentException("Tag name already in use");
             }
             
             tagRecord = new TagRecord
             {
-                Name = tag.Name!,
-                TagGroupId = tag.TagGroupId,
+                Name = model.Name,
+                TagGroupId = model.GroupId,
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
             };
             dbContext.Tags.Add(tagRecord);
             await dbContext.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("Saved {@Tag}", tagRecord);
-            return new TagListModel
-            {
-                Id = tagRecord.Id,
-                Name = tagRecord.Name,
-                GroupId = tagRecord.TagGroupId,
-                GroupIcon = group.Icon,
-                UpdatedAtUtc = tagRecord.UpdatedAtUtc,
-                NumberOfVariables = 0,
-            };
+            model.Id = tagRecord.Id;
+            model.Name = tagRecord.Name;
+            model.GroupId = tagRecord.TagGroupId;
+            model.GroupIcon = TagGroupIcon.GetByName(group.Icon);
+            model.UpdatedAtUtc = tagRecord.UpdatedAtUtc;
+            model.NumberOfVariables = 0;
+            return;
         }
         
-        if (await dbContext.Tags.AnyAsync(t => t.Id != tag.Id && t.Name == tag.Name, cancellationToken))
+        if (await dbContext.Tags.AnyAsync(t => t.Id != model.Id && t.Name == model.Name, cancellationToken))
         {
             throw new ArgumentException("Tag name already in use");
         }
 
         tagRecord = await dbContext.Tags
             .AsTracking()
-            .SingleAsync(t => t.Id == tag.Id, cancellationToken);
-        tagRecord.Name = tag.Name!;
+            .SingleAsync(t => t.Id == model.Id, cancellationToken);
+        tagRecord.Name = model.Name!;
         tagRecord.UpdatedAtUtc = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Saved {@Tag}", tagRecord);
 
-        return new TagListModel
-        {
-            Id = tagRecord.Id,
-            Name = tagRecord.Name,
-            GroupId = tagRecord.TagGroupId,
-            GroupIcon = group.Icon,
-            UpdatedAtUtc = tagRecord.UpdatedAtUtc,
-            NumberOfVariables =
-                await dbContext.TagVariables.CountAsync(tv => tv.TagId == tagRecord.Id, cancellationToken)
-        };
+        model.Id = tagRecord.Id;
+        model.Name = tagRecord.Name;
+        model.GroupId = tagRecord.TagGroupId;
+        model.GroupIcon = TagGroupIcon.GetByName(group.Icon);
+        model.UpdatedAtUtc = tagRecord.UpdatedAtUtc;
+        model.NumberOfVariables = await dbContext.TagVariables.CountAsync(tv => tv.TagId == tagRecord.Id, cancellationToken);
     }
 
-    public async Task DeleteTagAsync(TagDeleteModel tag, CancellationToken cancellationToken)
+    public async Task DeleteTagAsync(TagModel tag, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 

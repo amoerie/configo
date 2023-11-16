@@ -7,5 +7,6 @@ public static class Routes
     public const string Applications = "applications";
     public static string Schema(string application) => $"applications/{application}/schema";
     public const string TagGroups = "tag-groups";
-    public static string Tags(string group) => $"tags/{group}";
+    public const string Variables = "variables";
+    public static string Tags(string group) => $"tags/{group.ToLowerInvariant()}";
 }

@@ -50,7 +50,7 @@
                 <MudCardHeader>
                     <CardHeaderContent>
                         <MudText Typo="Typo.h6">
-                            <MudIcon Icon="@tagGroup.Icon.Value"/> @tagGroup.Name
+                            <MudIcon Icon="@tagGroup.GroupIcon.Value"/> @tagGroup.Name
                         </MudText>
                     </CardHeaderContent>
                 </MudCardHeader>
@@ -127,9 +127,9 @@
 
 @code {
     private List<TagGroupModel>? _tagGroups;
-    private readonly Dictionary<int, List<TagListModel>> _tagsByGroupId = new Dictionary<int, List<TagListModel>>();
+    private readonly Dictionary<int, List<TagModel>> _tagsByGroupId = new Dictionary<int, List<TagModel>>();
     private List<ApplicationListModel>? _applications;
-    private Dictionary<int, TagListModel> _tagsById = new Dictionary<int, TagListModel>();
+    private Dictionary<int, TagModel> _tagsById = new Dictionary<int, TagModel>();
     private List<ApiKeyListModel>? _apiKeys;
 
     protected override async Task OnInitializedAsync()

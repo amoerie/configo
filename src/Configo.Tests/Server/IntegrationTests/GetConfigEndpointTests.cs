@@ -10,7 +10,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
 {
     private readonly IntegrationTestFixture _fixture;
     private TagGroupModel _environments = default!;
-    private TagListModel _benelux = default!;
+    private TagModel _benelux = default!;
     private ApplicationListModel _processor = default!;
     private string _beneluxVariables = default!;
     private string _processorVariables = default!;

@@ -1,197 +1,120 @@
 ﻿@page "/tags/{group}"
-@* @using Configo.Server.Domain *@
-@* @inject TagGroupManager TagGroupManager *@
-@* @inject TagManager TagManager *@
-@* *@
-@* @if (_tagGroup == null || _tags == null) *@
-@* { *@
-@*     <p> *@
-@*         <em>Loading...</em> *@
-@*     </p> *@
-@* } *@
-@* else *@
-@* { *@
-@*     <Heading Size="HeadingSize.Is1"> *@
-@*         <Icon Name="@_tagGroup.Icon"/> @_tagGroup.Name *@
-@*     </Heading> *@
-@*      *@
-@*     <Table Hoverable> *@
-@*         <TableHeader ThemeContrast="ThemeContrast.Light"> *@
-@*             <TableRow> *@
-@*                 <TableHeaderCell Style="width: 40%">Name</TableHeaderCell> *@
-@*                 <TableHeaderCell Style="width: 20%"># Variables</TableHeaderCell> *@
-@*                 <TableHeaderCell Style="width: 20%">Updated UTC</TableHeaderCell> *@
-@*                 <TableHeaderCell Style="width: 20%"></TableHeaderCell> *@
-@*             </TableRow> *@
-@*         </TableHeader> *@
-@*         <TableBody> *@
-@*             @foreach (var tag in TagsToShow) *@
-@*             { *@
-@*                 @if (_tagBeingEdited?.Id == tag.Id) *@
-@*                 { *@
-@*                     <TableRow> *@
-@*                         <TableRowCell ColumnSpan="4"> *@
-@*                             <EditForm Model="@_tagBeingEdited" OnSubmit="@SaveTag"> *@
-@*                                 <Row> *@
-@*                                     <Field ColumnSize="ColumnSize.Is2" > *@
-@*                                         <TextEdit Placeholder="Name" @bind-Text="_tagBeingEdited.Name" @ref=_tagNameInput> *@
-@*                                             <FieldHelp>Tag names must be unique</FieldHelp> *@
-@*                                         </TextEdit> *@
-@*                                     </Field> *@
-@*                                     <Field ColumnSize="ColumnSize.IsAuto" TextAlignment="TextAlignment.Start"> *@
-@*                                         <Button Color="Color.Success" Clicked="SaveTag"><Icon Name="IconName.Check"/> Save</Button> *@
-@*                                         <Button Color="Color.Secondary" Clicked="StopEditing"><Icon Name="IconName.Times"/> Cancel</Button> *@
-@*                                     </Field> *@
-@*                                 </Row> *@
-@*                             </EditForm> *@
-@*                         </TableRowCell> *@
-@*                     </TableRow> *@
-@*                 } *@
-@*                 else if (_tagBeingDeleted?.Id == tag.Id) *@
-@*                 { *@
-@*                     <TableRow> *@
-@*                         <TableRowCell ColumnSpan="4"> *@
-@*                             <EditForm Model="@_tagBeingDeleted" OnSubmit="@ConfirmDeleteTag" class="grid-table-row"> *@
-@*                                 <InputNumber @bind-Value="_tagBeingDeleted!.Id" hidden="hidden"/> *@
-@*                                 <Alert Color="Color.Warning" Visible> *@
-@*                                     <AlertMessage>Are you sure?</AlertMessage> *@
-@*                                     <AlertDescription>Deleting @tag.Name cannot be undone</AlertDescription> *@
-@*                                 </Alert> *@
-@*                                 <Button Color="Color.Danger" Clicked="ConfirmDeleteTag"><Icon Name="IconName.Delete"/> Yes, delete it</Button> *@
-@*                                 <Button Color="Color.Secondary" Clicked="StopDeleting"><Icon Name="IconName.Times"/> No, keep it</Button> *@
-@*                             </EditForm> *@
-@*                         </TableRowCell> *@
-@*                     </TableRow> *@
-@*                 } *@
-@*                 else *@
-@*                 { *@
-@*                     <TableRow> *@
-@*                         <TableRowHeader Style="cursor:pointer" Clicked="() => EditTag(tag)"> *@
-@*                             @tag.Name *@
-@*                         </TableRowHeader> *@
-@*                         <TableRowCell> *@
-@*                             <Badge Color="Color.Primary" Pill Background="Background.Secondary">@tag.NumberOfVariables</Badge> *@
-@*                         </TableRowCell> *@
-@*                         <TableRowCell>@tag.UpdatedAtUtc.ToString("g")</TableRowCell> *@
-@*                         <TableRowCell> *@
-@*                             <Button Color="Color.Danger" Clicked="() => DeleteTag(tag)"><Icon Name="IconName.Delete"/> Delete</Button> *@
-@*                         </TableRowCell> *@
-@*                     </TableRow> *@
-@*                 } *@
-@*             } *@
-@*         </TableBody> *@
-@*     </Table> *@
-@* *@
-@*     <div> *@
-@*         <Button Color="Color.Success" Clicked="AddTag"><Icon Name="IconName.PlusSquare"/> Add new tag</Button> *@
-@*     </div> *@
-@* } *@
-@* *@
-@* @code { *@
-@*     private TagGroupListModel? _tagGroup; *@
-@*     private List<TagListModel>? _tags; *@
-@*     private TagEditModel? _tagBeingEdited; *@
-@*     private TagDeleteModel? _tagBeingDeleted; *@
-@*     private TextEdit? _tagNameInput; *@
-@* *@
-@*     private IEnumerable<TagListModel> TagsToShow *@
-@*     { *@
-@*         get *@
-@*         { *@
-@*             if (_tags == null || _tagGroup == null) yield break; *@
-@*             foreach (var tag in _tags) yield return tag; *@
-@*             if (_tagBeingEdited?.Id == 0) *@
-@*             { *@
-@*                 yield return new TagListModel *@
-@*                 { *@
-@*                     Id = 0, *@
-@*                     Name = _tagBeingEdited.Name ?? "", *@
-@*                     GroupId = _tagBeingEdited.TagGroupId, *@
-@*                     GroupIcon = _tagGroup!.Icon, *@
-@*                     UpdatedAtUtc = DateTime.UtcNow, *@
-@*                     NumberOfVariables = 0 *@
-@*                 }; *@
-@*             } *@
-@*         } *@
-@*     } *@
-@* *@
-@*     [Parameter] *@
-@*     public string? Group { get; set; } *@
-@* *@
-@*     protected override async Task OnParametersSetAsync() *@
-@*     { *@
-@*         if (Group == null) *@
-@*         { *@
-@*             throw new InvalidOperationException("Oi, where is the group"); *@
-@*         } *@
-@*         _tagGroup = await TagGroupManager.GetTagGroupAsync(Group, CancellationToken); *@
-@*         _tags = await TagManager.GetTagsOfGroupAsync(_tagGroup.Id, CancellationToken); *@
-@*     } *@
-@* *@
-@*     protected override async Task OnAfterRenderAsync(bool firstRender) *@
-@*     { *@
-@*         if (_tagNameInput != null) *@
-@*         { *@
-@*             await _tagNameInput.Focus(); *@
-@*         } *@
-@*     } *@
-@* *@
-@*     private void AddTag() *@
-@*     { *@
-@*         _tagBeingEdited = new TagEditModel { Id = 0, Name = "", TagGroupId = _tagGroup!.Id }; *@
-@*     } *@
-@* *@
-@*     private void EditTag(TagListModel tag) *@
-@*     { *@
-@*         _tagBeingEdited = new TagEditModel { Id = tag.Id, Name = tag.Name, TagGroupId = _tagGroup!.Id }; *@
-@*     } *@
-@* *@
-@*     private void DeleteTag(TagListModel tag) *@
-@*     { *@
-@*         _tagBeingDeleted = new TagDeleteModel { Id = tag.Id }; *@
-@*     } *@
-@* *@
-@*     private async Task SaveTag() *@
-@*     { *@
-@*         var tag = await TagManager.SaveTagAsync(_tagBeingEdited!, CancellationToken); *@
-@*         if (_tagBeingEdited!.Id == 0) *@
-@*         { *@
-@*             _tags!.Add(tag); *@
-@*         } *@
-@*         else *@
-@*         { *@
-@*             for (var i = 0; i < _tags!.Count; i++) *@
-@*             { *@
-@*                 if (_tags[i].Id == _tagBeingEdited!.Id) *@
-@*                 { *@
-@*                     _tags[i] = tag; *@
-@*                 } *@
-@*             } *@
-@*         } *@
-@*         StopEditing(); *@
-@*     } *@
-@* *@
-@*     private async Task ConfirmDeleteTag() *@
-@*     { *@
-@*         await TagManager.DeleteTagAsync(_tagBeingDeleted!, CancellationToken); *@
-@*         for (var i = 0; i < _tags!.Count; i++) *@
-@*         { *@
-@*             if (_tags[i].Id != _tagBeingDeleted!.Id) continue; *@
-@*             _tags.RemoveAt(i); *@
-@*             break; *@
-@*         } *@
-@*         _tagBeingDeleted = null; *@
-@*     } *@
-@* *@
-@*     private void StopEditing() *@
-@*     { *@
-@*         _tagBeingEdited = null; *@
-@*         _tagNameInput = null; *@
-@*     } *@
-@* *@
-@*     private void StopDeleting() *@
-@*     { *@
-@*         _tagBeingDeleted = null; *@
-@*     } *@
-@* *@
-@* } *@
+@using Configo.Server.Domain
+@using System.Collections.ObjectModel
+@inject TagGroupManager TagGroupManager
+@inject TagManager TagManager
+@inject IDialogService DialogService
+
+@if (_tagGroup == null || _tags == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true"/>
+    return;
+}
+
+<MudText Typo="Typo.h4" GutterBottom="true">
+    <MudIcon Icon="@_tagGroup.GroupIcon.Value" Size="Size.Large"/> @_tagGroup.Name
+</MudText>
+
+<MudButton
+    Variant="Variant.Filled"
+    Size="Size.Large"
+    OnClick="@AddNew" Color="@Color.Success" Class="add-item-btn" StartIcon="@Icons.Material.Filled.Add">
+    Add new
+</MudButton>
+
+<MudDataGrid @ref="_dataGrid"
+             Items="@_tags"
+             Filterable="true"
+             FilterMode="DataGridFilterMode.ColumnFilterRow"
+             FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+             ReadOnly="false"
+             EditMode="DataGridEditMode.Form"
+             EditTrigger="DataGridEditTrigger.OnRowClick"
+             CanceledEditingItem="(TagModel model) => DoNotSaveTag(model)"
+             CommittedItemChanges="(TagModel model) => SaveTag(model)">
+    <Columns>
+        <PropertyColumn Property="(TagModel x) => x.Name" Title="Name"/>
+        <TemplateColumn Title="# Variables" IsEditable="false" Filterable="false"
+                        Sortable="true" SortBy="(TagModel model) => model.NumberOfVariables">
+            <CellTemplate>
+                <MudChip Color="Color.Primary">@context.Item.NumberOfVariables</MudChip>
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="(TagModel x) => x.UpdatedAtUtc" Title="Updated" IsEditable="false" Format="u"/>
+        <TemplateColumn IsEditable="false" Filterable="false" Sortable="false">
+            <CellTemplate>
+                <MudStack Row>
+                    <MudIconButton Size="@Size.Small"
+                                   Icon="@Icons.Material.Filled.Delete"
+                                   Variant="@Variant.Filled"
+                                   Color="@Color.Error"
+                                   @onclick="() => OpenDeleteDialogAsync(context.Item)">
+                    </MudIconButton>
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="TagModel"/>
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    private ObservableCollection<TagModel>? _tags;
+    private MudDataGrid<TagModel>? _dataGrid;
+
+    private TagGroupModel? _tagGroup;
+
+    [Parameter]
+    public string? Group { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Group == null)
+        {
+            throw new InvalidOperationException("Oi, where is the group");
+        }
+        _tagGroup = await TagGroupManager.GetTagGroupAsync(Group, CancellationToken);
+        _tags = new ObservableCollection<TagModel>(await TagManager.GetTagsOfGroupAsync(_tagGroup.Id, CancellationToken));
+    }
+
+    private async Task OpenDeleteDialogAsync(TagModel tag)
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var parameters = new DialogParameters<DeleteDialog> { { x => x.ThingThatWillBeDeleted, tag.Name } };
+        var dialog = await DialogService.ShowAsync<DeleteDialog>("Delete", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            await TagManager.DeleteTagAsync(tag, CancellationToken);
+            _tags!.Remove(tag);
+        }
+    }
+
+    private async Task SaveTag(TagModel model)
+    {
+        await TagManager.SaveTagAsync(model, CancellationToken);
+    }
+
+    private void DoNotSaveTag(TagModel model)
+    {
+        if (model.Id == 0)
+        {
+            _tags!.Remove(model);
+        }
+    }
+
+    private async Task AddNew()
+    {
+        var model = new TagModel
+        {
+            Id = 0, Name = "",
+            GroupId = _tagGroup!.Id,
+            GroupIcon = _tagGroup!.GroupIcon,
+            NumberOfVariables = 0, UpdatedAtUtc = DateTime.UtcNow
+        };
+        _tags!.Add(model);
+        await _dataGrid!.SetEditingItemAsync(model);
+    }
+
+}

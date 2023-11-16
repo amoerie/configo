@@ -38,14 +38,14 @@ public class ManagingTagGroups : IAsyncLifetime
 
         tagGroups.Should().HaveCount(1);
         tagGroups.Single().Name.Should().Be("Test 1");
-        tagGroups.Single().Icon.Should().Be(FaNames.Fa0);
+        tagGroups.Single().GroupIcon.Should().Be(FaNames.Fa0);
 
         await tagGroupManager.SaveTagGroupAsync(new TagGroupEditModel { Id = tagGroup.Id, Name = "Test 2", Icon = FaNames.Fa1 }, cancellationToken);
         
         tagGroups = await tagGroupManager.GetAllTagGroupsAsync(cancellationToken);
         tagGroups.Should().HaveCount(1);
         tagGroups.Single().Name.Should().Be("Test 2");
-        tagGroups.Single().Icon.Should().Be(FaNames.Fa1);
+        tagGroups.Single().GroupIcon.Should().Be(FaNames.Fa1);
 
         await tagGroupManager.DeleteTagGroupAsync(new TagGroupDeleteModel { Id = tagGroup.Id }, cancellationToken);
         tagGroups = await tagGroupManager.GetAllTagGroupsAsync(cancellationToken);

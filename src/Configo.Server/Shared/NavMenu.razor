@@ -6,19 +6,19 @@
     <MudNavLink Href="/" Match="NavLinkMatch.All" ActiveClass="">
         <MudImage Src="configo.png" Alt="Logo" Height="160"></MudImage>
     </MudNavLink>
-    <MudNavLink Href="/tag-groups" Icon="@Icons.Material.Filled.Category" Match="NavLinkMatch.Prefix">Tag Groups</MudNavLink>
+    <MudNavLink Href="@($"/{Routes.TagGroups}")" Icon="@Icons.Material.Filled.Category" Match="NavLinkMatch.Prefix">Tag Groups</MudNavLink>
     @if (_tagGroups != null)
     {
         <MudNavGroup Title="Tags" Expanded="true" Icon="@Icons.Material.Filled.Label">
             @foreach (var tagGroup in _tagGroups)
             {
-                <MudNavLink Href="@tagGroup.Name" Icon="@tagGroup.Icon.Value" Match="@NavLinkMatch.Prefix">@tagGroup.Name</MudNavLink>
+                <MudNavLink Href="@($"/{Routes.Tags(tagGroup.Name)}")" Icon="@tagGroup.GroupIcon.Value" Match="@NavLinkMatch.Prefix">@tagGroup.Name</MudNavLink>
             }
         </MudNavGroup>
     }
-    <MudNavLink Href="/applications" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Cloud">Applications</MudNavLink>
-    <MudNavLink Href="/api-keys" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Key">API Keys</MudNavLink>
-    <MudNavLink Href="/variables" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.SettingsSuggest">Variables</MudNavLink>
+    <MudNavLink Href=@($"/{Routes.Applications}") Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Cloud">Applications</MudNavLink>
+    <MudNavLink Href=@($"/{Routes.ApiKeys}") Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Key">API Keys</MudNavLink>
+    <MudNavLink Href=@($"/{Routes.Variables}") Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.SettingsSuggest">Variables</MudNavLink>
 </MudNavMenu>
 
 @code {

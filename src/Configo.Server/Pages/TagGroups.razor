@@ -5,78 +5,79 @@
 @inject TagGroupManager TagGroupManager
 @inject IDialogService DialogService
 
-<MudText Typo="Typo.h1" GutterBottom="true">
+<MudText Typo="Typo.h4" GutterBottom="true">
     Tag Groups
 </MudText>
 
 @if (_tagGroups == null)
 {
     <MudProgressCircular Color="Color.Primary" Indeterminate="true"/>
+    return;
 }
-else
-{
-    <MudButton
-        Variant="Variant.Filled"
-        Size="Size.Large"
-        OnClick="@AddNew" Color="@Color.Success" Class="add-item-btn" StartIcon="@Icons.Material.Filled.Add">
-        Add new
-    </MudButton>
 
-    <MudDataGrid @ref="_dataGrid"
-                 Items="@_tagGroups"
-                 Filterable="true"
-                 FilterMode="DataGridFilterMode.ColumnFilterRow"
-                 FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
-                 ReadOnly="false"
-                 EditMode="DataGridEditMode.Form"
-                 EditTrigger="DataGridEditTrigger.OnRowClick"
-                 CanceledEditingItem="(TagGroupModel model) => DoNotSaveTagGroup(model)"
-                 CommittedItemChanges="(TagGroupModel model) => SaveTagGroup(model)">
-        <Columns>
-            <PropertyColumn Property="(TagGroupModel x) => x.Name" Title="Name"/>
-            <TemplateColumn T="TagGroupModel"
-                            Title="Icon"
-                            IsEditable="true" Filterable="false" Sortable="false">
-                <CellTemplate>
-                    <MudIcon Icon="@context.Item.Icon.Value"></MudIcon>
-                </CellTemplate>
-                <EditTemplate>
-                    <MudAutocomplete T="TagIcon"
-                                     @bind-Value="@context.Item.Icon"
-                                     SearchFunc="TagIcon.SearchAsync"
-                                     ToStringFunc="icon => icon.Name"
-                                     Label="Icon">
-                        <ItemTemplate Context="e">
-                            <MudIcon Icon="@e.Value"/> @e.Name
-                        </ItemTemplate>
-                    </MudAutocomplete>
-                </EditTemplate>
-            </TemplateColumn>
-            <TemplateColumn Title="# Tags" IsEditable="false" Filterable="false" 
-                            Sortable="true" SortBy="(TagGroupModel model) => model.NumberOfTags">
-                <CellTemplate>
-                    <MudChip Color="Color.Primary">@context.Item.NumberOfTags</MudChip> 
-                </CellTemplate>
-            </TemplateColumn>
-            <PropertyColumn Property="(TagGroupModel x) => x.UpdatedAtUtc" Title="Updated" IsEditable="false" />
-            <TemplateColumn IsEditable="false" Filterable="false" Sortable="false">
-                <CellTemplate>
-                    <MudStack Row>
-                        <MudIconButton Size="@Size.Small"
-                                       Icon="@Icons.Material.Filled.Delete"
-                                       Variant="@Variant.Filled"
-                                       Color="@Color.Error"
-                                       @onclick="() => OpenDeleteDialogAsync(context.Item)">
-                        </MudIconButton>
-                    </MudStack>
-                </CellTemplate>
-            </TemplateColumn>
-        </Columns>
-        <PagerContent>
-            <MudDataGridPager T="TagGroupModel"/>
-        </PagerContent>
-    </MudDataGrid>
-}
+<MudButton
+    Variant="Variant.Filled"
+    Size="Size.Large"
+    OnClick="@AddNew" Color="@Color.Success" Class="add-item-btn" StartIcon="@Icons.Material.Filled.Add">
+    Add new
+</MudButton>
+
+<MudDataGrid @ref="_dataGrid"
+             Items="@_tagGroups"
+             Filterable="true"
+             FilterMode="DataGridFilterMode.ColumnFilterRow"
+             FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+             ReadOnly="false"
+             EditMode="DataGridEditMode.Form"
+             EditTrigger="DataGridEditTrigger.OnRowClick"
+             CanceledEditingItem="(TagGroupModel model) => DoNotSaveTagGroup(model)"
+             CommittedItemChanges="(TagGroupModel model) => SaveTagGroup(model)">
+    <Columns>
+        <PropertyColumn Property="(TagGroupModel x) => x.Name" Title="Name"/>
+        <TemplateColumn T="TagGroupModel"
+                        Title="Icon"
+                        IsEditable="true" Filterable="false" Sortable="false">
+            <CellTemplate>
+                <MudIcon Icon="@context.Item.GroupIcon.Value"></MudIcon>
+            </CellTemplate>
+            <EditTemplate>
+                <MudAutocomplete T="TagGroupIcon"
+                                 @bind-Value="@context.Item.GroupIcon"
+                                 SearchFunc="TagGroupIcon.SearchAsync"
+                                 ToStringFunc="icon => icon.Name"
+                                 Label="Icon">
+                    <ItemTemplate Context="e">
+                        <MudIcon Icon="@e.Value"/> @e.Name
+                    </ItemTemplate>
+                </MudAutocomplete>
+            </EditTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="# Tags" IsEditable="false" Filterable="false" 
+                        Sortable="true" SortBy="(TagGroupModel model) => model.NumberOfTags">
+            <CellTemplate>
+                <MudChip Color="Color.Primary">@context.Item.NumberOfTags</MudChip> 
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="(TagGroupModel x) => x.UpdatedAtUtc" Title="Updated" 
+                        IsEditable="false"
+                        Format="u"/>
+        <TemplateColumn IsEditable="false" Filterable="false" Sortable="false">
+            <CellTemplate>
+                <MudStack Row>
+                    <MudIconButton Size="@Size.Small"
+                                   Icon="@Icons.Material.Filled.Delete"
+                                   Variant="@Variant.Filled"
+                                   Color="@Color.Error"
+                                   @onclick="() => OpenDeleteDialogAsync(context.Item)">
+                    </MudIconButton>
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="TagGroupModel"/>
+    </PagerContent>
+</MudDataGrid>
 
 @code {
     private ObservableCollection<TagGroupModel>? _tagGroups;
@@ -115,7 +116,7 @@ else
 
     private async Task AddNew()
     {
-        var tagGroupModel = new TagGroupModel { Id = 0, Name = "", Icon = TagIcon.Default, NumberOfTags = 0, UpdatedAtUtc = DateTime.UtcNow };
+        var tagGroupModel = new TagGroupModel { Id = 0, Name = "", GroupIcon = TagGroupIcon.Default, NumberOfTags = 0, UpdatedAtUtc = DateTime.UtcNow };
         _tagGroups!.Add(tagGroupModel);
         await _dataGrid!.SetEditingItemAsync(tagGroupModel);
     }

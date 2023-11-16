@@ -10,7 +10,7 @@ public sealed record TagGroupModel
     public required int Id { get; set; }
     public required string Name { get; set; }
     
-    public required TagIcon Icon { get; set; }
+    public required TagGroupIcon GroupIcon { get; set; }
     public required DateTime UpdatedAtUtc { get; set; }
     public required int NumberOfTags { get; set; }
 }
@@ -72,7 +72,7 @@ public sealed class TagGroupManager
                 {
                     Id = tagGroup.Id,
                     Name = tagGroup.Name,
-                    Icon = TagIcon.GetByName(tagGroup.Icon),
+                    GroupIcon = TagGroupIcon.GetByName(tagGroup.Icon),
                     UpdatedAtUtc = tagGroup.UpdatedAtUtc,
                     NumberOfTags = tags.Count()
                 })
@@ -98,7 +98,7 @@ public sealed class TagGroupManager
                 {
                     Id = tagGroup.Id,
                     Name = tagGroup.Name,
-                    Icon = TagIcon.GetByName(tagGroup.Icon),
+                    GroupIcon = TagGroupIcon.GetByName(tagGroup.Icon),
                     UpdatedAtUtc = tagGroup.UpdatedAtUtc,
                     NumberOfTags = tags.Count()
                 })
@@ -128,7 +128,7 @@ public sealed class TagGroupManager
             tagGroupRecord = new TagGroupRecord
             {
                 Name = tagGroup.Name!,
-                Icon = tagGroup.Icon.Name,
+                Icon = tagGroup.GroupIcon.Name,
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
             };
@@ -138,7 +138,7 @@ public sealed class TagGroupManager
             _logger.LogInformation("Saved {@TagGroup}", tagGroupRecord);
             tagGroup.Id = tagGroupRecord.Id;
             tagGroup.Name = tagGroupRecord.Name;
-            tagGroup.Icon = TagIcon.GetByName(tagGroupRecord.Icon);
+            tagGroup.GroupIcon = TagGroupIcon.GetByName(tagGroupRecord.Icon);
             tagGroup.UpdatedAtUtc = tagGroupRecord.UpdatedAtUtc;
             tagGroup.NumberOfTags = 0;
         }
@@ -152,7 +152,7 @@ public sealed class TagGroupManager
             .AsTracking()
             .SingleAsync(t => t.Id == tagGroup.Id, cancellationToken);
         tagGroupRecord.Name = tagGroup.Name!;
-        tagGroupRecord.Icon = tagGroup.Icon.Name;
+        tagGroupRecord.Icon = tagGroup.GroupIcon.Name;
         tagGroupRecord.UpdatedAtUtc = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
         await NotifyListenersAsync(cancellationToken);
@@ -160,7 +160,7 @@ public sealed class TagGroupManager
     
         tagGroup.Id = tagGroupRecord.Id;
         tagGroup.Name = tagGroupRecord.Name;
-        tagGroup.Icon = TagIcon.GetByName(tagGroupRecord.Icon);
+        tagGroup.GroupIcon = TagGroupIcon.GetByName(tagGroupRecord.Icon);
         tagGroup.UpdatedAtUtc = tagGroupRecord.UpdatedAtUtc;
         tagGroup.NumberOfTags = await dbContext.Tags.CountAsync(t => t.TagGroupId == tagGroupRecord.Id, cancellationToken);
     }
