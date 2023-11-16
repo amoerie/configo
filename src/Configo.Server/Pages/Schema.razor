@@ -1,88 +1,83 @@
 ﻿@page "/applications/{application}/schema"
-@* @using Configo.Server.Domain *@
-@* @inject ApplicationManager ApplicationManager *@
-@* @inject SchemaManager SchemaManager *@
-@* @inject IJSRuntime JsRuntime *@
-@* @inject NavigationManager NavigationManager *@
-@* *@
-@* @if (_application == null || _schema == null) *@
-@* { *@
-@*     <p>...loading</p> *@
-@*     return; *@
-@* } *@
-@* *@
-@* <Heading Size="HeadingSize.Is1"> *@
-@*     <Icon Name="IconName.Server"/> @Application JSON schema *@
-@* </Heading> *@
-@* *@
-@* <SnackbarStack @ref="_schemaSavedNotification" Color="SnackbarColor.Success"></SnackbarStack> *@
-@* *@
-@* <div id="schema-editor-container" class="container-fluid" style="height: 90vh"> *@
-@*      *@
-@* </div> *@
-@* *@
-@* @code { *@
-@*     private string? _schema; *@
-@*     private SnackbarStack? _schemaSavedNotification; *@
-@*     private DotNetObjectReference<Schema>? _objectReference; *@
-@*     private ApplicationListModel? _application; *@
-@* *@
-@*     [Parameter] *@
-@*     public string? Application { get; set; } *@
-@* *@
-@*     private async Task InitEditorIfNecessary() *@
-@*     { *@
-@*         if (_objectReference == null && _application != null) *@
-@*         { *@
-@*             _objectReference = DotNetObjectReference.Create(this); *@
-@*             await JsRuntime.InvokeVoidAsync("schema.initialize", CancellationToken, _objectReference, _application.Id, _schema); *@
-@*         } *@
-@*     } *@
-@* *@
-@*     protected override async Task OnAfterRenderAsync(bool firstRender) *@
-@*     { *@
-@*         await InitEditorIfNecessary(); *@
-@*     } *@
-@* *@
-@*     protected override async Task OnParametersSetAsync() *@
-@*     {         *@
-@*         var application = await ApplicationManager.GetApplicationByNameAsync(Application, CancellationToken); *@
-@*         if (application == null) *@
-@*         { *@
-@*             NavigationManager.NavigateTo("applications"); *@
-@*             return; *@
-@*         } *@
-@*         _application = application; *@
-@*         _schema = await SchemaManager.GetSchemaAsync(_application!.Id, CancellationToken); *@
-@*     } *@
-@* *@
-@*     [JSInvokable] *@
-@*     public async Task OnSave() *@
-@*     { *@
-@*         if (_schemaSavedNotification != null) *@
-@*         { *@
-@*             await _schemaSavedNotification.PushAsync("Application schema saved successfully", SnackbarColor.Success); *@
-@*         } *@
-@*     } *@
-@*      *@
-@*     protected override async ValueTask OnDisposeAsync() *@
-@*     { *@
-@*         if (_objectReference != null) *@
-@*         { *@
-@*             try *@
-@*             { *@
-@*                 await JsRuntime.InvokeVoidAsync("schema.destroy", CancellationToken); *@
-@*             } *@
-@*             catch (JSDisconnectedException) *@
-@*             { *@
-@*                 // Ignore *@
-@*             } *@
-@*             finally *@
-@*             { *@
-@*                 _objectReference?.Dispose(); *@
-@*             } *@
-@*         } *@
-@*         await base.OnDisposeAsync(); *@
-@*     } *@
-@* *@
-@* } *@
+@using Configo.Server.Domain
+@inject ApplicationManager ApplicationManager
+@inject SchemaManager SchemaManager
+@inject IJSRuntime JsRuntime
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+@if (_application == null || _schema == null)
+{
+    <p>...loading</p>
+    return;
+}
+
+<MudText Typo="Typo.h4" GutterBottom="true">
+    @_application.Name JSON schema
+</MudText>
+
+<div id="schema-editor-container" class="container-fluid">
+
+</div>
+
+@code {
+    private string? _schema;
+    private DotNetObjectReference<Schema>? _objectReference;
+    private ApplicationModel? _application;
+
+    [Parameter]
+    public string? Application { get; set; }
+
+    private async Task InitEditorIfNecessary()
+    {
+        if (_objectReference == null && _application != null)
+        {
+            _objectReference = DotNetObjectReference.Create(this);
+            await JsRuntime.InvokeVoidAsync("schema.initialize", CancellationToken, _objectReference, _application.Id, _schema);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await InitEditorIfNecessary();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var application = await ApplicationManager.GetApplicationByNameAsync(Application, CancellationToken);
+        if (application == null)
+        {
+            NavigationManager.NavigateTo("applications");
+            return;
+        }
+        _application = application;
+        _schema = await SchemaManager.GetSchemaAsync(_application!.Id, CancellationToken);
+    }
+
+    [JSInvokable]
+    public void OnSave()
+    {
+        Snackbar.Add("Application schema saved successfully", Severity.Success);
+    }
+
+    protected override async ValueTask OnDisposeAsync()
+    {
+        if (_objectReference != null)
+        {
+            try
+            {
+                await JsRuntime.InvokeVoidAsync("schema.destroy", CancellationToken);
+            }
+            catch (JSDisconnectedException)
+            {
+                // Ignore
+            }
+            finally
+            {
+                _objectReference?.Dispose();
+            }
+        }
+        await base.OnDisposeAsync();
+    }
+
+}

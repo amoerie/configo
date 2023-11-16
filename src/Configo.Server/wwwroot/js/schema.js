@@ -3,9 +3,24 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.main.js";
 
 export class Schema {
+    /**
+     * @type {Object}
+     */
     #dotNetRef;
+
+    /**
+     * @type {int}
+     */
     #applicationId;
+
+    /**
+     * @type {monaco.editor.ITextModel}
+     */
     #model;
+
+    /**
+     * @type {monaco.editor.IStandaloneCodeEditor}
+     */
     #editor;
     constructor() {
     }
@@ -44,6 +59,11 @@ export class Schema {
 
         this.#editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, async () => {
             await this.save();
+        });
+        
+        this.#editor.layout({
+            width: container.clientWidth,
+            height: document.documentElement.clientHeight - container.offsetTop
         });
     }
     

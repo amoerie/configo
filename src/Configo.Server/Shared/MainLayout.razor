@@ -9,11 +9,11 @@
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit"
                        Edge="Edge.Start" OnClick="@(_ => DrawerToggle())"/>
     </MudAppBar>
-    <MudDrawer @bind-Open="@_drawerOpen" Color="Color.Transparent">
+    <MudDrawer @bind-Open="@_drawerOpen" Color="Color.Transparent" Elevation="0">
         <NavMenu/>
     </MudDrawer>
-    <MudMainContent>
-        <MudContainer Fixed="true">
+    <MudMainContent Style="padding-top: 0">
+        <MudContainer Fixed="true" >
             @Body
         </MudContainer>
     </MudMainContent>

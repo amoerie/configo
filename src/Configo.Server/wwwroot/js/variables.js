@@ -158,22 +158,18 @@ export class Variables {
             this.#editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, async () => {
                 await this.save();
             });
-
-            this.#editor.layout({
-                height: this.#editorContainer.clientHeight,
-                width: this.#editorContainer.clientWidth
-            });
         } else {
             this.#model?.dispose();
             this.#model = monaco.editor.createModel(config, "json", monaco.Uri.parse("internal://server/config.json"));
             this.#editor.setModel(this.#model);
             this.#editor.updateOptions({ readOnly: isReadonly });
             this.#editorContainer.style.display = "block";
-            this.#editor.layout({
-                height: this.#editorContainer.clientHeight,
-                width: this.#editorContainer.clientWidth
-            });
         }
+
+        this.#editor.layout({
+            height: document.documentElement.clientHeight - this.#editorContainer.offsetTop,
+            width: this.#editorContainer.clientWidth
+        });
     }
 
     /**
@@ -227,11 +223,6 @@ export class Variables {
                 original: this.#originalModel,
                 modified: this.#modifiedModel
             });
-
-            this.#diffEditor.layout({
-                height: this.#diffEditorContainer.clientHeight,
-                width: this.#diffEditorContainer.clientWidth
-            });
         } else {
             this.#originalModel?.dispose();
             this.#modifiedModel?.dispose();
@@ -241,11 +232,12 @@ export class Variables {
                 original: this.#originalModel,
                 modified: this.#modifiedModel
             });
-            this.#diffEditor.layout({
-                height: this.#diffEditorContainer.clientHeight,
-                width: this.#diffEditorContainer.clientWidth
-            });
         }
+
+        this.#diffEditor.layout({
+            height: document.documentElement.clientHeight - this.#diffEditorContainer.offsetTop,
+            width: this.#diffEditorContainer.clientWidth
+        });
     }
 
     destroy() {
