@@ -35,7 +35,7 @@ public class ManagingApiKeys : IAsyncLifetime
         CancellationToken cancellationToken = default;
         
         // Act + Assert
-        var application = await applicationManager.SaveApplicationAsync(new ApplicationEditModel { Name = "App" }, cancellationToken);
+        var application = await applicationManager.SaveApplicationAsync(new ApplicationModel { Name = "App" }, cancellationToken);
         var tagGroup1 = await tagGroupManager.SaveTagGroupAsync(new TagGroupModel { Name = "Group 1" }, cancellationToken);
         var tagGroup2 = await tagGroupManager.SaveTagGroupAsync(new TagGroupModel { Name = "Group 2" }, cancellationToken);
         var tag1 = await tagManager.SaveTagAsync(new TagModel { Name = "Tag 1", TagGroupId = tagGroup1.Id }, cancellationToken);

@@ -13,9 +13,9 @@ public class ManagingVariables : IAsyncLifetime
     private TagModel _nordics = default!;
     private TagModel _blade1 = default!;
     private TagModel _blade2 = default!;
-    private ApplicationListModel _processor = default!;
-    private ApplicationListModel _router = default!;
-    private ApplicationListModel _otherApplication = default!;
+    private ApplicationModel _processor = default!;
+    private ApplicationModel _router = default!;
+    private ApplicationModel _otherApplication = default!;
     private TagModel _otherTag = default!;
     private string _blade1Variables = default!;
     private string _blade2Variables = default!;
@@ -74,9 +74,9 @@ public class ManagingVariables : IAsyncLifetime
         _blade1 = await tagManager.SaveTagAsync(blade1Model, cancellationToken);
         _blade2 = await tagManager.SaveTagAsync(blade2Model, cancellationToken);
         _otherTag = await tagManager.SaveTagAsync(otherTagModel, cancellationToken);
-        var processorModel = new ApplicationEditModel { Name = "Processor" };
-        var routerModel = new ApplicationEditModel { Name = "Router" };
-        var otherApplicationModel = new ApplicationEditModel { Name = "Other" };
+        var processorModel = new ApplicationModel { Name = "Processor" };
+        var routerModel = new ApplicationModel { Name = "Router" };
+        var otherApplicationModel = new ApplicationModel { Name = "Other" };
         _processor = await applicationManager.SaveApplicationAsync(processorModel, cancellationToken);
         _router = await applicationManager.SaveApplicationAsync(routerModel, cancellationToken);
         _otherApplication = await applicationManager.SaveApplicationAsync(otherApplicationModel, cancellationToken);

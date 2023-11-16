@@ -8,7 +8,7 @@ namespace Configo.Tests.Server.IntegrationTests;
 public class SaveSchemaEndpointTests : IAsyncLifetime
 {
     private readonly IntegrationTestFixture _fixture;
-    private ApplicationListModel _processor = default!;
+    private ApplicationModel _processor = default!;
 
     public SaveSchemaEndpointTests(IntegrationTestFixture fixture, ITestOutputHelper output)
     {
@@ -21,7 +21,7 @@ public class SaveSchemaEndpointTests : IAsyncLifetime
         var applicationManager = _fixture.GetRequiredService<ApplicationManager>();
         var cancellationToken = CancellationToken.None;
 
-        var processorModel = new ApplicationEditModel { Name = "Processor" };
+        var processorModel = new ApplicationModel { Name = "Processor" };
         _processor = await applicationManager.SaveApplicationAsync(processorModel, cancellationToken);
     }
 

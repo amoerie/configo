@@ -1,27 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Configo.Database;
+﻿using Configo.Database;
 using Configo.Database.Tables;
 using Microsoft.EntityFrameworkCore;
 
 namespace Configo.Server.Domain;
 
-public sealed record ApplicationListModel
+public sealed record ApplicationModel
 {
-    public required int Id { get; init; }
-    public required string Name { get; init; }
-    public required DateTime UpdatedAtUtc { get; init; }
-}
-
-public sealed record ApplicationEditModel
-{
-    public int? Id { get; init; }
-
-    [Required] [MaxLength(256)] public string? Name { get; set; }
-}
-
-public sealed record ApplicationDeleteModel
-{
-    [Required] public int? Id { get; set; }
+    public required int Id { get; set; }
+    public required string Name { get; set; }
+    public required DateTime UpdatedAtUtc { get; set; }
 }
 
 public sealed record ApplicationDropdownModel
@@ -62,7 +49,7 @@ public sealed class ApplicationManager
         return applications;
     }
 
-    public async Task<List<ApplicationListModel>> GetAllApplicationsAsync(CancellationToken cancellationToken)
+    public async Task<List<ApplicationModel>> GetAllApplicationsAsync(CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -70,7 +57,7 @@ public sealed class ApplicationManager
 
         var applications = await dbContext.Applications
             .OrderBy(t => t.Name)
-            .Select(t => new ApplicationListModel
+            .Select(t => new ApplicationModel
             {
                 Id = t.Id,
                 Name = t.Name,
@@ -83,7 +70,7 @@ public sealed class ApplicationManager
         return applications;
     }
 
-    public async Task<ApplicationListModel?> GetApplicationByNameAsync(string? name, CancellationToken cancellationToken)
+    public async Task<ApplicationModel?> GetApplicationByNameAsync(string? name, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -91,7 +78,7 @@ public sealed class ApplicationManager
 
         var application = await dbContext.Applications
             .Where(a => a.Name == name)
-            .Select(t => new ApplicationListModel
+            .Select(t => new ApplicationModel
             {
                 Id = t.Id,
                 Name = t.Name,
@@ -104,24 +91,24 @@ public sealed class ApplicationManager
         return application;
     }
 
-    public async Task<ApplicationListModel> SaveApplicationAsync(ApplicationEditModel application,
+    public async Task SaveApplicationAsync(ApplicationModel model,
         CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        _logger.LogDebug("Saving application {@Application}", application);
+        _logger.LogDebug("Saving application {@Application}", model);
 
         ApplicationRecord applicationRecord;
-        if (application.Id is null or 0)
+        if (model.Id is 0)
         {
-            if (await dbContext.Applications.AnyAsync(t => t.Name == application.Name, cancellationToken))
+            if (await dbContext.Applications.AnyAsync(t => t.Name == model.Name, cancellationToken))
             {
                 throw new ArgumentException("Application name already in use");
             }
             
             applicationRecord = new ApplicationRecord
             {
-                Name = application.Name!,
+                Name = model.Name!,
                 JsonSchema = "",
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
@@ -129,36 +116,31 @@ public sealed class ApplicationManager
             dbContext.Applications.Add(applicationRecord);
             await dbContext.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("Saved {@Application}", applicationRecord);
-            return new ApplicationListModel
-            {
-                Id = applicationRecord.Id,
-                Name = applicationRecord.Name,
-                UpdatedAtUtc = applicationRecord.UpdatedAtUtc,
-            };
+            model.Id = applicationRecord.Id;
+            model.Name = applicationRecord.Name;
+            model.UpdatedAtUtc = applicationRecord.UpdatedAtUtc;
+            return;
         }
         
-        if (await dbContext.Applications.AnyAsync(t => t.Id != application.Id && t.Name == application.Name, cancellationToken))
+        if (await dbContext.Applications.AnyAsync(t => t.Id != model.Id && t.Name == model.Name, cancellationToken))
         {
             throw new ArgumentException("Application name already in use");
         }
 
         applicationRecord = await dbContext.Applications
             .AsTracking()
-            .SingleAsync(t => t.Id == application.Id, cancellationToken);
-        applicationRecord.Name = application.Name!;
+            .SingleAsync(t => t.Id == model.Id, cancellationToken);
+        applicationRecord.Name = model.Name!;
         applicationRecord.UpdatedAtUtc = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Saved {@Application}", applicationRecord);
 
-        return new ApplicationListModel
-        {
-            Id = applicationRecord.Id,
-            Name = applicationRecord.Name,
-            UpdatedAtUtc = applicationRecord.UpdatedAtUtc,
-        };
+        model.Id = applicationRecord.Id;
+        model.Name = applicationRecord.Name;
+        model.UpdatedAtUtc = applicationRecord.UpdatedAtUtc;
     }
 
-    public async Task DeleteApplicationAsync(ApplicationDeleteModel application, CancellationToken cancellationToken)
+    public async Task DeleteApplicationAsync(ApplicationModel application, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 

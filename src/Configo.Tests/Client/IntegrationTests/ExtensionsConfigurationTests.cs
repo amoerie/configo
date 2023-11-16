@@ -14,7 +14,7 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
     private readonly IntegrationTestFixture _fixture;
     private TagGroupModel _environments = default!;
     private TagModel _benelux = default!;
-    private ApplicationListModel _processor = default!;
+    private ApplicationModel _processor = default!;
     private string _beneluxVariables = default!;
     private string _processorVariables = default!;
     private string _processorBeneluxVariables = default!;
@@ -37,7 +37,7 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         await tagGroupManager.SaveTagGroupAsync(_environments, cancellationToken);
         _benelux = new TagModel { Name = "Benelux", GroupId = _environments.Id, GroupIcon = _environments.Icon };
         await tagManager.SaveTagAsync(_benelux, cancellationToken);
-        var processorModel = new ApplicationEditModel { Name = "Processor" };
+        var processorModel = new ApplicationModel { Name = "Processor" };
         _processor = await applicationManager.SaveApplicationAsync(processorModel, cancellationToken);
 
         // Environment specific config

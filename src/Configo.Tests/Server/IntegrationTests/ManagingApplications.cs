@@ -32,13 +32,13 @@ public class ManagingApplications : IAsyncLifetime
         CancellationToken cancellationToken = default;
         
         // Act + Assert
-        var application = await applicationManager.SaveApplicationAsync(new ApplicationEditModel { Name = "Test 1" }, cancellationToken);
+        var application = await applicationManager.SaveApplicationAsync(new ApplicationModel { Name = "Test 1" }, cancellationToken);
         var applications = await applicationManager.GetAllApplicationsAsync(cancellationToken);
 
         applications.Should().HaveCount(1);
         applications.Single().Name.Should().Be("Test 1");
 
-        await applicationManager.SaveApplicationAsync(new ApplicationEditModel { Id = application.Id, Name = "Test 2" }, cancellationToken);
+        await applicationManager.SaveApplicationAsync(new ApplicationModel { Id = application.Id, Name = "Test 2" }, cancellationToken);
         
         applications = await applicationManager.GetAllApplicationsAsync(cancellationToken);
         applications.Should().HaveCount(1);
