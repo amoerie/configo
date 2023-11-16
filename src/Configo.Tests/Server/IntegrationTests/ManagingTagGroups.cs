@@ -1,5 +1,6 @@
 ﻿using Configo.Server.Blazor;
 using Configo.Server.Domain;
+using MudBlazor;
 using Xunit.Abstractions;
 
 namespace Configo.Tests.Server.IntegrationTests;
@@ -33,21 +34,26 @@ public class ManagingTagGroups : IAsyncLifetime
         CancellationToken cancellationToken = default;
         
         // Act + Assert
-        var tagGroup = await tagGroupManager.SaveTagGroupAsync(new TagGroupEditModel { Name = "Test 1", Icon = FaNames.Fa0 }, cancellationToken);
+        var tagGroup = new TagGroupModel
+        {
+            Name = "Test 1",
+            Icon = TagGroupIcon.GetByName(Icons.Material.Filled.Factory)
+        };
+        await tagGroupManager.SaveTagGroupAsync(tagGroup, cancellationToken);
         var tagGroups = await tagGroupManager.GetAllTagGroupsAsync(cancellationToken);
 
         tagGroups.Should().HaveCount(1);
         tagGroups.Single().Name.Should().Be("Test 1");
-        tagGroups.Single().GroupIcon.Should().Be(FaNames.Fa0);
+        tagGroups.Single().Icon.Should().Be(FaNames.Fa0);
 
-        await tagGroupManager.SaveTagGroupAsync(new TagGroupEditModel { Id = tagGroup.Id, Name = "Test 2", Icon = FaNames.Fa1 }, cancellationToken);
+        await tagGroupManager.SaveTagGroupAsync(new TagGroupModel { Id = tagGroup.Id, Name = "Test 2", Icon = TagGroupIcon.GetByName(Icons.Material.Filled.Face2) }, cancellationToken);
         
         tagGroups = await tagGroupManager.GetAllTagGroupsAsync(cancellationToken);
         tagGroups.Should().HaveCount(1);
         tagGroups.Single().Name.Should().Be("Test 2");
-        tagGroups.Single().GroupIcon.Should().Be(FaNames.Fa1);
+        tagGroups.Single().Icon.Should().Be(FaNames.Fa1);
 
-        await tagGroupManager.DeleteTagGroupAsync(new TagGroupDeleteModel { Id = tagGroup.Id }, cancellationToken);
+        await tagGroupManager.DeleteTagGroupAsync(tagGroup, cancellationToken);
         tagGroups = await tagGroupManager.GetAllTagGroupsAsync(cancellationToken);
         tagGroups.Should().HaveCount(0);
     }

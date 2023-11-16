@@ -12,7 +12,7 @@
 }
 
 <MudText Typo="Typo.h4" GutterBottom="true">
-    <MudIcon Icon="@_tagGroup.GroupIcon.Value" Size="Size.Large"/> @_tagGroup.Name
+    <MudIcon Icon="@_tagGroup.Icon.Value" Size="Size.Large"/> @_tagGroup.Name
 </MudText>
 
 <MudButton
@@ -110,7 +110,7 @@
         {
             Id = 0, Name = "",
             GroupId = _tagGroup!.Id,
-            GroupIcon = _tagGroup!.GroupIcon,
+            GroupIcon = _tagGroup!.Icon,
             NumberOfVariables = 0, UpdatedAtUtc = DateTime.UtcNow
         };
         _tags!.Add(model);

@@ -1,6 +1,8 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
+using Configo.Server.Blazor;
 using Configo.Server.Domain;
+using MudBlazor;
 using Xunit.Abstractions;
 
 namespace Configo.Tests.Server.IntegrationTests;
@@ -30,10 +32,10 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var variableManager = _fixture.GetRequiredService<VariableManager>();
         var cancellationToken = CancellationToken.None;
 
-        var environmentsModel = new TagGroupEditModel { Name = "Environments" };
-        _environments = await tagGroupManager.SaveTagGroupAsync(environmentsModel, cancellationToken);
-        var beneluxModel = new TagEditModel { Name = "Benelux", TagGroupId = _environments.Id };
-        _benelux = await tagManager.SaveTagAsync(beneluxModel, cancellationToken);
+        _environments = new TagGroupModel { Name = "Environments", Icon = TagGroupIcon.GetByName(Icons.Material.Filled.Map)};
+        await tagGroupManager.SaveTagGroupAsync(_environments, cancellationToken);
+        _benelux = new TagModel { Name = "Benelux", GroupId = _environments.Id, GroupIcon = _environments.Icon };
+        await tagManager.SaveTagAsync(_benelux, cancellationToken);
         var processorModel = new ApplicationEditModel { Name = "Processor" };
         _processor = await applicationManager.SaveApplicationAsync(processorModel, cancellationToken);
 

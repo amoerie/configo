@@ -7,14 +7,14 @@ namespace Configo.Server.Domain;
 
 public sealed record TagModel
 {
-    public required int Id { get; set; }
+    public int Id { get; set; }
     
     public required int GroupId { get; set; }
     
     public required TagGroupIcon GroupIcon { get; set; }
     public required string Name { get; set; }
-    public required DateTime UpdatedAtUtc { get; set; }
-    public required int NumberOfVariables { get; set; }
+    public DateTime UpdatedAtUtc { get; set; }
+    public int NumberOfVariables { get; set; }
 }
 
 public sealed record TagDropdownModel

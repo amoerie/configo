@@ -38,11 +38,11 @@
                         Title="Icon"
                         IsEditable="true" Filterable="false" Sortable="false">
             <CellTemplate>
-                <MudIcon Icon="@context.Item.GroupIcon.Value"></MudIcon>
+                <MudIcon Icon="@context.Item.Icon.Value"></MudIcon>
             </CellTemplate>
             <EditTemplate>
                 <MudAutocomplete T="TagGroupIcon"
-                                 @bind-Value="@context.Item.GroupIcon"
+                                 @bind-Value="@context.Item.Icon"
                                  SearchFunc="TagGroupIcon.SearchAsync"
                                  ToStringFunc="icon => icon.Name"
                                  Label="Icon">
@@ -116,7 +116,7 @@
 
     private async Task AddNew()
     {
-        var tagGroupModel = new TagGroupModel { Id = 0, Name = "", GroupIcon = TagGroupIcon.Default, NumberOfTags = 0, UpdatedAtUtc = DateTime.UtcNow };
+        var tagGroupModel = new TagGroupModel { Id = 0, Name = "", Icon = TagGroupIcon.Default, NumberOfTags = 0, UpdatedAtUtc = DateTime.UtcNow };
         _tagGroups!.Add(tagGroupModel);
         await _dataGrid!.SetEditingItemAsync(tagGroupModel);
     }

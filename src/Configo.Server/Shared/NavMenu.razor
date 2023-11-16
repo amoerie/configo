@@ -12,7 +12,7 @@
         <MudNavGroup Title="Tags" Expanded="true" Icon="@Icons.Material.Filled.Label">
             @foreach (var tagGroup in _tagGroups)
             {
-                <MudNavLink Href="@($"/{Routes.Tags(tagGroup.Name)}")" Icon="@tagGroup.GroupIcon.Value" Match="@NavLinkMatch.Prefix">@tagGroup.Name</MudNavLink>
+                <MudNavLink Href="@($"/{Routes.Tags(tagGroup.Name)}")" Icon="@tagGroup.Icon.Value" Match="@NavLinkMatch.Prefix">@tagGroup.Name</MudNavLink>
             }
         </MudNavGroup>
     }

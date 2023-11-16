@@ -58,17 +58,17 @@ public class ManagingVariables : IAsyncLifetime
         var variableManager = _fixture.GetRequiredService<VariableManager>();
         var cancellationToken = CancellationToken.None;
 
-        var environmentsModel = new TagGroupEditModel { Name = "Environments" };
-        var machinesModel = new TagGroupEditModel { Name = "Machines" };
-        var otherTagGroupModel = new TagGroupEditModel { Name = "Other" };
+        var environmentsModel = new TagGroupModel { Name = "Environments" };
+        var machinesModel = new TagGroupModel { Name = "Machines" };
+        var otherTagGroupModel = new TagGroupModel { Name = "Other" };
         _environments = await tagGroupManager.SaveTagGroupAsync(environmentsModel, cancellationToken);
         _machines = await tagGroupManager.SaveTagGroupAsync(machinesModel, cancellationToken);
         var otherTagGroup = await tagGroupManager.SaveTagGroupAsync(otherTagGroupModel, cancellationToken);
-        var beneluxModel = new TagEditModel { Name = "Benelux", TagGroupId = _environments.Id };
-        var nordicsModel = new TagEditModel { Name = "Nordics", TagGroupId = _environments.Id };
-        var blade1Model = new TagEditModel { Name = "Blade 1", TagGroupId = _machines.Id };
-        var blade2Model = new TagEditModel { Name = "Blade 2", TagGroupId = _machines.Id };
-        var otherTagModel = new TagEditModel { Name = "Other Tag", TagGroupId = otherTagGroup.Id };
+        var beneluxModel = new TagModel { Name = "Benelux", TagGroupId = _environments.Id };
+        var nordicsModel = new TagModel { Name = "Nordics", TagGroupId = _environments.Id };
+        var blade1Model = new TagModel { Name = "Blade 1", TagGroupId = _machines.Id };
+        var blade2Model = new TagModel { Name = "Blade 2", TagGroupId = _machines.Id };
+        var otherTagModel = new TagModel { Name = "Other Tag", TagGroupId = otherTagGroup.Id };
         _benelux = await tagManager.SaveTagAsync(beneluxModel, cancellationToken);
         _nordics = await tagManager.SaveTagAsync(nordicsModel, cancellationToken);
         _blade1 = await tagManager.SaveTagAsync(blade1Model, cancellationToken);
