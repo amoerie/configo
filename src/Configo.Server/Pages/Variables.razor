@@ -18,12 +18,6 @@
     <Icon Name="FaNames.FaCog"/> Variables
 </Heading>
 
-@if (_hasPendingChanges)
-{
-    <div>
-        <Button Color="Color.Success" Clicked="SavePendingChanges"><Icon Name="IconName.Save"/> Save pending changes</Button>
-    </div>
-}
 
 <Row>
     <Column ColumnSize="ColumnSize.Is3.OnWidescreen.Is4.OnDesktop.Is5.OnTablet.Is12.OnMobile">
@@ -33,8 +27,18 @@
             </CardHeader>
             <CardBody>
                 <Switch TValue="bool" Checked="@_showMerged" CheckedChanged="@OnShowMerged">Show merged</Switch>
-                <Switch TValue="bool" Checked="@_showDiff" CheckedChanged="@OnShowDiff">Show pending changes</Switch>
+                <Switch TValue="bool" Checked="@_showPendingChangesDiff" CheckedChanged="@OnShowPendingChanges">Show pending changes diff</Switch>
             </CardBody>
+            <CardFooter>
+                <Button Color="Color.Success" 
+                        Size="Size.Small"
+                        Disabled="!_hasPendingChanges"
+                        Clicked="SavePendingChanges"><Icon Name="IconName.Save"/> Save pending</Button>
+                <Button Color="Color.Danger" 
+                        Size="Size.Small"
+                        Disabled="!_hasPendingChanges"
+                        Clicked="DiscardPendingChanges"><Icon Name="FaNames.FaTrash"/> Discard pending</Button>
+            </CardFooter>
         </Card>
 
         @* Applications & Tag Groups go here *@
@@ -106,8 +110,11 @@
             </CardHeader>
             <CardBody TextColor="TextColor.White">
 
-                @* Editor goes here *@
+                @* Editors go here *@
                 <div id="variables-editor-container" class="container-fluid" style="min-height: 70vh">
+
+                </div>
+                <div id="variables-diff-editor-container" class="container-fluid" style="min-height: 70vh">
 
                 </div>
             </CardBody>
@@ -124,7 +131,7 @@
     private List<TagGroupListModel>? _tagGroups;
     private List<ApplicationListModel>? _applications;
     private bool _showMerged;
-    private bool _showDiff;
+    private bool _showPendingChangesDiff;
     private bool _hasPendingChanges;
 
     private readonly List<int> _selectedApplicationIds = new List<int>();
@@ -155,12 +162,25 @@
     {
         await VariableManager.SavePendingChangesAsync(CancellationToken);
 
+        _hasPendingChanges = false;
+        _showPendingChangesDiff = false;
+
+        await UpdateEditorAsync();
+        
         if (_variablesSavedNotification != null)
         {
             await _variablesSavedNotification.PushAsync("Pending changes saved successfully", SnackbarColor.Success);
         }
-        
+    }
+
+    public async Task DiscardPendingChanges()
+    {
+        await VariableManager.DiscardPendingChangesAsync(CancellationToken);
+
         _hasPendingChanges = false;
+        _showPendingChangesDiff = false;
+
+        await UpdateEditorAsync();
     }
 
     [JSInvokable]
@@ -210,8 +230,8 @@
         _selectedTags.AddRange(_selectedTagIds.Select(id => _tagsById[id]));
         _objectReference ??= DotNetObjectReference.Create(this);
         var schema = await SchemaManager.GetSchemaAsync(_selectedApplicationIds, CancellationToken);
-        var isReadonly = _showMerged || _showDiff;
-        if (_showDiff)
+        var isReadonly = _showMerged || _showPendingChangesDiff;
+        if (_showPendingChangesDiff)
         {
             var originalConfig = _showMerged
                 ? await VariableManager.GetMergedConfigAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken)
@@ -225,8 +245,8 @@
         else
         {
             var config = _showMerged
-                ? await VariableManager.GetMergedConfigAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken)
-                : await VariableManager.GetConfigAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken);
+                ? await VariableManager.GetMergedConfigWithPendingChangesAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken)
+                : await VariableManager.GetConfigWithPendingChangesAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken);
             await JsRuntime.InvokeVoidAsync("variables.updateEditor", CancellationToken, _objectReference, config, schema, isReadonly);
         }
     }
@@ -276,9 +296,9 @@
         await UpdateEditorAsync();
     }
 
-    private async Task OnShowDiff(bool value)
+    private async Task OnShowPendingChanges(bool value)
     {
-        _showDiff = value;
+        _showPendingChangesDiff = value;
 
         await UpdateEditorAsync();
     }

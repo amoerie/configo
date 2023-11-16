@@ -455,6 +455,19 @@ public sealed record VariableManager
         }
     }
 
+    public async Task DiscardPendingChangesAsync(CancellationToken cancellationToken)
+    {
+        await _pendingChangesLock.WaitAsync(cancellationToken);
+        try
+        {
+            _pendingChanges.EditModels.Clear();
+        }
+        finally
+        {
+            _pendingChangesLock.Release();
+        }
+    }
+
     public async Task<bool> HasPendingChangesAsync(CancellationToken cancellationToken)
     {
         await _pendingChangesLock.WaitAsync(cancellationToken);

@@ -1,5 +1,6 @@
 ﻿// use strict
 import * as monaco from "monaco-editor/esm/vs/editor/editor.main.js";
+
 export class Variables {
     /**
      * @type {Object}
@@ -9,13 +10,18 @@ export class Variables {
     /**
      * @type {HTMLDivElement}
      */
-    #container;
-    
+    #editorContainer;
+
+    /**
+     * @type {HTMLDivElement}
+     */
+    #diffEditorContainer;
+
     /**
      * @type {string | null}
      */
     #schema;
-    
+
     /**
      * @type {string | null}
      */
@@ -60,28 +66,50 @@ export class Variables {
      * @type {monaco.editor.IStandaloneDiffEditor}
      */
     #diffEditor;
-    
+
     constructor() {
     }
-    
-    #disposeStandalone() {
+
+    #disposeEditorModels() {
         this.#model?.dispose();
-        this.#editor?.dispose();
         this.#model = null;
-        this.#editor = null;
+        this.#modelUri = null;
         this.#schema = null;
+        this.#editor?.setModel(null);
     }
-    
-    #disposeDiff() {
+
+    #disposeDiffEditorModels() {
         this.#originalModel?.dispose();
         this.#modifiedModel?.dispose();
-        this.#diffEditor?.dispose();
         this.#originalModel = null;
         this.#modifiedModel = null;
-        this.#diffEditor = null;
         this.#originalModelUri = null;
         this.#modifiedModelUri = null;
         this.#diffSchema = null;
+        this.#diffEditor?.setModel(null);
+    }
+    
+    #initializeEditorContainers() {
+        if (!this.#editorContainer) {
+            const container = document.getElementById("variables-editor-container");
+
+            if (!container) {
+                console.warn("Container for editor not present");
+                return;
+            }
+
+            this.#editorContainer = container;
+        }
+        if (!this.#diffEditorContainer) {
+            const container = document.getElementById("variables-diff-editor-container");
+
+            if (!container) {
+                console.warn("Container for diff editor not present");
+                return;
+            }
+
+            this.#diffEditorContainer = container;
+        }
     }
 
     /**
@@ -92,13 +120,16 @@ export class Variables {
      */
     updateEditor(dotNetRef, config, schema, isReadonly) {
         this.#dotNetRef = dotNetRef;
-        this.#disposeDiff();
+        this.#disposeDiffEditorModels();
+        this.#initializeEditorContainers();
+        this.#diffEditorContainer.style.display = "none";
+        this.#editorContainer.style.display = "block";
 
-        if(!this.#modelUri) {
+        if (!this.#modelUri) {
             this.#modelUri = monaco.Uri.parse("internal://server/config.json");
         }
-        
-        if(this.#schema !== schema) {
+
+        if (this.#schema !== schema) {
             this.#schema = schema;
             monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
                 validate: true,
@@ -107,30 +138,18 @@ export class Variables {
                     // If we give the model a name that matches wich this filematch
                     // monaco will use this schema file for validation
                     uri: "http://server/config-schema",
-                    fileMatch: [ this.#modelUri.toString() ],
+                    fileMatch: [this.#modelUri.toString()],
                     schema: JSON.parse(schema),
                 }],
                 enableSchemaRequest: false
             });
         }
-        
-        if(!this.#editor) {
+
+        if (!this.#editor) {
             monaco.editor.setTheme("vs-dark");
 
             this.#model = monaco.editor.createModel(config, "json", this.#modelUri);
-
-            if(!this.#container) {
-                const container = document.getElementById("variables-editor-container");
-
-                if (!container) {
-                    console.warn("Container for monaco editor not present");
-                    return;
-                }
-                
-                this.#container = container;
-            }
-
-            this.#editor = monaco.editor.create(this.#container, {
+            this.#editor = monaco.editor.create(this.#editorContainer, {
                 model: this.#model,
                 automaticLayout: true,
                 readonly: isReadonly
@@ -139,24 +158,24 @@ export class Variables {
             this.#editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, async () => {
                 await this.save();
             });
-            
+
             this.#editor.layout({
-                height: this.#container.clientHeight,
-                width: this.#container.clientWidth
+                height: this.#editorContainer.clientHeight,
+                width: this.#editorContainer.clientWidth
             });
-        }
-        else {
-            this.#model.dispose();
+        } else {
+            this.#model?.dispose();
             this.#model = monaco.editor.createModel(config, "json", monaco.Uri.parse("internal://server/config.json"));
             this.#editor.setModel(this.#model);
             this.#editor.updateOptions({ readOnly: isReadonly });
+            this.#editorContainer.style.display = "block";
             this.#editor.layout({
-                height: this.#container.clientHeight,
-                width: this.#container.clientWidth
+                height: this.#editorContainer.clientHeight,
+                width: this.#editorContainer.clientWidth
             });
         }
     }
-    
+
     /**
      * @param {Object} dotNetRef
      * @param {string} originalConfig
@@ -165,14 +184,17 @@ export class Variables {
      */
     updateDiffEditor(dotNetRef, originalConfig, modifiedConfig, schema) {
         this.#dotNetRef = dotNetRef;
-        this.#disposeStandalone();
-
-        if(!this.#originalModelUri || !this.#modifiedModelUri) {
+        this.#disposeEditorModels();
+        this.#initializeEditorContainers();
+        this.#editorContainer.style.display = "none";
+        this.#diffEditorContainer.style.display = "block";
+        
+        if (!this.#originalModelUri || !this.#modifiedModelUri) {
             this.#originalModelUri = monaco.Uri.parse("internal://server/original-config.json");
             this.#modifiedModelUri = monaco.Uri.parse("internal://server/modified-config.json");
         }
-        
-        if(this.#diffSchema !== schema) {
+
+        if (this.#diffSchema !== schema) {
             this.#diffSchema = schema;
             monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
                 validate: true,
@@ -181,48 +203,38 @@ export class Variables {
                     // If we give the model a name that matches wich this filematch
                     // monaco will use this schema file for validation
                     uri: "http://server/config-schema",
-                    fileMatch: [ this.#originalModelUri.toString(), this.#modifiedModelUri.toString() ],
+                    fileMatch: [this.#originalModelUri.toString(), this.#modifiedModelUri.toString()],
                     schema: JSON.parse(schema),
                 }],
                 enableSchemaRequest: false
             });
         }
-        
-        if(!this.#diffEditor) {
+
+        if (!this.#diffEditor) {
             monaco.editor.setTheme("vs-dark");
 
             this.#originalModel = monaco.editor.createModel(originalConfig, "json", this.#originalModelUri);
-            this.#modifiedModel = monaco.editor.createModel(originalConfig, "json", this.#modifiedModelUri);
+            this.#modifiedModel = monaco.editor.createModel(modifiedConfig, "json", this.#modifiedModelUri);
 
-            if(!this.#container) {
-                const container = document.getElementById("variables-editor-container");
-
-                if (!container) {
-                    console.warn("Container for monaco editor not present");
-                    return;
-                }
-
-                this.#container = container;
-            }
-
-            this.#diffEditor = monaco.editor.createDiffEditor(this.#container, {
-                originalEditable: false,
+            this.#diffEditor = monaco.editor.createDiffEditor(this.#diffEditorContainer, {
                 automaticLayout: false,
+                readOnly: true,
+                enableSplitViewResizing: false,
+                renderSideBySide: true
             });
 
             this.#diffEditor.setModel({
                 original: this.#originalModel,
                 modified: this.#modifiedModel
             });
-            
+
             this.#diffEditor.layout({
-                height: this.#container.clientHeight,
-                width: this.#container.clientWidth
+                height: this.#diffEditorContainer.clientHeight,
+                width: this.#diffEditorContainer.clientWidth
             });
-        }
-        else {
-            this.#originalModel.dispose();
-            this.#modifiedModel.dispose();
+        } else {
+            this.#originalModel?.dispose();
+            this.#modifiedModel?.dispose();
             this.#originalModel = monaco.editor.createModel(originalConfig, "json", this.#originalModelUri);
             this.#modifiedModel = monaco.editor.createModel(modifiedConfig, "json", this.#modifiedModelUri);
             this.#diffEditor.setModel({
@@ -230,18 +242,22 @@ export class Variables {
                 modified: this.#modifiedModel
             });
             this.#diffEditor.layout({
-                height: this.#container.clientHeight,
-                width: this.#container.clientWidth
+                height: this.#diffEditorContainer.clientHeight,
+                width: this.#diffEditorContainer.clientWidth
             });
         }
     }
 
     destroy() {
-        this.#disposeStandalone();
-        this.#disposeDiff();
+        this.#disposeEditorModels();
+        this.#disposeDiffEditorModels();
+        this.#editor?.dispose();
+        this.#diffEditor?.dispose();
+        this.#editor = null;
+        this.#diffEditor = null;
         this.#dotNetRef = null;
     }
-    
+
     async save() {
         const config = this.#editor.getValue();
         await this.#dotNetRef.invokeMethodAsync("Save", config);
