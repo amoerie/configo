@@ -40,7 +40,7 @@
                 <MudChip Color="Color.Primary">@context.Item.NumberOfVariables</MudChip>
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="(TagModel x) => x.UpdatedAtUtc" Title="Updated" IsEditable="false" Format="u"/>
+        <PropertyColumn Property="(TagModel x) => x.UpdatedAtUtc" Title="Updated" IsEditable="false" Format="u" Filterable="false"/>
         <TemplateColumn IsEditable="false" Filterable="false" Sortable="false">
             <CellTemplate>
                 <MudStack Row>
