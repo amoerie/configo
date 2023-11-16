@@ -18,6 +18,7 @@
 @*     <Icon Name="FaNames.FaCog"/> Variables *@
 @* </Heading> *@
 @* *@
+@* *@
 @* <Row> *@
 @*     <Column ColumnSize="ColumnSize.Is3.OnWidescreen.Is4.OnDesktop.Is5.OnTablet.Is12.OnMobile"> *@
 @*         <Card Background="Background.Dark" TextColor="TextColor.White50" Margin="Margin.Is2.FromBottom"> *@
@@ -25,8 +26,19 @@
 @*                 <Icon Name="FaNames.FaWrench"></Icon> Settings *@
 @*             </CardHeader> *@
 @*             <CardBody> *@
-@*                 <Switch TValue="bool" Checked="@_showMerged" CheckedChanged="@OnShowMerged">Show merged config</Switch> *@
+@*                 <Switch TValue="bool" Checked="@_showMerged" CheckedChanged="@OnShowMerged">Show merged</Switch> *@
+@*                 <Switch TValue="bool" Checked="@_showPendingChangesDiff" CheckedChanged="@OnShowPendingChanges">Show pending changes diff</Switch> *@
 @*             </CardBody> *@
+@*             <CardFooter> *@
+@*                 <Button Color="Color.Success"  *@
+@*                         Size="Size.Small" *@
+@*                         Disabled="!_hasPendingChanges" *@
+@*                         Clicked="SavePendingChanges"><Icon Name="IconName.Save"/> Save pending</Button> *@
+@*                 <Button Color="Color.Danger"  *@
+@*                         Size="Size.Small" *@
+@*                         Disabled="!_hasPendingChanges" *@
+@*                         Clicked="DiscardPendingChanges"><Icon Name="FaNames.FaTrash"/> Discard pending</Button> *@
+@*             </CardFooter> *@
 @*         </Card> *@
 @* *@
 @*         $1$ Applications & Tag Groups go here #1# *@
@@ -98,8 +110,11 @@
 @*             </CardHeader> *@
 @*             <CardBody TextColor="TextColor.White"> *@
 @* *@
-@*                 $1$ Editor goes here #1# *@
+@*                 $1$ Editors go here #1# *@
 @*                 <div id="variables-editor-container" class="container-fluid" style="min-height: 70vh"> *@
+@* *@
+@*                 </div> *@
+@*                 <div id="variables-diff-editor-container" class="container-fluid" style="min-height: 70vh"> *@
 @* *@
 @*                 </div> *@
 @*             </CardBody> *@
@@ -116,6 +131,8 @@
 @*     private List<TagGroupListModel>? _tagGroups; *@
 @*     private List<ApplicationListModel>? _applications; *@
 @*     private bool _showMerged; *@
+@*     private bool _showPendingChangesDiff; *@
+@*     private bool _hasPendingChanges; *@
 @* *@
 @*     private readonly List<int> _selectedApplicationIds = new List<int>(); *@
 @*     private readonly List<int> _selectedTagIds = new List<int>(); *@
@@ -132,6 +149,7 @@
 @*         _applicationsById = _applications.ToDictionary(a => a.Id); *@
 @*         _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken); *@
 @*         _tagGroupsById = _tagGroups.ToDictionary(g => g.Id); *@
+@*         _hasPendingChanges = await VariableManager.HasPendingChangesAsync(CancellationToken); *@
 @*         foreach (var tagGroup in _tagGroups) *@
 @*         { *@
 @*             _tagsByGroupId[tagGroup.Id] = await TagManager.GetTagsOfGroupAsync(tagGroup.Id, CancellationToken); *@
@@ -140,20 +158,48 @@
 @*         await base.OnInitializedAsync(); *@
 @*     } *@
 @* *@
+@*     public async Task SavePendingChanges() *@
+@*     { *@
+@*         await VariableManager.SavePendingChangesAsync(CancellationToken); *@
+@* *@
+@*         _hasPendingChanges = false; *@
+@*         _showPendingChangesDiff = false; *@
+@* *@
+@*         await UpdateEditorAsync(); *@
+@*          *@
+@*         if (_variablesSavedNotification != null) *@
+@*         { *@
+@*             await _variablesSavedNotification.PushAsync("Pending changes saved successfully", SnackbarColor.Success); *@
+@*         } *@
+@*     } *@
+@* *@
+@*     public async Task DiscardPendingChanges() *@
+@*     { *@
+@*         await VariableManager.DiscardPendingChangesAsync(CancellationToken); *@
+@* *@
+@*         _hasPendingChanges = false; *@
+@*         _showPendingChangesDiff = false; *@
+@* *@
+@*         await UpdateEditorAsync(); *@
+@*     } *@
+@* *@
 @*     [JSInvokable] *@
 @*     public async Task Save(string variables) *@
 @*     { *@
-@*         await VariableManager.SaveAsync(new VariablesEditModel *@
+@*         await VariableManager.SaveToPendingAsync(new VariablesEditModel *@
 @*         { *@
 @*             Json = variables, *@
-@*             ApplicationIds = _selectedApplicationIds, *@
-@*             TagIds = _selectedTagIds *@
+@*             ApplicationIds = _selectedApplicationIds.ToList(), *@
+@*             TagIds = _selectedTagIds.ToList() *@
 @*         }, CancellationToken); *@
 @* *@
 @*         if (_variablesSavedNotification != null) *@
 @*         { *@
-@*             await _variablesSavedNotification.PushAsync("Variables saved successfully", SnackbarColor.Success); *@
+@*             await _variablesSavedNotification.PushAsync("Variables saved to pending changes", SnackbarColor.Success); *@
 @*         } *@
+@* *@
+@*         _hasPendingChanges = true; *@
+@*         StateHasChanged(); *@
 @*     } *@
 @* *@
 @*     protected override async ValueTask OnDisposeAsync() *@
@@ -182,20 +228,26 @@
 @*         _selectedApplications.AddRange(_selectedApplicationIds.Select(id => _applicationsById[id])); *@
 @*         _selectedTags.Clear(); *@
 @*         _selectedTags.AddRange(_selectedTagIds.Select(id => _tagsById[id])); *@
-@* *@
-@*         var config = _showMerged *@
-@*             ? await VariableManager.GetMergedConfigAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken) *@
-@*             : await VariableManager.GetConfigAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken); *@
+@*         _objectReference ??= DotNetObjectReference.Create(this); *@
 @*         var schema = await SchemaManager.GetSchemaAsync(_selectedApplicationIds, CancellationToken); *@
-@*         var isReadonly = _showMerged; *@
-@*         if (_objectReference == null) *@
+@*         var isReadonly = _showMerged || _showPendingChangesDiff; *@
+@*         if (_showPendingChangesDiff) *@
 @*         { *@
-@*             _objectReference = DotNetObjectReference.Create(this); *@
-@*             await JsRuntime.InvokeVoidAsync("variables.initialize", CancellationToken, _objectReference, config, schema, isReadonly); *@
+@*             var originalConfig = _showMerged *@
+@*                 ? await VariableManager.GetMergedConfigAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken) *@
+@*                 : await VariableManager.GetConfigAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken); *@
+@*             var modifiedConfig = _showMerged *@
+@*                 ? await VariableManager.GetMergedConfigWithPendingChangesAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken) *@
+@*                 : await VariableManager.GetConfigWithPendingChangesAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken); *@
+@*              *@
+@*             await JsRuntime.InvokeVoidAsync("variables.updateDiffEditor", CancellationToken, _objectReference, originalConfig, modifiedConfig, schema); *@
 @*         } *@
 @*         else *@
 @*         { *@
-@*             await JsRuntime.InvokeVoidAsync("variables.update", CancellationToken, config, schema, isReadonly); *@
+@*             var config = _showMerged *@
+@*                 ? await VariableManager.GetMergedConfigWithPendingChangesAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken) *@
+@*                 : await VariableManager.GetConfigWithPendingChangesAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken); *@
+@*             await JsRuntime.InvokeVoidAsync("variables.updateEditor", CancellationToken, _objectReference, config, schema, isReadonly); *@
 @*         } *@
 @*     } *@
 @* *@
@@ -240,6 +292,13 @@
 @*     private async Task OnShowMerged(bool value) *@
 @*     { *@
 @*         _showMerged = value; *@
+@* *@
+@*         await UpdateEditorAsync(); *@
+@*     } *@
+@* *@
+@*     private async Task OnShowPendingChanges(bool value) *@
+@*     { *@
+@*         _showPendingChangesDiff = value; *@
 @* *@
 @*         await UpdateEditorAsync(); *@
 @*     } *@
