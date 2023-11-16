@@ -1,136 +1,148 @@
 ﻿@page "/"
-@* @using Configo.Server.Domain *@
-@* @using Configo.Server.Blazor *@
-@* @inject ApplicationManager ApplicationManager *@
-@* @inject TagGroupManager TagGroupManager *@
-@* @inject TagManager TagManager *@
-@* @inject ApiKeyManager ApiKeyManager *@
-@* @inject VariableManager VariableManager *@
-@* @inject NavigationManager NavigationManager *@
-@* *@
-@* @if (_tagGroups == null || _applications == null || _apiKeys == null) *@
-@* { *@
-@*     <p>...loading</p> *@
-@*     return; *@
-@* } *@
-@* *@
-@* <Heading Size="HeadingSize.Is1"> *@
-@*     <Icon Name="IconName.Wrench"/> Configo *@
-@* </Heading> *@
-@* *@
-@* <CardDeck > *@
-@*     <Card Background="Background.Dark" TextColor="TextColor.White" Margin="Margin.Is2.FromBottom"> *@
-@*         <CardHeader Border="Border.Is0"> *@
-@*             <Icon Name="IconName.Server"/> Applications *@
-@*         </CardHeader> *@
-@*         <CardBody> *@
-@*              <CardText TextColor="TextColor.White50"> *@
-@*                 <Icon Name="FaNames.FaInfoCircle"></Icon> Applications are unique types of processes, each with a different JSON configuration schema. *@
-@*             </CardText> *@
-@*         </CardBody> *@
-@*         <ListGroup Background="Background.Dark" TextColor="TextColor.White50"> *@
-@*             @foreach (var application in _applications) *@
-@*             { *@
-@*                 <ListGroupItem Background="Background.Dark" TextColor="TextColor.White" Border="Border.Is0"> *@
-@*                     @application.Name *@
-@*                 </ListGroupItem> *@
-@*             } *@
-@*         </ListGroup> *@
-@*         <CardFooter Border="Border.Is0"> *@
-@*             <Button Type="ButtonType.Link" Color="Color.Primary" To="@Routes.Applications">Manage</Button> *@
-@*         </CardFooter> *@
-@*     </Card> *@
-@* *@
-@*     <Card Background="Background.Dark" TextColor="TextColor.White" Margin="Margin.Is2.FromBottom"> *@
-@*         <CardHeader Border="Border.Is0"> *@
-@*             <Icon Name="FaNames.FaTags"/> Tag Groups *@
-@*         </CardHeader> *@
-@*         <CardBody> *@
-@*              <CardText TextColor="TextColor.White50"> *@
-@*                 <Icon Name="FaNames.FaInfoCircle"></Icon> Tag groups describe a characteristic of a deployed application.  *@
-@*                 Possible tag groups are environments, timezones, machines, ... *@
-@*             </CardText> *@
-@*         </CardBody> *@
-@*         <ListGroup Background="Background.Dark" TextColor="TextColor.White50"> *@
-@*             @foreach (var tagGroup in _tagGroups) *@
-@*             { *@
-@*                 <ListGroupItem Background="Background.Dark" TextColor="TextColor.White" Border="Border.Is0"> *@
-@*                     @tagGroup.Name *@
-@*                 </ListGroupItem> *@
-@*             } *@
-@*         </ListGroup> *@
-@*         <CardFooter Border="Border.Is0"> *@
-@*             <Button Type="ButtonType.Link" Color="Color.Primary" To="@Routes.TagGroups">Manage</Button> *@
-@*         </CardFooter> *@
-@*     </Card> *@
-@* *@
-@*     @foreach (var tagGroup in _tagGroups) *@
-@*     { *@
-@*         <Card Background="Background.Dark" TextColor="TextColor.White" Margin="Margin.Is2.FromBottom"> *@
-@*             <CardHeader Border="Border.Is0"> *@
-@*                 <Icon Name="@tagGroup.Icon"/> @tagGroup.Name *@
-@*             </CardHeader> *@
-@*             <CardBody> *@
-@*                  <CardText TextColor="TextColor.White50"> *@
-@*                     <Icon Name="FaNames.FaInfoCircle"></Icon> Tags specify one of the options of a tag group  *@
-@*                 </CardText> *@
-@*             </CardBody> *@
-@*             <ListGroup Background="Background.Dark" TextColor="TextColor.White50"> *@
-@*                 @foreach (var tag in _tagsByGroupId[tagGroup.Id]) *@
-@*                 { *@
-@*                     <ListGroupItem Background="Background.Dark" TextColor="TextColor.White" Border="Border.Is0"> *@
-@*                         @tag.Name *@
-@*                     </ListGroupItem> *@
-@*                 } *@
-@*             </ListGroup> *@
-@*             <CardFooter Border="Border.Is0"> *@
-@*                 <Button Type="ButtonType.Link" Color="Color.Primary" To="@Routes.Tags(tagGroup.Name)">Manage</Button> *@
-@*             </CardFooter> *@
-@*         </Card> *@
-@*     } *@
-@* *@
-@*     <Card Background="Background.Dark" TextColor="TextColor.White" Margin="Margin.Is2.FromBottom"> *@
-@*         <CardHeader Border="Border.Is0"> *@
-@*             <Icon Name="FaNames.FaKey"/> API Keys *@
-@*         </CardHeader> *@
-@*         <CardBody> *@
-@*             <CardText TextColor="TextColor.White50"> *@
-@*                 <Icon Name="FaNames.FaInfoCircle"></Icon> API keys give a single instance of a deployed application access to its configuration. *@
-@*                 An API key is constrained to one application and zero or more tags *@
-@*             </CardText> *@
-@*         </CardBody> *@
-@*         <ListGroup Background="Background.Dark" TextColor="TextColor.White50"> *@
-@*             @foreach (var apiKey in _apiKeys) *@
-@*             { *@
-@*                 <ListGroupItem Background="Background.Dark" TextColor="TextColor.White" Border="Border.Is0"> *@
-@*                     @apiKey.Key.Substring(0, 5)... *@
-@*                 </ListGroupItem> *@
-@*             } *@
-@*         </ListGroup> *@
-@*         <CardFooter Border="Border.Is0"> *@
-@*             <Button Type="ButtonType.Link" Color="Color.Primary" To="@Routes.TagGroups">Manage</Button> *@
-@*         </CardFooter> *@
-@*     </Card> *@
-@* </CardDeck> *@
-@* *@
-@* @code { *@
-@*     private List<TagGroupListModel>? _tagGroups; *@
-@*     private readonly Dictionary<int, List<TagListModel>> _tagsByGroupId = new Dictionary<int, List<TagListModel>>(); *@
-@*     private List<ApplicationListModel>? _applications; *@
-@*     private Dictionary<int, TagListModel> _tagsById = new Dictionary<int, TagListModel>(); *@
-@*     private List<ApiKeyListModel>? _apiKeys; *@
-@* *@
-@*     protected override async Task OnInitializedAsync() *@
-@*     { *@
-@*         _applications = await ApplicationManager.GetAllApplicationsAsync(CancellationToken); *@
-@*         _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken); *@
-@*         _apiKeys = await ApiKeyManager.GetAllApiKeysAsync(CancellationToken); *@
-@*         foreach (var tagGroup in _tagGroups) *@
-@*         { *@
-@*             _tagsByGroupId[tagGroup.Id] = await TagManager.GetTagsOfGroupAsync(tagGroup.Id, CancellationToken); *@
-@*         } *@
-@*         _tagsById = _tagsByGroupId.Values.SelectMany(t => t).ToDictionary(t => t.Id); *@
-@*         await base.OnInitializedAsync(); *@
-@*     } *@
-@* *@
-@* } *@
+@using Configo.Server.Domain
+@inject ApplicationManager ApplicationManager
+@inject TagGroupManager TagGroupManager
+@inject TagManager TagManager
+@inject ApiKeyManager ApiKeyManager
+
+@if (_tagGroups == null || _applications == null || _apiKeys == null)
+{
+    <p>...loading</p>
+    return;
+}
+
+<MudText Typo="Typo.h1" GutterBottom="true">
+    Configo
+</MudText>
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4" lg="3" xl="2">
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Category"/> Tag Groups</MudText>
+                    <MudText Typo="Typo.caption">
+                        Tag groups describe a characteristic of a deployed application.
+                        Possible tag groups are environments, timezones, machines, ...
+                    </MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudList DisableGutters="true">
+                    @foreach (var tagGroup in _tagGroups)
+                    {
+                        <MudListItem>
+                            @tagGroup.Name
+                        </MudListItem>
+                    }
+                </MudList>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Color="Color.Primary" Href="@Routes.TagGroups">Manage</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+    @foreach (var tagGroup in _tagGroups)
+    {
+        <MudItem xs="12" sm="6" md="4" lg="3" xl="2">
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">
+                            <MudIcon Icon="@tagGroup.Icon.Value"/> @tagGroup.Name
+                        </MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudList DisableGutters="true">
+                        @foreach (var tag in _tagsByGroupId[tagGroup.Id])
+                        {
+                            <MudListItem>
+                                @tag.Name
+                            </MudListItem>
+                        }
+                    </MudList>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Color="Color.Primary" Href="@Routes.Tags(tagGroup.Name)">Manage</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    }
+
+    <MudItem xs="12" sm="6" md="4" lg="3" xl="2">
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Cloud"/> Applications</MudText>
+                    <MudText Typo="Typo.caption">
+                        Applications are unique types of processes, each with a different JSON configuration schema.
+                    </MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudList DisableGutters="true">
+                    @foreach (var application in _applications)
+                    {
+                        <MudListItem>
+                            @application.Name
+                        </MudListItem>
+                    }
+                </MudList>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Color="Color.Primary" Href="@Routes.Applications">Manage</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="4" lg="3" xl="2">
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Category"/> API Keys</MudText>
+                    <MudText Typo="Typo.caption">
+                        API keys give a single instance of a deployed application access to its configuration.
+                        An API key is constrained to one application and zero or more tags
+                    </MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudList DisableGutters="true">
+                    @foreach (var apiKey in _apiKeys)
+                    {
+                        <MudListItem>
+                            @apiKey.Key.Substring(0, 5)...
+                        </MudListItem>
+                    }
+                </MudList>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Color="Color.Primary" Href="@Routes.ApiKeys">Manage</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<TagGroupModel>? _tagGroups;
+    private readonly Dictionary<int, List<TagListModel>> _tagsByGroupId = new Dictionary<int, List<TagListModel>>();
+    private List<ApplicationListModel>? _applications;
+    private Dictionary<int, TagListModel> _tagsById = new Dictionary<int, TagListModel>();
+    private List<ApiKeyListModel>? _apiKeys;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _applications = await ApplicationManager.GetAllApplicationsAsync(CancellationToken);
+        _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken);
+        _apiKeys = await ApiKeyManager.GetAllApiKeysAsync(CancellationToken);
+        foreach (var tagGroup in _tagGroups)
+        {
+            _tagsByGroupId[tagGroup.Id] = await TagManager.GetTagsOfGroupAsync(tagGroup.Id, CancellationToken);
+        }
+        _tagsById = _tagsByGroupId.Values.SelectMany(t => t).ToDictionary(t => t.Id);
+        await base.OnInitializedAsync();
+    }
+
+}
