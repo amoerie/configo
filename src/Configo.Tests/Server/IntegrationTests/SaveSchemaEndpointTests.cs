@@ -21,8 +21,8 @@ public class SaveSchemaEndpointTests : IAsyncLifetime
         var applicationManager = _fixture.GetRequiredService<ApplicationManager>();
         var cancellationToken = CancellationToken.None;
 
-        var processorModel = new ApplicationModel { Name = "Processor" };
-        _processor = await applicationManager.SaveApplicationAsync(processorModel, cancellationToken);
+        _processor = new ApplicationModel { Name = "Processor" };
+        await applicationManager.SaveApplicationAsync(_processor, cancellationToken);
     }
 
     public Task DisposeAsync()

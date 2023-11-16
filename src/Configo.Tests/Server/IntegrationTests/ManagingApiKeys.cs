@@ -1,4 +1,5 @@
-﻿using Configo.Server.Domain;
+﻿using Configo.Server.Blazor;
+using Configo.Server.Domain;
 using Xunit.Abstractions;
 
 namespace Configo.Tests.Server.IntegrationTests;
@@ -35,11 +36,16 @@ public class ManagingApiKeys : IAsyncLifetime
         CancellationToken cancellationToken = default;
         
         // Act + Assert
-        var application = await applicationManager.SaveApplicationAsync(new ApplicationModel { Name = "App" }, cancellationToken);
-        var tagGroup1 = await tagGroupManager.SaveTagGroupAsync(new TagGroupModel { Name = "Group 1" }, cancellationToken);
-        var tagGroup2 = await tagGroupManager.SaveTagGroupAsync(new TagGroupModel { Name = "Group 2" }, cancellationToken);
-        var tag1 = await tagManager.SaveTagAsync(new TagModel { Name = "Tag 1", TagGroupId = tagGroup1.Id }, cancellationToken);
-        var tag2 = await tagManager.SaveTagAsync(new TagModel { Name = "Tag 2", TagGroupId = tagGroup2.Id }, cancellationToken);
+        var application = new ApplicationModel { Name = "App" };
+        await applicationManager.SaveApplicationAsync(application, cancellationToken);
+        var tagGroup1 = new TagGroupModel { Name = "Group 1", Icon = TagGroupIcon.Default };
+        var tagGroup2 = new TagGroupModel { Name = "Group 2", Icon = TagGroupIcon.Default };
+        await tagGroupManager.SaveTagGroupAsync(tagGroup1, cancellationToken);
+        await tagGroupManager.SaveTagGroupAsync(tagGroup2, cancellationToken);
+        var tag1 = new TagModel { Name = "Tag 1", GroupId = tagGroup1.Id, GroupIcon = tagGroup1.Icon };
+        var tag2 = new TagModel { Name = "Tag 2", GroupId = tagGroup2.Id, GroupIcon = tagGroup2.Icon };
+        await tagManager.SaveTagAsync(tag1, cancellationToken);
+        await tagManager.SaveTagAsync(tag2, cancellationToken);
         var apiKeyEditModel = new ApiKeyEditModel
         {
             ApplicationId = application.Id,

@@ -1,4 +1,6 @@
-﻿using Configo.Server.Domain;
+﻿using Configo.Server.Blazor;
+using Configo.Server.Domain;
+using MudBlazor;
 using Xunit.Abstractions;
 
 namespace Configo.Tests.Server.IntegrationTests;
@@ -58,28 +60,28 @@ public class ManagingVariables : IAsyncLifetime
         var variableManager = _fixture.GetRequiredService<VariableManager>();
         var cancellationToken = CancellationToken.None;
 
-        var environmentsModel = new TagGroupModel { Name = "Environments" };
-        var machinesModel = new TagGroupModel { Name = "Machines" };
-        var otherTagGroupModel = new TagGroupModel { Name = "Other" };
-        _environments = await tagGroupManager.SaveTagGroupAsync(environmentsModel, cancellationToken);
-        _machines = await tagGroupManager.SaveTagGroupAsync(machinesModel, cancellationToken);
-        var otherTagGroup = await tagGroupManager.SaveTagGroupAsync(otherTagGroupModel, cancellationToken);
-        var beneluxModel = new TagModel { Name = "Benelux", TagGroupId = _environments.Id };
-        var nordicsModel = new TagModel { Name = "Nordics", TagGroupId = _environments.Id };
-        var blade1Model = new TagModel { Name = "Blade 1", TagGroupId = _machines.Id };
-        var blade2Model = new TagModel { Name = "Blade 2", TagGroupId = _machines.Id };
-        var otherTagModel = new TagModel { Name = "Other Tag", TagGroupId = otherTagGroup.Id };
-        _benelux = await tagManager.SaveTagAsync(beneluxModel, cancellationToken);
-        _nordics = await tagManager.SaveTagAsync(nordicsModel, cancellationToken);
-        _blade1 = await tagManager.SaveTagAsync(blade1Model, cancellationToken);
-        _blade2 = await tagManager.SaveTagAsync(blade2Model, cancellationToken);
-        _otherTag = await tagManager.SaveTagAsync(otherTagModel, cancellationToken);
-        var processorModel = new ApplicationModel { Name = "Processor" };
-        var routerModel = new ApplicationModel { Name = "Router" };
-        var otherApplicationModel = new ApplicationModel { Name = "Other" };
-        _processor = await applicationManager.SaveApplicationAsync(processorModel, cancellationToken);
-        _router = await applicationManager.SaveApplicationAsync(routerModel, cancellationToken);
-        _otherApplication = await applicationManager.SaveApplicationAsync(otherApplicationModel, cancellationToken);
+        _environments = new TagGroupModel { Name = "Environments", Icon = TagGroupIcon.GetByName(Icons.Material.Filled.Factory)};
+        _machines = new TagGroupModel { Name = "Machines", Icon = TagGroupIcon.GetByName(Icons.Material.Filled.Computer)};
+        var otherTagGroup = new TagGroupModel { Name = "Other", Icon = TagGroupIcon.GetByName(Icons.Material.Filled.QuestionMark) };
+        await tagGroupManager.SaveTagGroupAsync(_environments, cancellationToken);
+        await tagGroupManager.SaveTagGroupAsync(_machines, cancellationToken);
+        await tagGroupManager.SaveTagGroupAsync(otherTagGroup, cancellationToken);
+        _benelux = new TagModel { Name = "Benelux", GroupId = _environments.Id, GroupIcon = _environments.Icon };
+        _nordics = new TagModel { Name = "Nordics", GroupId = _environments.Id, GroupIcon = _environments.Icon };
+        _blade1 = new TagModel { Name = "Blade 1", GroupId = _machines.Id, GroupIcon = _machines.Icon };
+        _blade2 = new TagModel { Name = "Blade 2", GroupId = _machines.Id, GroupIcon = _machines.Icon };
+        _otherTag = new TagModel { Name = "Other Tag", GroupId = otherTagGroup.Id, GroupIcon = otherTagGroup.Icon };
+        await tagManager.SaveTagAsync(_benelux, cancellationToken);
+        await tagManager.SaveTagAsync(_nordics, cancellationToken);
+        await tagManager.SaveTagAsync(_blade1, cancellationToken);
+        await tagManager.SaveTagAsync(_blade2, cancellationToken);
+        await tagManager.SaveTagAsync(_otherTag, cancellationToken);
+        _processor = new ApplicationModel { Name = "Processor" };
+        _router = new ApplicationModel { Name = "Router" };
+        _otherApplication = new ApplicationModel { Name = "Other" };
+        await applicationManager.SaveApplicationAsync(_processor, cancellationToken);
+        await applicationManager.SaveApplicationAsync(_router, cancellationToken);
+        await applicationManager.SaveApplicationAsync(_otherApplication, cancellationToken);
 
         // Other config
         var otherVariablesModel = new VariablesEditModel

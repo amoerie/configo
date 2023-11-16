@@ -37,8 +37,8 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         await tagGroupManager.SaveTagGroupAsync(_environments, cancellationToken);
         _benelux = new TagModel { Name = "Benelux", GroupId = _environments.Id, GroupIcon = _environments.Icon };
         await tagManager.SaveTagAsync(_benelux, cancellationToken);
-        var processorModel = new ApplicationModel { Name = "Processor" };
-        _processor = await applicationManager.SaveApplicationAsync(processorModel, cancellationToken);
+        _processor = new ApplicationModel { Name = "Processor" };
+        await applicationManager.SaveApplicationAsync(_processor, cancellationToken);
 
         // Environment specific config
         _beneluxVariables = """{ "Environment": { "Name": "Benelux" } }""";

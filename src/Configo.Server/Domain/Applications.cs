@@ -6,9 +6,9 @@ namespace Configo.Server.Domain;
 
 public sealed record ApplicationModel
 {
-    public required int Id { get; set; }
+    public int Id { get; set; }
     public required string Name { get; set; }
-    public required DateTime UpdatedAtUtc { get; set; }
+    public DateTime UpdatedAtUtc { get; set; }
 }
 
 public sealed record ApplicationDropdownModel
