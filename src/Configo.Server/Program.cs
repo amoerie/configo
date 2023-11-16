@@ -125,6 +125,7 @@ services.AddSingleton<SchemaManager>();
 services.AddSingleton<VariableManager>();
 services.AddSingleton<VariablesJsonSerializer>();
 services.AddSingleton<VariablesJsonDeserializer>();
+services.AddSingleton<VariablesPendingChanges>();
 
 var app = builder.Build();
 

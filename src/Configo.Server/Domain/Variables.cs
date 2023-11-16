@@ -16,6 +16,12 @@ public sealed record VariableModel
     public required VariableValueType ValueType { get; set; }
 }
 
+public sealed record VariableWithSpecificityModel
+{
+    public required VariableModel Variable { get; init; }
+    public required int Specificity { get; init; } 
+}
+
 public sealed record VariablesEditModel
 {
     public required string Json { get; set; }
@@ -25,21 +31,30 @@ public sealed record VariablesEditModel
     public required List<int> TagIds { get; set; }
 }
 
+public sealed record VariablesPendingChanges(List<VariablesEditModel> EditModels)
+{
+    public VariablesPendingChanges() : this(new List<VariablesEditModel>()) {}
+}
+
 public sealed record VariableManager
 {
     private readonly IDbContextFactory<ConfigoDbContext> _dbContextFactory;
     private readonly ILogger<VariableManager> _logger;
+    private readonly VariablesPendingChanges _pendingChanges;
+    private readonly SemaphoreSlim _pendingChangesLock = new SemaphoreSlim(1, 1);
     private readonly VariablesJsonDeserializer _deserializer;
     private readonly VariablesJsonSerializer _serializer;
 
     public VariableManager(
         IDbContextFactory<ConfigoDbContext> dbContextFactory,
         ILogger<VariableManager> logger,
+        VariablesPendingChanges pendingChanges,
         VariablesJsonDeserializer deserializer,
         VariablesJsonSerializer serializer)
     {
         _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _pendingChanges = pendingChanges ?? throw new ArgumentNullException(nameof(pendingChanges));
         _deserializer = deserializer ?? throw new ArgumentNullException(nameof(deserializer));
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
     }
@@ -73,13 +88,28 @@ public sealed record VariableManager
 
         return await GetMergedConfigAsync(applicationIds, tagIds, cancellationToken);
     }
-    
+
     /// <summary>
     /// Gets configuration variables that are defined for the specified applications and tags, or a subset thereof
     /// If multiple variables with the same key exist, the most specific variable will win
     /// The most specific variable is the one constrained to the highest number of applications and tags
     /// </summary>
     public async Task<string> GetMergedConfigAsync(List<int> applicationIds, List<int> tagIds, CancellationToken cancellationToken)
+    {
+        return await GetMergedConfigAsync(applicationIds, tagIds, includePendingChanges: false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets configuration variables that are defined for the specified applications and tags, or a subset thereof, including any pending changes
+    /// If multiple variables with the same key exist, the most specific variable will win
+    /// The most specific variable is the one constrained to the highest number of applications and tags
+    /// </summary>
+    public async Task<string> GetMergedConfigWithPendingChangesAsync(List<int> applicationIds, List<int> tagIds, CancellationToken cancellationToken)
+    {
+        return await GetMergedConfigAsync(applicationIds, tagIds, includePendingChanges: true, cancellationToken);
+    }
+    
+    private async Task<string> GetMergedConfigAsync(List<int> applicationIds, List<int> tagIds, bool includePendingChanges, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -89,9 +119,8 @@ public sealed record VariableManager
         var tagVariables = dbContext.TagVariables;
         var applicationVariables = dbContext.ApplicationVariables;
         
-        // Get variables of API key
         var variablesQuery = variables
-            // If a variable is linked to any other tag than the API key tags, then it is not relevant to this API key
+            // If a variable is linked to any other tag, then it is not relevant
             .Where(v => !tagVariables.Any(tv => tv.VariableId == v.Id && !tagIds.Contains(tv.TagId)));
 
         if (applicationIds.Count > 0)
@@ -105,9 +134,9 @@ public sealed record VariableManager
             variablesQuery = variablesQuery.Where(v => !applicationVariables.Any(av => av.VariableId == v.Id));
         }
         
-        var variablesOfApiKey = await variablesQuery
+        var variablesWithSpecificity = await variablesQuery
             // For each variable, we want to calculate a specificity to decide which variable overrides which other variable
-            .Select(v => new
+            .Select(v => new VariableWithSpecificityModel
             {
                 Variable = new VariableModel
                 {
@@ -120,8 +149,46 @@ public sealed record VariableManager
             })
             .ToListAsync(cancellationToken);
 
+        if (includePendingChanges)
+        {
+            List<VariablesEditModel> pendingChanges;
+            await _pendingChangesLock.WaitAsync(cancellationToken);
+            try
+            {
+                pendingChanges = _pendingChanges.EditModels.ToList();
+            }
+            finally
+            {
+                _pendingChangesLock.Release();
+            }
+
+            var matchingPendingChanges = pendingChanges.Where(c => c.TagIds.All(tagIds.Contains));
+
+            if (applicationIds.Count > 0)
+            {
+                matchingPendingChanges = matchingPendingChanges.Where(c =>
+                    c.ApplicationIds.Any(applicationIds.Contains)
+                    || c.ApplicationIds.Count == 0);
+            }
+            else
+            {
+                matchingPendingChanges = matchingPendingChanges.Where(c => c.ApplicationIds.Count == 0);
+            }
+
+            foreach (var pendingChange in matchingPendingChanges)
+            {
+                var pendingVariables = _deserializer.DeserializeFromJson(pendingChange.Json);
+                var pendingVariablesWithSpecificity = pendingVariables.Select(v => new VariableWithSpecificityModel
+                {
+                    Variable = v,
+                    Specificity = pendingChange.ApplicationIds.Count + pendingChange.TagIds.Count
+                });
+                variablesWithSpecificity.AddRange(pendingVariablesWithSpecificity);
+            }
+        }
+
         // Take into account that we might have overlapping variables with the same key. In that case, the most "specific" variable wins
-        var mergedVariables = variablesOfApiKey
+        var mergedVariables = variablesWithSpecificity
             .GroupBy(v => v.Variable.Key)
             .Select(g => g.MaxBy(v => v.Specificity)!.Variable)
             .ToList();
@@ -129,13 +196,28 @@ public sealed record VariableManager
         _logger.LogInformation("Got {NumberOfVariables} variables for applications {@ApplicationIds} and tags {@TagIds}", mergedVariables.Count, applicationIds, tagIds);
 
         return _serializer.SerializeToJson(mergedVariables);
-        
     }
     
     /// <summary>
     /// Gets configuration variables that are defined exactly for this combination of applications and tags
     /// </summary>
     public async Task<string> GetConfigAsync(List<int> applicationIds, List<int> tagIds, CancellationToken cancellationToken)
+    {
+        return await GetConfigAsync(applicationIds, tagIds, includePendingChanges: false, cancellationToken);
+    }
+    
+    /// <summary>
+    /// Gets configuration variables that are defined exactly for this combination of applications and tags, including any pending changes
+    /// </summary>
+    public async Task<string> GetConfigWithPendingChangesAsync(List<int> applicationIds, List<int> tagIds, CancellationToken cancellationToken)
+    {
+        return await GetConfigAsync(applicationIds, tagIds, includePendingChanges: true, cancellationToken);
+    }
+    
+    /// <summary>
+    /// Gets configuration variables that are defined exactly for this combination of applications and tags
+    /// </summary>
+    public async Task<string> GetConfigAsync(List<int> applicationIds, List<int> tagIds, bool includePendingChanges, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -168,11 +250,80 @@ public sealed record VariableManager
             })
             .ToListAsync(cancellationToken);
 
+        if (includePendingChanges)
+        {
+            List<VariablesEditModel> pendingChanges;
+            await _pendingChangesLock.WaitAsync(cancellationToken);
+            try
+            {
+                pendingChanges = _pendingChanges.EditModels.ToList();
+            }
+            finally
+            {
+                _pendingChangesLock.Release();
+            }
+
+            // Ensure that the last changes have highest priority
+            pendingChanges.Reverse();
+
+            var matchingPendingChanges = pendingChanges
+                .Where(pendingChange => pendingChange.TagIds.All(tagIds.Contains))
+                .Where(pendingChange => pendingChange.ApplicationIds.All(applicationIds.Contains));
+
+            foreach (var tagId in tagIds)
+            {
+                matchingPendingChanges = matchingPendingChanges.Where(pendingChange => pendingChange.TagIds.Contains(tagId));
+            }
+
+            foreach (var applicationId in applicationIds)
+            {
+                matchingPendingChanges = matchingPendingChanges.Where(pendingChange => pendingChange.ApplicationIds.Contains(applicationId));
+            }
+            
+            foreach (var pendingChange in matchingPendingChanges)
+            {
+                matchingVariables.AddRange(_deserializer.DeserializeFromJson(pendingChange.Json));
+            }
+            
+            // Ensure that duplicate keys are pruned, but that pending changes win over variables from the database
+            matchingVariables = matchingVariables.AsEnumerable()
+                .Reverse()
+                .DistinctBy(v => v.Key)
+                .Reverse()
+                .ToList();
+        }
+
         _logger.LogInformation("Got {NumberOfVariables} variables for applications {@ApplicationIds} and tags {@TagIds}", matchingVariables.Count, applicationIds, tagIds);
 
         return _serializer.SerializeToJson(matchingVariables);
     }
+    
+    public async Task SaveToPendingAsync(VariablesEditModel model, CancellationToken cancellationToken)
+    {
+        model.ApplicationIds.Sort();
+        model.TagIds.Sort();
+        await _pendingChangesLock.WaitAsync(cancellationToken);
+        try
+        {
+            var existing = _pendingChanges.EditModels.SingleOrDefault(m =>
+                m.ApplicationIds.SequenceEqual(model.ApplicationIds)
+                && m.TagIds.SequenceEqual(model.TagIds));
 
+            if (existing != null)
+            {
+                existing.Json = model.Json;
+            }
+            else
+            {
+                _pendingChanges.EditModels.Add(model);
+            }
+        }
+        finally
+        {
+            _pendingChangesLock.Release();
+        }
+    }
+    
     public async Task SaveAsync(VariablesEditModel model, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -283,6 +434,38 @@ public sealed record VariableManager
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task SavePendingChangesAsync(CancellationToken cancellationToken)
+    {
+        var pendingChanges = new List<VariablesEditModel>();
+        await _pendingChangesLock.WaitAsync(cancellationToken);
+        try
+        {
+            pendingChanges.AddRange(_pendingChanges.EditModels);
+            _pendingChanges.EditModels.Clear();
+        }
+        finally
+        {
+            _pendingChangesLock.Release();
+        }
+        foreach (var pendingChange in pendingChanges)
+        {
+            await SaveAsync(pendingChange, cancellationToken);
+        }
+    }
+
+    public async Task<bool> HasPendingChangesAsync(CancellationToken cancellationToken)
+    {
+        await _pendingChangesLock.WaitAsync(cancellationToken);
+        try
+        {
+            return _pendingChanges.EditModels.Count > 0;
+        }
+        finally
+        {
+            _pendingChangesLock.Release();
+        }
     }
 }
 
