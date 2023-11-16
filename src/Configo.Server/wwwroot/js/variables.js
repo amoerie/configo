@@ -5,6 +5,11 @@ export class Variables {
      * @type {Object}
      */
     #dotNetRef;
+
+    /**
+     * @type {HTMLDivElement}
+     */
+    #container;
     
     /**
      * @type {string | null}
@@ -114,15 +119,18 @@ export class Variables {
 
             this.#model = monaco.editor.createModel(config, "json", this.#modelUri);
 
-            const container = document.getElementById("variables-editor-container");
+            if(!this.#container) {
+                const container = document.getElementById("variables-editor-container");
 
-            if(!container)
-            {
-                console.warn("Container for monaco editor not present");
-                return;
+                if (!container) {
+                    console.warn("Container for monaco editor not present");
+                    return;
+                }
+                
+                this.#container = container;
             }
 
-            this.#editor = monaco.editor.create(container, {
+            this.#editor = monaco.editor.create(this.#container, {
                 model: this.#model,
                 automaticLayout: true,
                 readonly: isReadonly
@@ -131,12 +139,21 @@ export class Variables {
             this.#editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, async () => {
                 await this.save();
             });
+            
+            this.#editor.layout({
+                height: this.#container.clientHeight,
+                width: this.#container.clientWidth
+            });
         }
         else {
             this.#model.dispose();
             this.#model = monaco.editor.createModel(config, "json", monaco.Uri.parse("internal://server/config.json"));
             this.#editor.setModel(this.#model);
             this.#editor.updateOptions({ readOnly: isReadonly });
+            this.#editor.layout({
+                height: this.#container.clientHeight,
+                width: this.#container.clientWidth
+            });
         }
     }
     
@@ -177,22 +194,30 @@ export class Variables {
             this.#originalModel = monaco.editor.createModel(originalConfig, "json", this.#originalModelUri);
             this.#modifiedModel = monaco.editor.createModel(originalConfig, "json", this.#modifiedModelUri);
 
-            const container = document.getElementById("variables-editor-container");
+            if(!this.#container) {
+                const container = document.getElementById("variables-editor-container");
 
-            if(!container)
-            {
-                console.warn("Container for monaco editor not present");
-                return;
+                if (!container) {
+                    console.warn("Container for monaco editor not present");
+                    return;
+                }
+
+                this.#container = container;
             }
 
-            this.#diffEditor = monaco.editor.createDiffEditor(container, {
+            this.#diffEditor = monaco.editor.createDiffEditor(this.#container, {
                 originalEditable: false,
-                automaticLayout: true,
+                automaticLayout: false,
             });
 
             this.#diffEditor.setModel({
                 original: this.#originalModel,
                 modified: this.#modifiedModel
+            });
+            
+            this.#diffEditor.layout({
+                height: this.#container.clientHeight,
+                width: this.#container.clientWidth
             });
         }
         else {
@@ -203,6 +228,10 @@ export class Variables {
             this.#diffEditor.setModel({
                 original: this.#originalModel,
                 modified: this.#modifiedModel
+            });
+            this.#diffEditor.layout({
+                height: this.#container.clientHeight,
+                width: this.#container.clientWidth
             });
         }
     }

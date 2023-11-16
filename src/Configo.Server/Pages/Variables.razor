@@ -18,6 +18,13 @@
     <Icon Name="FaNames.FaCog"/> Variables
 </Heading>
 
+@if (_hasPendingChanges)
+{
+    <div>
+        <Button Color="Color.Success" Clicked="SavePendingChanges"><Icon Name="IconName.Save"/> Save pending changes</Button>
+    </div>
+}
+
 <Row>
     <Column ColumnSize="ColumnSize.Is3.OnWidescreen.Is4.OnDesktop.Is5.OnTablet.Is12.OnMobile">
         <Card Background="Background.Dark" TextColor="TextColor.White50" Margin="Margin.Is2.FromBottom">
@@ -26,7 +33,7 @@
             </CardHeader>
             <CardBody>
                 <Switch TValue="bool" Checked="@_showMerged" CheckedChanged="@OnShowMerged">Show merged</Switch>
-                <Switch TValue="bool" Checked="@_showDiff" CheckedChanged="@OnShowDiff">Show diff</Switch>
+                <Switch TValue="bool" Checked="@_showDiff" CheckedChanged="@OnShowDiff">Show pending changes</Switch>
             </CardBody>
         </Card>
 
@@ -172,6 +179,7 @@
         }
 
         _hasPendingChanges = true;
+        StateHasChanged();
     }
 
     protected override async ValueTask OnDisposeAsync()
