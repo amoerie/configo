@@ -95,20 +95,20 @@ export class Variables {
 
             if (!container) {
                 console.warn("Container for editor not present");
-                return;
             }
-
-            this.#editorContainer = container;
+            else {
+                this.#editorContainer = container;
+            }
         }
         if (!this.#diffEditorContainer) {
             const container = document.getElementById("variables-diff-editor-container");
 
             if (!container) {
                 console.warn("Container for diff editor not present");
-                return;
             }
-
-            this.#diffEditorContainer = container;
+            else {
+                this.#diffEditorContainer = container;
+            }
         }
     }
 
@@ -248,6 +248,8 @@ export class Variables {
         this.#editor = null;
         this.#diffEditor = null;
         this.#dotNetRef = null;
+        this.#editorContainer = null;
+        this.#diffEditorContainer = null;
     }
 
     async save() {
