@@ -1,306 +1,326 @@
 ﻿@page "/variables"
-@* @using Configo.Server.Domain *@
-@* @using Configo.Server.Blazor *@
-@* @inject ApplicationManager ApplicationManager *@
-@* @inject TagGroupManager TagGroupManager *@
-@* @inject TagManager TagManager *@
-@* @inject VariableManager VariableManager *@
-@* @inject SchemaManager SchemaManager *@
-@* @inject IJSRuntime JsRuntime *@
-@* *@
-@* @if (_tagGroups == null || _applications == null) *@
-@* { *@
-@*     <p>...loading</p> *@
-@*     return; *@
-@* } *@
-@* *@
-@* <Heading Size="HeadingSize.Is1"> *@
-@*     <Icon Name="FaNames.FaCog"/> Variables *@
-@* </Heading> *@
-@* *@
-@* *@
-@* <Row> *@
-@*     <Column ColumnSize="ColumnSize.Is3.OnWidescreen.Is4.OnDesktop.Is5.OnTablet.Is12.OnMobile"> *@
-@*         <Card Background="Background.Dark" TextColor="TextColor.White50" Margin="Margin.Is2.FromBottom"> *@
-@*             <CardHeader Border="Border.Is0"> *@
-@*                 <Icon Name="FaNames.FaWrench"></Icon> Settings *@
-@*             </CardHeader> *@
-@*             <CardBody> *@
-@*                 <Switch TValue="bool" Checked="@_showMerged" CheckedChanged="@OnShowMerged">Show merged</Switch> *@
-@*                 <Switch TValue="bool" Checked="@_showPendingChangesDiff" CheckedChanged="@OnShowPendingChanges">Show pending changes diff</Switch> *@
-@*             </CardBody> *@
-@*             <CardFooter> *@
-@*                 <Button Color="Color.Success"  *@
-@*                         Size="Size.Small" *@
-@*                         Disabled="!_hasPendingChanges" *@
-@*                         Clicked="SavePendingChanges"><Icon Name="IconName.Save"/> Save pending</Button> *@
-@*                 <Button Color="Color.Danger"  *@
-@*                         Size="Size.Small" *@
-@*                         Disabled="!_hasPendingChanges" *@
-@*                         Clicked="DiscardPendingChanges"><Icon Name="FaNames.FaTrash"/> Discard pending</Button> *@
-@*             </CardFooter> *@
-@*         </Card> *@
-@* *@
-@*         $1$ Applications & Tag Groups go here #1# *@
-@*         <Card Background="Background.Dark" TextColor="TextColor.White50" Margin="Margin.Is2.FromBottom"> *@
-@*             <CardHeader Border="Border.Is0"> *@
-@*                 <Icon Name="IconName.Server"/> Applications *@
-@*             </CardHeader> *@
-@*             <ListGroup Background="Background.Dark" TextColor="TextColor.White50"> *@
-@*                 @foreach (var application in _applications) *@
-@*                 { *@
-@*                     <ListGroupItem Background="Background.Dark" TextColor="TextColor.White" Border="Border.Is0"> *@
-@*                         <Field Margin="Margin.Is0"> *@
-@*                             <Check TValue="bool" *@
-@*                                    Checked="_selectedApplicationIds.Contains(application.Id)" *@
-@*                                    CheckedChanged="isChecked => OnCheckApplication(isChecked, application.Id)"> *@
-@*                                 @application.Name *@
-@*                             </Check> *@
-@*                         </Field> *@
-@*                     </ListGroupItem> *@
-@*                 } *@
-@*             </ListGroup> *@
-@*         </Card> *@
-@* *@
-@*         @foreach (var tagGroup in _tagGroups) *@
-@*         { *@
-@*             <Card Background="Background.Dark" TextColor="TextColor.White50" Margin="Margin.Is2.FromBottom"> *@
-@*                 <CardHeader Border="Border.Is0"> *@
-@*                     <Icon Name="@tagGroup.Icon"/> @tagGroup.Name *@
-@*                 </CardHeader> *@
-@*                 <ListGroup Background="Background.Dark" TextColor="TextColor.White50"> *@
-@*                     @foreach (var tag in _tagsByGroupId[tagGroup.Id]) *@
-@*                     { *@
-@*                         <ListGroupItem Background="Background.Dark" TextColor="TextColor.White" Border="Border.Is0"> *@
-@*                             <Field Margin="Margin.Is0"> *@
-@*                                 <Check TValue="bool" *@
-@*                                        Checked="_selectedTagIds.Contains(tag.Id)" *@
-@*                                        CheckedChanged="isChecked => OnCheckTag(isChecked, tag.Id)"> *@
-@*                                     @tag.Name *@
-@*                                 </Check> *@
-@*                             </Field> *@
-@*                         </ListGroupItem> *@
-@*                     } *@
-@*                 </ListGroup> *@
-@*             </Card> *@
-@*         } *@
-@*     </Column> *@
-@*     <Column ColumnSize="ColumnSize.Is9.OnWidescreen.Is8.OnDesktop.Is7.OnTablet.Is12.OnMobile"> *@
-@*         <Card Background="Background.Dark" TextColor="TextColor.White50"> *@
-@*             <CardHeader Border="Border.Is0"> *@
-@*                 @if (_selectedApplicationIds.Count == 0 && _selectedTagIds.Count == 0) *@
-@*                 { *@
-@*                     <Paragraph><Icon Name="FaNames.FaInfoCircle"></Icon> Select applications and/or tags to edit their configuration</Paragraph> *@
-@*                 } *@
-@*                 else *@
-@*                 { *@
-@*                     @foreach (var application in _selectedApplications) *@
-@*                     { *@
-@*                         <Badge Color="Color.Primary" Margin="Margin.Is1.FromEnd"> *@
-@*                             <Icon Name="IconName.Server"/> @application.Name *@
-@*                         </Badge> *@
-@*                     } *@
-@*                     @foreach (var tag in _selectedTags) *@
-@*                     { *@
-@*                         <Badge Color="Color.Primary" Margin="Margin.Is1.FromEnd"> *@
-@*                             <Icon Name="@tag.GroupIcon"/> @tag.Name *@
-@*                         </Badge> *@
-@*                     } *@
-@*                 } *@
-@*             </CardHeader> *@
-@*             <CardBody TextColor="TextColor.White"> *@
-@* *@
-@*                 $1$ Editors go here #1# *@
-@*                 <div id="variables-editor-container" class="container-fluid" style="min-height: 70vh"> *@
-@* *@
-@*                 </div> *@
-@*                 <div id="variables-diff-editor-container" class="container-fluid" style="min-height: 70vh"> *@
-@* *@
-@*                 </div> *@
-@*             </CardBody> *@
-@*         </Card> *@
-@* *@
-@*     </Column> *@
-@* </Row> *@
-@* *@
-@* <SnackbarStack @ref="_variablesSavedNotification" Color="SnackbarColor.Success"></SnackbarStack> *@
-@* *@
-@* @code { *@
-@*     private DotNetObjectReference<Variables>? _objectReference; *@
-@*     private SnackbarStack? _variablesSavedNotification; *@
-@*     private List<TagGroupListModel>? _tagGroups; *@
-@*     private List<ApplicationModel>? _applications; *@
-@*     private bool _showMerged; *@
-@*     private bool _showPendingChangesDiff; *@
-@*     private bool _hasPendingChanges; *@
-@* *@
-@*     private readonly List<int> _selectedApplicationIds = new List<int>(); *@
-@*     private readonly List<int> _selectedTagIds = new List<int>(); *@
-@*     private readonly List<ApplicationModel> _selectedApplications = new List<ApplicationModel>(); *@
-@*     private readonly List<TagListModel> _selectedTags = new List<TagListModel>(); *@
-@*     private readonly Dictionary<int, List<TagListModel>> _tagsByGroupId = new Dictionary<int, List<TagListModel>>(); *@
-@*     private Dictionary<int, ApplicationModel> _applicationsById = new Dictionary<int, ApplicationModel>(); *@
-@*     private Dictionary<int, TagListModel> _tagsById = new Dictionary<int, TagListModel>(); *@
-@*     private Dictionary<int, TagGroupListModel> _tagGroupsById = new Dictionary<int, TagGroupListModel>(); *@
-@* *@
-@*     protected override async Task OnInitializedAsync() *@
-@*     { *@
-@*         _applications = await ApplicationManager.GetAllApplicationsAsync(CancellationToken); *@
-@*         _applicationsById = _applications.ToDictionary(a => a.Id); *@
-@*         _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken); *@
-@*         _tagGroupsById = _tagGroups.ToDictionary(g => g.Id); *@
-@*         _hasPendingChanges = await VariableManager.HasPendingChangesAsync(CancellationToken); *@
-@*         foreach (var tagGroup in _tagGroups) *@
-@*         { *@
-@*             _tagsByGroupId[tagGroup.Id] = await TagManager.GetTagsOfGroupAsync(tagGroup.Id, CancellationToken); *@
-@*         } *@
-@*         _tagsById = _tagsByGroupId.Values.SelectMany(t => t).ToDictionary(t => t.Id); *@
-@*         await base.OnInitializedAsync(); *@
-@*     } *@
-@* *@
-@*     public async Task SavePendingChanges() *@
-@*     { *@
-@*         await VariableManager.SavePendingChangesAsync(CancellationToken); *@
-@* *@
-@*         _hasPendingChanges = false; *@
-@*         _showPendingChangesDiff = false; *@
-@* *@
-@*         await UpdateEditorAsync(); *@
-@*          *@
-@*         if (_variablesSavedNotification != null) *@
-@*         { *@
-@*             await _variablesSavedNotification.PushAsync("Pending changes saved successfully", SnackbarColor.Success); *@
-@*         } *@
-@*     } *@
-@* *@
-@*     public async Task DiscardPendingChanges() *@
-@*     { *@
-@*         await VariableManager.DiscardPendingChangesAsync(CancellationToken); *@
-@* *@
-@*         _hasPendingChanges = false; *@
-@*         _showPendingChangesDiff = false; *@
-@* *@
-@*         await UpdateEditorAsync(); *@
-@*     } *@
-@* *@
-@*     [JSInvokable] *@
-@*     public async Task Save(string variables) *@
-@*     { *@
-@*         await VariableManager.SaveToPendingAsync(new VariablesEditModel *@
-@*         { *@
-@*             Json = variables, *@
-@*             ApplicationIds = _selectedApplicationIds.ToList(), *@
-@*             TagIds = _selectedTagIds.ToList() *@
-@*         }, CancellationToken); *@
-@* *@
-@*         if (_variablesSavedNotification != null) *@
-@*         { *@
-@*             await _variablesSavedNotification.PushAsync("Variables saved to pending changes", SnackbarColor.Success); *@
-@*         } *@
-@* *@
-@*         _hasPendingChanges = true; *@
-@*         StateHasChanged(); *@
-@*     } *@
-@* *@
-@*     protected override async ValueTask OnDisposeAsync() *@
-@*     { *@
-@*         if (_objectReference != null) *@
-@*         { *@
-@*             try *@
-@*             { *@
-@*                 await JsRuntime.InvokeVoidAsync("variables.destroy", CancellationToken); *@
-@*             } *@
-@*             catch (JSDisconnectedException) *@
-@*             { *@
-@*                 // Ignore *@
-@*             } *@
-@*             finally *@
-@*             { *@
-@*                 _objectReference?.Dispose(); *@
-@*             } *@
-@*         } *@
-@*         await base.OnDisposeAsync(); *@
-@*     } *@
-@* *@
-@*     private async Task UpdateEditorAsync() *@
-@*     { *@
-@*         _selectedApplications.Clear(); *@
-@*         _selectedApplications.AddRange(_selectedApplicationIds.Select(id => _applicationsById[id])); *@
-@*         _selectedTags.Clear(); *@
-@*         _selectedTags.AddRange(_selectedTagIds.Select(id => _tagsById[id])); *@
-@*         _objectReference ??= DotNetObjectReference.Create(this); *@
-@*         var schema = await SchemaManager.GetSchemaAsync(_selectedApplicationIds, CancellationToken); *@
-@*         var isReadonly = _showMerged || _showPendingChangesDiff; *@
-@*         if (_showPendingChangesDiff) *@
-@*         { *@
-@*             var originalConfig = _showMerged *@
-@*                 ? await VariableManager.GetMergedConfigAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken) *@
-@*                 : await VariableManager.GetConfigAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken); *@
-@*             var modifiedConfig = _showMerged *@
-@*                 ? await VariableManager.GetMergedConfigWithPendingChangesAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken) *@
-@*                 : await VariableManager.GetConfigWithPendingChangesAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken); *@
-@*              *@
-@*             await JsRuntime.InvokeVoidAsync("variables.updateDiffEditor", CancellationToken, _objectReference, originalConfig, modifiedConfig, schema); *@
-@*         } *@
-@*         else *@
-@*         { *@
-@*             var config = _showMerged *@
-@*                 ? await VariableManager.GetMergedConfigWithPendingChangesAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken) *@
-@*                 : await VariableManager.GetConfigWithPendingChangesAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken); *@
-@*             await JsRuntime.InvokeVoidAsync("variables.updateEditor", CancellationToken, _objectReference, config, schema, isReadonly); *@
-@*         } *@
-@*     } *@
-@* *@
-@*     private async Task OnCheckApplication(bool isChecked, int applicationId) *@
-@*     { *@
-@*         if (isChecked) *@
-@*         { *@
-@*             _selectedApplicationIds.Add(applicationId); *@
-@*         } *@
-@*         else *@
-@*         { *@
-@*             _selectedApplicationIds.Remove(applicationId); *@
-@*         } *@
-@*         await UpdateEditorAsync(); *@
-@*     } *@
-@* *@
-@*     private async Task OnCheckTag(bool isChecked, int tagId) *@
-@*     { *@
-@*         if (isChecked) *@
-@*         { *@
-@*             // Automatically uncheck other tags of the same group *@
-@*             var groupId = _tagsById[tagId].GroupId; *@
-@*             for (var i = _selectedTagIds.Count - 1; i >= 0; i--) *@
-@*             { *@
-@*                 var selectedTagId = _selectedTagIds[i]; *@
-@*                 if (_tagsById[selectedTagId].GroupId == groupId) *@
-@*                 { *@
-@*                     _selectedTagIds.RemoveAt(i); *@
-@*                 } *@
-@*             } *@
-@* *@
-@*             _selectedTagIds.Add(tagId); *@
-@*             _selectedTagIds.Sort((a, b) => string.CompareOrdinal(_tagGroupsById[_tagsById[a].GroupId].Name, _tagGroupsById[_tagsById[b].GroupId].Name)); *@
-@*         } *@
-@*         else *@
-@*         { *@
-@*             _selectedTagIds.Remove(tagId); *@
-@*         } *@
-@*         await UpdateEditorAsync(); *@
-@*     } *@
-@* *@
-@*     private async Task OnShowMerged(bool value) *@
-@*     { *@
-@*         _showMerged = value; *@
-@* *@
-@*         await UpdateEditorAsync(); *@
-@*     } *@
-@* *@
-@*     private async Task OnShowPendingChanges(bool value) *@
-@*     { *@
-@*         _showPendingChangesDiff = value; *@
-@* *@
-@*         await UpdateEditorAsync(); *@
-@*     } *@
-@* *@
-@* } *@
+@using Configo.Server.Domain
+@inject ApplicationManager ApplicationManager
+@inject TagGroupManager TagGroupManager
+@inject TagManager TagManager
+@inject VariableManager VariableManager
+@inject SchemaManager SchemaManager
+@inject IJSRuntime JsRuntime
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h4" GutterBottom="true">
+    Variables
+</MudText>
+
+@if (_tagGroups == null || _applications == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true"/>
+    return;
+}
+
+<MudGrid>
+    <MudItem sm="12" md="5" lg="4" xl="3">
+        <MudCard Square="true" Class="mb-1">
+            <MudCardHeader Class="py-2">
+                <CardHeaderAvatar>
+                    <MudAvatar Size="Size.Small" Variant="Variant.Filled">
+                        <MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Settings"/>
+                    </MudAvatar>
+                </CardHeaderAvatar>
+                <CardHeaderContent>
+                    <MudText>Settings</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent Class="py-0">
+                <MudSwitch T="bool" Checked="@_showMerged" CheckedChanged="@OnShowMerged">Show merged</MudSwitch>
+                <MudSwitch T="bool" Checked="@_showPendingChangesDiff" CheckedChanged="@OnShowPendingChanges">Show pending changes diff</MudSwitch>
+            </MudCardContent>
+            <MudCardActions  Clas>
+                <MudButtonGroup OverrideStyles="false">
+                    <MudButton Color="Color.Success"
+                               Size="Size.Small"
+                               Variant="Variant.Outlined"
+                               Disabled="!_hasPendingChanges"
+                               @onclick="SavePendingChanges">
+                        <MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Save"/> Save pending
+                    </MudButton>
+                    <MudButton Color="Color.Error"
+                               Size="Size.Small"
+                               Variant="Variant.Outlined"
+                               Disabled="!_hasPendingChanges"
+                               @onclick="DiscardPendingChanges">
+                        <MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Delete"/> Discard pending
+                    </MudButton>
+                </MudButtonGroup>
+            </MudCardActions>
+        </MudCard>
+
+        <MudCard Square="true" Class="mb-1">
+            <MudCardHeader Class="py-2">
+                <CardHeaderAvatar>
+                    <MudAvatar Size="Size.Small" Variant="Variant.Filled">
+                        <MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Cloud"/>
+                    </MudAvatar>
+                </CardHeaderAvatar>
+                <CardHeaderContent>
+                    <MudText>Applications</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent Class="py-0">
+                <MudList Class="py-0" DisableGutters="true">
+                    @foreach (var application in _applications)
+                    {
+                        <MudListItem Dense="true">
+                            <MudCheckBox T="bool"
+                                        Dense="true"
+                                         Size="Size.Small"
+                                         Label="@application.Name"
+                                         Checked="_selectedApplicationIds.Contains(application.Id)"
+                                         CheckedChanged="isChecked => OnCheckApplication(isChecked, application.Id)">
+                            </MudCheckBox>
+                        </MudListItem>
+                    }
+                </MudList>
+            </MudCardContent>
+        </MudCard>
+
+        @foreach (var tagGroup in _tagGroups)
+        {
+            <MudCard Square="true" Class="mb-1">
+                <MudCardHeader Class="py-2">
+                    <CardHeaderAvatar>
+                        <MudAvatar Size="Size.Small" Variant="Variant.Filled">
+                            <MudIcon Size="Size.Small" Icon="@tagGroup.Icon.Value"/>
+                        </MudAvatar>
+                    </CardHeaderAvatar>
+                    <CardHeaderContent>
+                        <MudText>@tagGroup.Name</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="py-0">
+                    <MudList Class="py-0" DisableGutters="true">
+                        @foreach (var tag in _tagsByGroupId[tagGroup.Id])
+                        {
+                            <MudListItem Dense="true">
+                                <MudCheckBox T="bool"
+                                             Dense="true"
+                                             Size="Size.Small"
+                                             Label="@tag.Name"
+                                             Checked="_selectedTagIds.Contains(tag.Id)"
+                                             CheckedChanged="isChecked => OnCheckTag(isChecked, tag.Id)">
+                                </MudCheckBox>
+                            </MudListItem>
+                        }
+                    </MudList>
+                </MudCardContent>
+            </MudCard>
+        }
+    </MudItem>
+    <MudItem sm="12" md="7" lg="8" xl="9">
+        <MudCard>
+            <MudCardHeader>
+                @if (_selectedApplicationIds.Count == 0 && _selectedTagIds.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Info">
+                        Select applications and/or tags to edit their configuration
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudChipSet>
+                        @foreach (var application in _selectedApplications)
+                        {
+                            <MudChip Icon="@Icons.Material.Filled.Cloud" Color="Color.Primary">@application.Name</MudChip>
+                        }
+                        @foreach (var tag in _selectedTags)
+                        {
+                            <MudChip Icon="@tag.GroupIcon.Value" Color="Color.Primary">@tag.Name</MudChip>
+                        }
+                    </MudChipSet>
+                }
+            </MudCardHeader>
+            <MudCardContent>
+                @* Editors go here *@
+                <div id="variables-editor-container" class="container-fluid" style="min-height: 70vh">
+
+                </div>
+                <div id="variables-diff-editor-container" class="container-fluid" style="min-height: 70vh">
+
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private DotNetObjectReference<Variables>? _objectReference;
+    private List<TagGroupModel>? _tagGroups;
+    private List<ApplicationModel>? _applications;
+    private bool _showMerged;
+    private bool _showPendingChangesDiff;
+    private bool _hasPendingChanges;
+
+    private readonly List<int> _selectedApplicationIds = new List<int>();
+    private readonly List<int> _selectedTagIds = new List<int>();
+    private readonly List<ApplicationModel> _selectedApplications = new List<ApplicationModel>();
+    private readonly List<TagModel> _selectedTags = new List<TagModel>();
+    private readonly Dictionary<int, List<TagModel>> _tagsByGroupId = new Dictionary<int, List<TagModel>>();
+    private Dictionary<int, ApplicationModel> _applicationsById = new Dictionary<int, ApplicationModel>();
+    private Dictionary<int, TagModel> _tagsById = new Dictionary<int, TagModel>();
+    private Dictionary<int, TagGroupModel> _tagGroupsById = new Dictionary<int, TagGroupModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _applications = await ApplicationManager.GetAllApplicationsAsync(CancellationToken);
+        _applicationsById = _applications.ToDictionary(a => a.Id);
+        _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken);
+        _tagGroupsById = _tagGroups.ToDictionary(g => g.Id);
+        _hasPendingChanges = await VariableManager.HasPendingChangesAsync(CancellationToken);
+        foreach (var tagGroup in _tagGroups)
+        {
+            _tagsByGroupId[tagGroup.Id] = await TagManager.GetTagsOfGroupAsync(tagGroup.Id, CancellationToken);
+        }
+        _tagsById = _tagsByGroupId.Values.SelectMany(t => t).ToDictionary(t => t.Id);
+        await base.OnInitializedAsync();
+    }
+
+    public async Task SavePendingChanges()
+    {
+        await VariableManager.SavePendingChangesAsync(CancellationToken);
+
+        _hasPendingChanges = false;
+        _showPendingChangesDiff = false;
+
+        await UpdateEditorAsync();
+
+        Snackbar.Add("Pending changes saved successfully", Severity.Success);
+    }
+
+    public async Task DiscardPendingChanges()
+    {
+        await VariableManager.DiscardPendingChangesAsync(CancellationToken);
+
+        _hasPendingChanges = false;
+        _showPendingChangesDiff = false;
+
+        await UpdateEditorAsync();
+    }
+
+    [JSInvokable]
+    public async Task Save(string variables)
+    {
+        await VariableManager.SaveToPendingAsync(new VariablesEditModel
+        {
+            Json = variables,
+            ApplicationIds = _selectedApplicationIds.ToList(),
+            TagIds = _selectedTagIds.ToList()
+        }, CancellationToken);
+
+        Snackbar.Add("Variables saved to pending changes", Severity.Success);
+
+        _hasPendingChanges = true;
+        StateHasChanged();
+    }
+
+    protected override async ValueTask OnDisposeAsync()
+    {
+        if (_objectReference != null)
+        {
+            try
+            {
+                await JsRuntime.InvokeVoidAsync("variables.destroy", CancellationToken);
+            }
+            catch (JSDisconnectedException)
+            {
+    // Ignore
+            }
+            finally
+            {
+                _objectReference?.Dispose();
+            }
+        }
+        await base.OnDisposeAsync();
+    }
+
+    private async Task UpdateEditorAsync()
+    {
+        _selectedApplications.Clear();
+        _selectedApplications.AddRange(_selectedApplicationIds.Select(id => _applicationsById[id]));
+        _selectedTags.Clear();
+        _selectedTags.AddRange(_selectedTagIds.Select(id => _tagsById[id]));
+        _objectReference ??= DotNetObjectReference.Create(this);
+        var schema = await SchemaManager.GetSchemaAsync(_selectedApplicationIds, CancellationToken);
+        var isReadonly = _showMerged || _showPendingChangesDiff;
+        if (_showPendingChangesDiff)
+        {
+            var originalConfig = _showMerged
+                ? await VariableManager.GetMergedConfigAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken)
+                : await VariableManager.GetConfigAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken);
+            var modifiedConfig = _showMerged
+                ? await VariableManager.GetMergedConfigWithPendingChangesAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken)
+                : await VariableManager.GetConfigWithPendingChangesAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken);
+
+            await JsRuntime.InvokeVoidAsync("variables.updateDiffEditor", CancellationToken, _objectReference, originalConfig, modifiedConfig, schema);
+        }
+        else
+        {
+            var config = _showMerged
+                ? await VariableManager.GetMergedConfigWithPendingChangesAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken)
+                : await VariableManager.GetConfigWithPendingChangesAsync(_selectedApplicationIds, _selectedTagIds, CancellationToken);
+            await JsRuntime.InvokeVoidAsync("variables.updateEditor", CancellationToken, _objectReference, config, schema, isReadonly);
+        }
+    }
+
+    private async Task OnCheckApplication(bool? isChecked, int applicationId)
+    {
+        if (isChecked == true)
+        {
+            _selectedApplicationIds.Add(applicationId);
+        }
+        else
+        {
+            _selectedApplicationIds.Remove(applicationId);
+        }
+        await UpdateEditorAsync();
+    }
+
+    private async Task OnCheckTag(bool? isChecked, int tagId)
+    {
+        if (isChecked == true)
+        {
+    // Automatically uncheck other tags of the same group
+            var groupId = _tagsById[tagId].GroupId;
+            for (var i = _selectedTagIds.Count - 1; i >= 0; i--)
+            {
+                var selectedTagId = _selectedTagIds[i];
+                if (_tagsById[selectedTagId].GroupId == groupId)
+                {
+                    _selectedTagIds.RemoveAt(i);
+                }
+            }
+
+            _selectedTagIds.Add(tagId);
+            _selectedTagIds.Sort((a, b) => string.CompareOrdinal(_tagGroupsById[_tagsById[a].GroupId].Name, _tagGroupsById[_tagsById[b].GroupId].Name));
+        }
+        else
+        {
+            _selectedTagIds.Remove(tagId);
+        }
+        await UpdateEditorAsync();
+    }
+
+    private async Task OnShowMerged(bool value)
+    {
+        _showMerged = value == true;
+
+        await UpdateEditorAsync();
+    }
+
+    private async Task OnShowPendingChanges(bool value)
+    {
+        _showPendingChangesDiff = value == true;
+
+        await UpdateEditorAsync();
+    }
+
+}
