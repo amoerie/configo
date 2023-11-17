@@ -96,14 +96,14 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var cancellationToken = default(CancellationToken);
         
         // Processor runs in benelux
-        var apiKeyModel = new ApiKeyModel
+        var apiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
             TagIds = new List<int> { _benelux.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var apiKey = await apiKeyManager.SaveApiKeyAsync(apiKeyModel, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(apiKey, cancellationToken);
 
         // Act
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/config");
@@ -134,14 +134,14 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var cancellationToken = default(CancellationToken);
         
         // Processor runs in benelux
-        var apiKeyModel = new ApiKeyModel
+        var apiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
             TagIds = new List<int> { _benelux.Id },
             ActiveSinceUtc = DateTime.UtcNow.AddDays(-5),
             ActiveUntilUtc = DateTime.UtcNow.AddDays(-1),
         };
-        var apiKey = await apiKeyManager.SaveApiKeyAsync(apiKeyModel, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(apiKey, cancellationToken);
 
         // Act
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/config");
@@ -162,14 +162,14 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var cancellationToken = default(CancellationToken);
         
         // Processor runs in benelux
-        var apiKeyModel = new ApiKeyModel
+        var apiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
             TagIds = new List<int> { _benelux.Id },
             ActiveSinceUtc = DateTime.UtcNow.AddDays(1),
             ActiveUntilUtc = DateTime.UtcNow.AddDays(5),
         };
-        var apiKey = await apiKeyManager.SaveApiKeyAsync(apiKeyModel, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(apiKey, cancellationToken);
 
         // Act
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/config");

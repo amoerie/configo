@@ -44,14 +44,15 @@ public class ManagingTagGroups : IAsyncLifetime
 
         tagGroups.Should().HaveCount(1);
         tagGroups.Single().Name.Should().Be("Test 1");
-        tagGroups.Single().Icon.Should().Be(FaNames.Fa0);
+        tagGroups.Single().Icon.Should().Be(TagGroupIcon.GetByName(Icons.Material.Filled.Factory));
 
-        await tagGroupManager.SaveTagGroupAsync(new TagGroupModel { Id = tagGroup.Id, Name = "Test 2", Icon = TagGroupIcon.GetByName(Icons.Material.Filled.Face2) }, cancellationToken);
+        await tagGroupManager.SaveTagGroupAsync(
+            new TagGroupModel { Id = tagGroup.Id, Name = "Test 2", Icon = TagGroupIcon.GetByName(Icons.Material.Filled.Face2) }, cancellationToken);
         
         tagGroups = await tagGroupManager.GetAllTagGroupsAsync(cancellationToken);
         tagGroups.Should().HaveCount(1);
         tagGroups.Single().Name.Should().Be("Test 2");
-        tagGroups.Single().Icon.Should().Be(FaNames.Fa1);
+        tagGroups.Single().Icon.Should().Be(TagGroupIcon.GetByName(Icons.Material.Filled.Face2));
 
         await tagGroupManager.DeleteTagGroupAsync(tagGroup, cancellationToken);
         tagGroups = await tagGroupManager.GetAllTagGroupsAsync(cancellationToken);

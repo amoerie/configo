@@ -12,13 +12,13 @@ namespace Configo.Server.Domain;
 
 public sealed record ApiKeyModel
 {
-    public required int Id { get; set; }
+    public int Id { get; set; }
     public required int ApplicationId { get; set; }
-    public required string Key { get; set; }
+    public string Key { get; set; } = "";
     public required IEnumerable<int> TagIds { get; set; }
     public required DateTime ActiveSinceUtc { get; set; }
     public required DateTime ActiveUntilUtc { get; set; }
-    public required DateTime UpdatedAtUtc { get; set; }
+    public DateTime UpdatedAtUtc { get; set; }
 }
   
 public sealed record ApiKeyValidationModel

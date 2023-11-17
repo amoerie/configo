@@ -464,42 +464,42 @@ public class ManagingVariables : IAsyncLifetime
         
         // Processor runs on both blades for both environments
         // Router runs on blade 1 for benelux and on blade 2 for nordics
-        var processorBlade1BeneluxApiKeyModel = new ApiKeyModel
+        var processorBlade1BeneluxApiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
             TagIds = new List<int> { _benelux.Id, _blade1.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var processorBlade2BeneluxApiKeyModel = new ApiKeyModel
+        var processorBlade2BeneluxApiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
             TagIds = new List<int> { _benelux.Id, _blade2.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var processorBlade1NordicsApiKeyModel = new ApiKeyModel
+        var processorBlade1NordicsApiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
             TagIds = new List<int> { _nordics.Id, _blade1.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var processorBlade2NordicsApiKeyModel = new ApiKeyModel
+        var processorBlade2NordicsApiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
             TagIds = new List<int> { _nordics.Id, _blade2.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var routerBlade1BeneluxApiKeyModel = new ApiKeyModel
+        var routerBlade1BeneluxApiKey = new ApiKeyModel
         {
             ApplicationId = _router.Id,
             TagIds = new List<int> { _benelux.Id, _blade1.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var routerBlade2NordicsApiKeyModel = new ApiKeyModel
+        var routerBlade2NordicsApiKey = new ApiKeyModel
         {
             ApplicationId = _router.Id,
             TagIds = new List<int> { _nordics.Id, _blade2.Id },
@@ -513,13 +513,13 @@ public class ManagingVariables : IAsyncLifetime
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var processorBlade1BeneluxApiKey = await apiKeyManager.SaveApiKeyAsync(processorBlade1BeneluxApiKeyModel, cancellationToken);
-        var processorBlade2BeneluxApiKey = await apiKeyManager.SaveApiKeyAsync(processorBlade2BeneluxApiKeyModel, cancellationToken);
-        var processorBlade1NordicsApiKey = await apiKeyManager.SaveApiKeyAsync(processorBlade1NordicsApiKeyModel, cancellationToken);
-        var processorBlade2NordicsApiKey = await apiKeyManager.SaveApiKeyAsync(processorBlade2NordicsApiKeyModel, cancellationToken);
-        var routerBlade1BeneluxApiKey = await apiKeyManager.SaveApiKeyAsync(routerBlade1BeneluxApiKeyModel, cancellationToken);
-        var routerBlade2NordicsApiKey = await apiKeyManager.SaveApiKeyAsync(routerBlade2NordicsApiKeyModel, cancellationToken);
-        _ = await apiKeyManager.SaveApiKeyAsync(otherApiKeyModel, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(processorBlade1BeneluxApiKey, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(processorBlade2BeneluxApiKey, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(processorBlade1NordicsApiKey, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(processorBlade2NordicsApiKey, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(routerBlade1BeneluxApiKey, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(routerBlade2NordicsApiKey, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(otherApiKeyModel, cancellationToken);
 
         // Act
         var processorBlade1BeneluxConfig = await variableManager.GetMergedConfigAsync(processorBlade1BeneluxApiKey.Id, cancellationToken);

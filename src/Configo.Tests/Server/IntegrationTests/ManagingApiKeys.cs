@@ -46,36 +46,37 @@ public class ManagingApiKeys : IAsyncLifetime
         var tag2 = new TagModel { Name = "Tag 2", GroupId = tagGroup2.Id, GroupIcon = tagGroup2.Icon };
         await tagManager.SaveTagAsync(tag1, cancellationToken);
         await tagManager.SaveTagAsync(tag2, cancellationToken);
-        var apiKeyModel = new ApiKeyModel
+        var apiKey = new ApiKeyModel
         {
             ApplicationId = application.Id,
             TagIds = new List<int> { tag1.Id, tag2.Id },
             ActiveSinceUtc = DateTime.UtcNow,
-            ActiveUntilUtc = DateTime.UtcNow.AddMonths(1)
+            ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
+            Key = "",
         };
-        var apiKey = await apiKeyManager.SaveApiKeyAsync(apiKeyModel, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(apiKey, cancellationToken);
         var apiKeys = await apiKeyManager.GetAllApiKeysAsync(cancellationToken);
 
         apiKeys.Should().HaveCount(1);
         var apiKeyListModel = apiKeys.Single();
         apiKeyListModel.ApplicationId.Should().Be(application.Id);
-        apiKeyListModel.TagIds.Should().BeEquivalentTo(apiKeyModel.TagIds);
+        apiKeyListModel.TagIds.Should().BeEquivalentTo(apiKey.TagIds);
 
-        apiKeyModel = apiKeyModel with
+        apiKey = apiKey with
         {
             Id = apiKey.Id,
             TagIds = new List<int> { tag2.Id }
         };
         
-        await apiKeyManager.SaveApiKeyAsync(apiKeyModel, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(apiKey, cancellationToken);
         
         apiKeys = await apiKeyManager.GetAllApiKeysAsync(cancellationToken);
         apiKeys.Should().HaveCount(1);
         apiKeyListModel = apiKeys.Single();
         apiKeyListModel.ApplicationId.Should().Be(application.Id);
-        apiKeyListModel.TagIds.Should().BeEquivalentTo(apiKeyModel.TagIds);
+        apiKeyListModel.TagIds.Should().BeEquivalentTo(apiKey.TagIds);
 
-        await apiKeyManager.DeleteApiKeyAsync(new ApiKeyDeleteModel { Id = apiKey.Id }, cancellationToken);
+        await apiKeyManager.DeleteApiKeyAsync(apiKey, cancellationToken);
         apiKeys = await apiKeyManager.GetAllApiKeysAsync(cancellationToken);
         apiKeys.Should().HaveCount(0);
     }

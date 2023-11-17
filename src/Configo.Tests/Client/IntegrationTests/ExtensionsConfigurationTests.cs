@@ -85,14 +85,15 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         using var httpClient = _fixture.CreateClient();
         
         // Processor runs in benelux
-        var apiKeyModel = new ApiKeyModel
+        var apiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
             TagIds = new List<int> { _benelux.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
+            Key = "",
         };
-        var apiKey = await apiKeyManager.SaveApiKeyAsync(apiKeyModel, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(apiKey, cancellationToken);
 
         // Act
         var configuration = new ConfigurationBuilder()
@@ -116,14 +117,15 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         using var httpClient = _fixture.CreateClient();
         
         // Processor runs in benelux
-        var apiKeyModel = new ApiKeyModel
+        var apiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
             TagIds = new List<int> { _benelux.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
+            Key = "",
         };
-        var apiKey = await apiKeyManager.SaveApiKeyAsync(apiKeyModel, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(apiKey, cancellationToken);
 
         try
         {
@@ -170,14 +172,15 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         using var httpClient = _fixture.CreateClient();
         
         // Processor runs in benelux
-        var apiKeyModel = new ApiKeyModel
+        var apiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
             TagIds = new List<int> { _benelux.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
+            Key = ""
         };
-        var apiKey = await apiKeyManager.SaveApiKeyAsync(apiKeyModel, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(apiKey, cancellationToken);
 
         // Act
         var configuration = new ConfigurationBuilder()

@@ -32,8 +32,8 @@
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent Class="py-0">
-                <MudSwitch T="bool" Checked="@_showMerged" CheckedChanged="@OnShowMerged">Show merged</MudSwitch>
-                <MudSwitch T="bool" Checked="@_showPendingChangesDiff" CheckedChanged="@OnShowPendingChanges">Show pending changes diff</MudSwitch>
+                <MudSwitch T="bool" Checked="@_showMerged" CheckedChanged="isChecked => OnShowMerged((bool?) isChecked)">Show merged</MudSwitch>
+                <MudSwitch T="bool" Checked="@_showPendingChangesDiff" CheckedChanged="isChecked => OnShowPendingChanges((bool?) isChecked)">Show pending changes diff</MudSwitch>
             </MudCardContent>
             <MudCardActions  Clas>
                 <MudButtonGroup OverrideStyles="false">
@@ -309,14 +309,14 @@
         await UpdateEditorAsync();
     }
 
-    private async Task OnShowMerged(bool value)
+    private async Task OnShowMerged(bool? value)
     {
         _showMerged = value == true;
 
         await UpdateEditorAsync();
     }
 
-    private async Task OnShowPendingChanges(bool value)
+    private async Task OnShowPendingChanges(bool? value)
     {
         _showPendingChangesDiff = value == true;
 
