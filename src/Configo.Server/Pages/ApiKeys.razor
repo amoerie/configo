@@ -63,7 +63,7 @@
                     {
                         continue;
                     }
-                    <MudChip Icon="@tag.GroupIcon.Value">@tag.Name</MudChip>
+                    <MudChip>@tag.Name</MudChip>
                 }
             </CellTemplate>
             <EditTemplate>
@@ -73,7 +73,7 @@
                     @foreach (var tag in _tags)
                     {
                         <MudSelectItem T="int" Value="@tag.Id">
-                            <MudIcon Icon="@tag.GroupIcon.Value"></MudIcon> @tag.Name
+                            @tag.Name
                         </MudSelectItem>
                     }
                 </MudSelect>

@@ -92,7 +92,7 @@ public class ManagingVariables : IAsyncLifetime
                    }
                    """",
             ApplicationIds = new List<int> { _otherApplication.Id },
-            TagIds = new List<int> { _otherTag.Id }
+            TagId = new List<int> { _otherTag.Id }
         };
         await variableManager.SaveAsync(otherVariablesModel, cancellationToken);
 
@@ -107,7 +107,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _blade1Variables,
             ApplicationIds = new List<int>(),
-            TagIds = new List<int> { _blade1.Id }
+            TagId = new List<int> { _blade1.Id }
         };
         _blade2Variables = """"
                           {
@@ -119,7 +119,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _blade2Variables,
             ApplicationIds = new List<int>(),
-            TagIds = new List<int> { _blade2.Id }
+            TagId = new List<int> { _blade2.Id }
         };
         await variableManager.SaveAsync(blade1VariablesModel, cancellationToken);
         await variableManager.SaveAsync(blade2VariablesModel, cancellationToken);
@@ -135,7 +135,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _beneluxVariables,
             ApplicationIds = new List<int>(),
-            TagIds = new List<int> { _benelux.Id }
+            TagId = new List<int> { _benelux.Id }
         };
         _nordicsVariables = """"
                             {
@@ -147,7 +147,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _nordicsVariables,
             ApplicationIds = new List<int>(),
-            TagIds = new List<int> { _nordics.Id }
+            TagId = new List<int> { _nordics.Id }
         };
         await variableManager.SaveAsync(beneluxVariablesModel, cancellationToken);
         await variableManager.SaveAsync(nordicsVariablesModel, cancellationToken);
@@ -163,7 +163,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _beneluxBlade1Variables,
             ApplicationIds = new List<int>(),
-            TagIds = new List<int> { _benelux.Id, _blade1.Id }
+            TagId = new List<int> { _benelux.Id, _blade1.Id }
         };
         _beneluxBlade2Variables = """"
                                   {
@@ -175,7 +175,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _beneluxBlade2Variables,
             ApplicationIds = new List<int>(),
-            TagIds = new List<int> { _benelux.Id, _blade2.Id }
+            TagId = new List<int> { _benelux.Id, _blade2.Id }
         };
         _nordicsBlade1Variables = """"
                                   {
@@ -187,7 +187,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _nordicsBlade1Variables,
             ApplicationIds = new List<int>(),
-            TagIds = new List<int> { _nordics.Id, _blade1.Id }
+            TagId = new List<int> { _nordics.Id, _blade1.Id }
         };
         _nordicsBlade2Variables = """"
                                   {
@@ -199,7 +199,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _nordicsBlade2Variables,
             ApplicationIds = new List<int>(),
-            TagIds = new List<int> { _nordics.Id, _blade2.Id }
+            TagId = new List<int> { _nordics.Id, _blade2.Id }
         };
         await variableManager.SaveAsync(beneluxBlade1VariablesModel, cancellationToken);
         await variableManager.SaveAsync(beneluxBlade2VariablesModel, cancellationToken);
@@ -217,7 +217,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _processorVariables,
             ApplicationIds = new List<int> { _processor.Id },
-            TagIds = new List<int>()
+            TagId = new List<int>()
         };
         _routerVariables = """"
                            {
@@ -229,7 +229,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _routerVariables,
             ApplicationIds = new List<int> { _router.Id },
-            TagIds = new List<int>()
+            TagId = new List<int>()
         };
         await variableManager.SaveAsync(processorVariablesModel, cancellationToken);
         await variableManager.SaveAsync(routerVariablesModel, cancellationToken);
@@ -245,7 +245,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _processorBlade1Variables,
             ApplicationIds = new List<int> { _processor.Id },
-            TagIds = new List<int> { _blade1.Id }
+            TagId = new List<int> { _blade1.Id }
         };
         _processorBlade2Variables = """"
                                     {
@@ -257,7 +257,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _processorBlade2Variables,
             ApplicationIds = new List<int> { _processor.Id },
-            TagIds = new List<int> { _blade2.Id }
+            TagId = new List<int> { _blade2.Id }
         };
         _routerBlade1Variables = """"
                                  {
@@ -269,7 +269,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _routerBlade1Variables,
             ApplicationIds = new List<int> { _router.Id },
-            TagIds = new List<int> { _blade1.Id }
+            TagId = new List<int> { _blade1.Id }
         };
         _routerBlade2Variables = """"
                                  {
@@ -281,7 +281,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _routerBlade2Variables,
             ApplicationIds = new List<int> { _router.Id },
-            TagIds = new List<int> { _blade2.Id }
+            TagId = new List<int> { _blade2.Id }
         };
         await variableManager.SaveAsync(processorBlade1VariablesModel, cancellationToken);
         await variableManager.SaveAsync(processorBlade2VariablesModel, cancellationToken);
@@ -299,7 +299,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _processorBeneluxVariables,
             ApplicationIds = new List<int> { _processor.Id },
-            TagIds = new List<int> { _benelux.Id }
+            TagId = new List<int> { _benelux.Id }
         };
         _processorNordicsVariables = """"
                                      {
@@ -311,7 +311,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _processorNordicsVariables,
             ApplicationIds = new List<int> { _processor.Id },
-            TagIds = new List<int> { _nordics.Id }
+            TagId = new List<int> { _nordics.Id }
         };
         _routerBeneluxVariables = """"
                                   {
@@ -323,7 +323,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _routerBeneluxVariables,
             ApplicationIds = new List<int> { _router.Id },
-            TagIds = new List<int> { _benelux.Id }
+            TagId = new List<int> { _benelux.Id }
         };
         _routerNordicsVariables = """"
                                   {
@@ -335,7 +335,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _routerNordicsVariables,
             ApplicationIds = new List<int> { _router.Id },
-            TagIds = new List<int> { _nordics.Id }
+            TagId = new List<int> { _nordics.Id }
         };
         await variableManager.SaveAsync(processorBeneluxVariablesModel, cancellationToken);
         await variableManager.SaveAsync(processorNordicsVariablesModel, cancellationToken);
@@ -353,7 +353,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _processorBeneluxBlade1Variables,
             ApplicationIds = new List<int> { _processor.Id },
-            TagIds = new List<int> { _benelux.Id, _blade1.Id }
+            TagId = new List<int> { _benelux.Id, _blade1.Id }
         };
         _processorBeneluxBlade2Variables = """"
                                            {
@@ -365,7 +365,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _processorBeneluxBlade2Variables,
             ApplicationIds = new List<int> { _processor.Id },
-            TagIds = new List<int> { _benelux.Id, _blade2.Id }
+            TagId = new List<int> { _benelux.Id, _blade2.Id }
         };
         _processorNordicsBlade1Variables = """"
                                            {
@@ -377,7 +377,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _processorNordicsBlade1Variables,
             ApplicationIds = new List<int> { _processor.Id },
-            TagIds = new List<int> { _nordics.Id, _blade1.Id }
+            TagId = new List<int> { _nordics.Id, _blade1.Id }
         };
         _processorNordicsBlade2Variables = """"
                                            {
@@ -389,7 +389,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _processorNordicsBlade2Variables,
             ApplicationIds = new List<int> { _processor.Id },
-            TagIds = new List<int> { _nordics.Id, _blade2.Id }
+            TagId = new List<int> { _nordics.Id, _blade2.Id }
         };
         _routerBeneluxBlade1Variables = """"
                                         {
@@ -401,7 +401,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _routerBeneluxBlade1Variables,
             ApplicationIds = new List<int> { _router.Id },
-            TagIds = new List<int> { _benelux.Id, _blade1.Id }
+            TagId = new List<int> { _benelux.Id, _blade1.Id }
         };
         _routerBeneluxBlade2Variables = """"
                                         {
@@ -413,7 +413,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _routerBeneluxBlade2Variables,
             ApplicationIds = new List<int> { _router.Id },
-            TagIds = new List<int> { _benelux.Id, _blade2.Id }
+            TagId = new List<int> { _benelux.Id, _blade2.Id }
         };
         _routerNordicsBlade1Variables = """"
                                         {
@@ -425,7 +425,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _routerNordicsBlade1Variables,
             ApplicationIds = new List<int> { _router.Id },
-            TagIds = new List<int> { _nordics.Id, _blade1.Id }
+            TagId = new List<int> { _nordics.Id, _blade1.Id }
         };
         _routerNordicsBlade2Variables = """"
                                         {
@@ -437,7 +437,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = _routerNordicsBlade2Variables,
             ApplicationIds = new List<int> { _router.Id },
-            TagIds = new List<int> { _nordics.Id, _blade2.Id }
+            TagId = new List<int> { _nordics.Id, _blade2.Id }
         };
         await variableManager.SaveAsync(processorBeneluxBlade1VariablesModel, cancellationToken);
         await variableManager.SaveAsync(processorBeneluxBlade2VariablesModel, cancellationToken);
@@ -912,7 +912,7 @@ public class ManagingVariables : IAsyncLifetime
         {
             Json = newBlade1Variables,
             ApplicationIds = new List<int>(),
-            TagIds = new List<int> { _blade1.Id }
+            TagId = new List<int> { _blade1.Id }
         }, cancellationToken);
         
         var actualBlade1VariablesModel = await variableManager.GetConfigAsync(

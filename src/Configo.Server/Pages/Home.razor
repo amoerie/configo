@@ -1,11 +1,10 @@
 ﻿@page "/"
 @using Configo.Server.Domain
 @inject ApplicationManager ApplicationManager
-@inject TagGroupManager TagGroupManager
 @inject TagManager TagManager
 @inject ApiKeyManager ApiKeyManager
 
-@if (_tagGroups == null || _applications == null || _apiKeys == null)
+@if (_tags == null || _applications == null || _apiKeys == null)
 {
     <p>...loading</p>
     return;
@@ -20,56 +19,28 @@
         <MudCard>
             <MudCardHeader>
                 <CardHeaderContent>
-                    <MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Category"/> Tag Groups</MudText>
+                    <MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Category"/> Tags</MudText>
                     <MudText Typo="Typo.caption">
-                        Tag groups describe a characteristic of a deployed application.
-                        Possible tag groups are environments, timezones, machines, ...
+                        Tags describe a characteristic of a deployed application.
+                        Possible tags are environments, timezones, machines, ...
                     </MudText>
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent>
                 <MudList DisableGutters="true">
-                    @foreach (var tagGroup in _tagGroups)
+                    @foreach (var tag in _tags)
                     {
                         <MudListItem>
-                            @tagGroup.Name
+                            @tag.Name
                         </MudListItem>
                     }
                 </MudList>
             </MudCardContent>
             <MudCardActions>
-                <MudButton Color="Color.Primary" Href="@Routes.TagGroups">Manage</MudButton>
+                <MudButton Color="Color.Primary" Href="@Routes.Tags">Manage</MudButton>
             </MudCardActions>
         </MudCard>
     </MudItem>
-
-    @foreach (var tagGroup in _tagGroups)
-    {
-        <MudItem xs="12" sm="6" md="4" lg="3" xl="2">
-            <MudCard>
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">
-                            <MudIcon Icon="@tagGroup.Icon.Value"/> @tagGroup.Name
-                        </MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MudList DisableGutters="true">
-                        @foreach (var tag in _tagsByGroupId[tagGroup.Id])
-                        {
-                            <MudListItem>
-                                @tag.Name
-                            </MudListItem>
-                        }
-                    </MudList>
-                </MudCardContent>
-                <MudCardActions>
-                    <MudButton Color="Color.Primary" Href="@Routes.Tags(tagGroup.Name)">Manage</MudButton>
-                </MudCardActions>
-            </MudCard>
-        </MudItem>
-    }
 
     <MudItem xs="12" sm="6" md="4" lg="3" xl="2">
         <MudCard>
@@ -126,22 +97,15 @@
 </MudGrid>
 
 @code {
-    private List<TagGroupModel>? _tagGroups;
-    private readonly Dictionary<int, List<TagModel>> _tagsByGroupId = new Dictionary<int, List<TagModel>>();
+    private List<TagModel>? _tags;
     private List<ApplicationModel>? _applications;
-    private Dictionary<int, TagModel> _tagsById = new Dictionary<int, TagModel>();
     private List<ApiKeyModel>? _apiKeys;
 
     protected override async Task OnInitializedAsync()
     {
         _applications = await ApplicationManager.GetAllApplicationsAsync(CancellationToken);
-        _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken);
+        _tags = await TagManager.GetAllTagsAsync(CancellationToken);
         _apiKeys = await ApiKeyManager.GetAllApiKeysAsync(CancellationToken);
-        foreach (var tagGroup in _tagGroups)
-        {
-            _tagsByGroupId[tagGroup.Id] = await TagManager.GetTagsOfGroupAsync(tagGroup.Id, CancellationToken);
-        }
-        _tagsById = _tagsByGroupId.Values.SelectMany(t => t).ToDictionary(t => t.Id);
         await base.OnInitializedAsync();
     }
 

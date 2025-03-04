@@ -46,7 +46,7 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         {
             Json = _beneluxVariables,
             ApplicationIds = new List<int>(),
-            TagIds = new List<int> { _benelux.Id }
+            TagId = new List<int> { _benelux.Id }
         };
         await variableManager.SaveAsync(beneluxVariablesModel, cancellationToken);
 
@@ -56,7 +56,7 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         {
             Json = _processorVariables,
             ApplicationIds = new List<int> { _processor.Id },
-            TagIds = new List<int>()
+            TagId = new List<int>()
         };
         await variableManager.SaveAsync(processorVariablesModel, cancellationToken);
 
@@ -66,7 +66,7 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         {
             Json = _processorBeneluxVariables,
             ApplicationIds = new List<int> { _processor.Id },
-            TagIds = new List<int> { _benelux.Id }
+            TagId = new List<int> { _benelux.Id }
         };
         await variableManager.SaveAsync(processorBeneluxVariablesModel, cancellationToken);
     }
@@ -198,7 +198,7 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         {
             Json = _beneluxVariables,
             ApplicationIds = new List<int>(),
-            TagIds = new List<int> { _benelux.Id }
+            TagId = new List<int> { _benelux.Id }
         };
         await variableManager.SaveAsync(beneluxVariablesModel, cancellationToken);
         

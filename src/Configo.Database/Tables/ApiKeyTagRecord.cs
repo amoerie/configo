@@ -5,8 +5,9 @@ namespace Configo.Database.Tables;
 
 public sealed record ApiKeyTagRecord
 {
-    public int ApiKeyId { get; set; }
-    public int TagId { get; set; }
+    public required int ApiKeyId { get; set; }
+    public required int TagId { get; set; }
+    public required int Order { get; set; }
 }
 
 public class TagApiKeyRecordConfigurator: IEntityTypeConfiguration<ApiKeyTagRecord>

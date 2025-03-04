@@ -6,7 +6,6 @@ namespace Configo.Database.Tables;
 public sealed record TagRecord
 {
     public int Id { get; set; }
-    public required int TagGroupId { get; set; }
     public required string Name { get; set; }
 
     public required DateTime CreatedAtUtc { get; set; }
@@ -19,9 +18,9 @@ public class TagRecordConfigurator: IEntityTypeConfiguration<TagRecord>
     {
         builder.HasKey(r => r.Id);
         builder.Property(r => r.Name).HasMaxLength(256);
-        builder.HasOne<TagGroupRecord>()
-            .WithMany()
-            .HasForeignKey(t => t.TagGroupId)
+        builder.HasMany<VariableRecord>()
+            .WithOne()
+            .HasForeignKey(v => v.TagId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

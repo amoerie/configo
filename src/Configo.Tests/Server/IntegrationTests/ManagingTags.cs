@@ -41,8 +41,8 @@ public class ManagingTags : IAsyncLifetime
         await tagGroupManager.SaveTagGroupAsync(group2, cancellationToken);
         var tag = new TagModel { Name = "Test 1", GroupId = group1.Id, GroupIcon = group1.Icon };
         await tagManager.SaveTagAsync(tag, cancellationToken);
-        var tagsOfGroup1 = await tagManager.GetTagsOfGroupAsync(group1.Id, cancellationToken);
-        var tagsOfGroup2 = await tagManager.GetTagsOfGroupAsync(group2.Id, cancellationToken);
+        var tagsOfGroup1 = await tagManager.GetAllTagsAsync(group1.Id, cancellationToken);
+        var tagsOfGroup2 = await tagManager.GetAllTagsAsync(group2.Id, cancellationToken);
 
         tagsOfGroup1.Should().HaveCount(1);
         tagsOfGroup1.Single().Name.Should().Be("Test 1");
@@ -51,12 +51,12 @@ public class ManagingTags : IAsyncLifetime
         tag.Name = "Test 2";
         await tagManager.SaveTagAsync(tag, cancellationToken);
         
-        tagsOfGroup1 = await tagManager.GetTagsOfGroupAsync(group1.Id, cancellationToken);
+        tagsOfGroup1 = await tagManager.GetAllTagsAsync(group1.Id, cancellationToken);
         tagsOfGroup1.Should().HaveCount(1);
         tagsOfGroup1.Single().Name.Should().Be("Test 2");
 
         await tagManager.DeleteTagAsync(tag, cancellationToken);
-        tagsOfGroup1 = await tagManager.GetTagsOfGroupAsync(group1.Id, cancellationToken);
+        tagsOfGroup1 = await tagManager.GetAllTagsAsync(group1.Id, cancellationToken);
         tagsOfGroup1.Should().HaveCount(0);
     }
 }

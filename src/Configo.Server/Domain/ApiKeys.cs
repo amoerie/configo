@@ -56,9 +56,8 @@ public sealed class ApiKeyManager
         {
             var apiKeyTagIds = await dbContext.ApiKeyTags
                 .Where(apiKeyTag => apiKeyTag.ApiKeyId == apiKeyRecord.Id)
-                .Join(dbContext.Tags, a => a.TagId, t => t.Id, (_, tag) => tag)
-                .Join(dbContext.TagGroups, t => t.TagGroupId, g => g.Id, (tag, group) => new { Tag = tag, Group = group })
-                .OrderBy(result => result.Group.Name)
+                .Join(dbContext.Tags, a => a.TagId, t => t.Id, (apiKeyTag, tag) => new { ApiKeyTag = apiKeyTag, Tag = tag })
+                .OrderBy(result => result.ApiKeyTag.Order)
                 .Select(result => result.Tag.Id)
                 .ToListAsync(cancellationToken);
 
@@ -142,21 +141,25 @@ public sealed class ApiKeyManager
 
         _logger.LogInformation("Saved {@ApiKey}", apiKeyRecord);
 
+        var index = 0;
         foreach (var tagId in model.TagIds)
         {
             var apiKeyTagRecord = new ApiKeyTagRecord
             {
                 ApiKeyId = apiKeyRecord.Id,
-                TagId = tagId
+                TagId = tagId,
+                Order = index
             };
             dbContext.ApiKeyTags.Add(apiKeyTagRecord);
+            index++;
         }
+
         await dbContext.SaveChangesAsync(cancellationToken);
         
-        var tagIds = await dbContext.Tags
-            .Where(t => model.TagIds.Contains(t.Id))
-            .Join(dbContext.TagGroups, t => t.TagGroupId, g => g.Id, (tag, group) => new { Tag = tag, Group = group })
-            .OrderBy(result => result.Group.Name)
+        var apiKeyTagIds = await dbContext.ApiKeyTags
+            .Where(apiKeyTag => apiKeyTag.ApiKeyId == apiKeyRecord.Id)
+            .Join(dbContext.Tags, a => a.TagId, t => t.Id, (apiKeyTag, tag) => new { ApiKeyTag = apiKeyTag, Tag = tag })
+            .OrderBy(result => result.ApiKeyTag.Order)
             .Select(result => result.Tag.Id)
             .ToListAsync(cancellationToken);
 
@@ -166,7 +169,7 @@ public sealed class ApiKeyManager
         model.ActiveUntilUtc = apiKeyRecord.ActiveUntilUtc;
         model.UpdatedAtUtc = apiKeyRecord.UpdatedAtUtc;
         model.ApplicationId = apiKeyRecord.ApplicationId;
-        model.TagIds = tagIds;
+        model.TagIds = apiKeyTagIds;
     }
 
     public async Task DeleteApiKeyAsync(ApiKeyModel apiKey, CancellationToken cancellationToken)
@@ -242,10 +245,8 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
         _apiKeyManager = apiKeyManager ?? throw new ArgumentNullException(nameof(apiKeyManager));
     }
 
-    // Override the HandleAuthenticateAsync method to implement the custom logic
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        // Get the authorization header from the request
         var authorizationHeader = Request.Headers["Authorization"].ToString();
 
         // If the header is empty or does not start with "Bearer ", return no result
@@ -283,15 +284,12 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
 
         _logger.LogInformation("Valid API key: {Key}", keyForLogging);
         
-        // Create a claim identity with a dummy name claim
         var identity = new ClaimsIdentity(Scheme.Name);
         
         identity.AddClaim(new Claim(ApiKeyIdClaim, apiKey.Id.ToString(CultureInfo.InvariantCulture)));
 
-        // Create a ticket with the identity and the scheme
         var ticket = new AuthenticationTicket(new ClaimsPrincipal(identity), Scheme.Name);
 
-        // Return a success result with the ticket
         return AuthenticateResult.Success(ticket);
     }
 }

@@ -1,18 +1,17 @@
-﻿@page "/tags/{group}"
+﻿@page "/tags"
 @using Configo.Server.Domain
 @using System.Collections.ObjectModel
-@inject TagGroupManager TagGroupManager
 @inject TagManager TagManager
 @inject IDialogService DialogService
 
-@if (_tagGroup == null || _tags == null)
+@if (_tags == null)
 {
     <MudProgressCircular Color="Color.Primary" Indeterminate="true"/>
     return;
 }
 
 <MudText Typo="Typo.h4" GutterBottom="true">
-    <MudIcon Icon="@_tagGroup.Icon.Value" Size="Size.Large"/> @_tagGroup.Name
+    <MudIcon Icon="@Icons.Material.Filled.Tag" Size="Size.Large"/> Tags
 </MudText>
 
 <MudButton
@@ -41,7 +40,8 @@
                 <MudChip Color="Color.Primary">@context.Item.NumberOfVariables</MudChip>
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="(TagModel x) => x.UpdatedAtUtc" Title="Updated" IsEditable="false" Format="u" Filterable="false"/>
+        <PropertyColumn Property="(TagModel x) => x.UpdatedAtUtc" Title="Updated" IsEditable="false" Format="u"
+                        Filterable="false"/>
         <TemplateColumn IsEditable="false" Filterable="false" Sortable="false">
             <CellTemplate>
                 <MudStack Row>
@@ -64,19 +64,9 @@
     private ObservableCollection<TagModel>? _tags;
     private MudDataGrid<TagModel>? _dataGrid;
 
-    private TagGroupModel? _tagGroup;
-
-    [Parameter]
-    public string? Group { get; set; }
-
     protected override async Task OnParametersSetAsync()
     {
-        if (Group == null)
-        {
-            throw new InvalidOperationException("Oi, where is the group");
-        }
-        _tagGroup = await TagGroupManager.GetTagGroupAsync(Group, CancellationToken);
-        _tags = new ObservableCollection<TagModel>(await TagManager.GetTagsOfGroupAsync(_tagGroup.Id, CancellationToken));
+        _tags = new ObservableCollection<TagModel>(await TagManager.GetAllTagsAsync(CancellationToken));
     }
 
     private async Task OpenDeleteDialogAsync(TagModel tag)
@@ -109,10 +99,10 @@
     {
         var model = new TagModel
         {
-            Id = 0, Name = "",
-            GroupId = _tagGroup!.Id,
-            GroupIcon = _tagGroup!.Icon,
-            NumberOfVariables = 0, UpdatedAtUtc = DateTime.UtcNow
+            Id = 0,
+            Name = "",
+            NumberOfVariables = 0, 
+            UpdatedAtUtc = DateTime.UtcNow
         };
         _tags!.Add(model);
         await _dataGrid!.SetEditingItemAsync(model);

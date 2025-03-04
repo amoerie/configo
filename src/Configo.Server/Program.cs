@@ -112,7 +112,6 @@ services.AddDbContextFactory<ConfigoDbContext>(dbContextOptions =>
 services.AddHostedService<DatabaseMigrator>();
 
 // Domain
-services.AddSingleton<TagGroupManager>();
 services.AddSingleton<TagManager>();
 services.AddSingleton<ApplicationManager>();
 services.AddSingleton<ApiKeyManager>();
