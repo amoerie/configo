@@ -73,6 +73,9 @@ namespace Configo.Database.NpgSql.Migrations
                     b.Property<int>("TagId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("Order")
+                        .HasColumnType("integer");
+
                     b.HasKey("ApiKeyId", "TagId");
 
                     b.HasIndex("TagId");
@@ -127,41 +130,6 @@ namespace Configo.Database.NpgSql.Migrations
                     b.ToTable("ApplicationVariables");
                 });
 
-            modelBuilder.Entity("Configo.Database.Tables.TagGroupRecord", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc));
-
-                    b.Property<string>("Icon")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasDefaultValue("fa-tags");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc));
-
-                    b.HasKey("Id");
-
-                    b.ToTable("TagGroups");
-                });
-
             modelBuilder.Entity("Configo.Database.Tables.TagRecord", b =>
                 {
                     b.Property<int>("Id")
@@ -178,32 +146,12 @@ namespace Configo.Database.NpgSql.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<int>("TagGroupId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TagGroupId");
-
                     b.ToTable("Tags");
-                });
-
-            modelBuilder.Entity("Configo.Database.Tables.TagVariableRecord", b =>
-                {
-                    b.Property<int>("TagId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("VariableId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("TagId", "VariableId");
-
-                    b.HasIndex("VariableId");
-
-                    b.ToTable("TagVariables");
                 });
 
             modelBuilder.Entity("Configo.Database.Tables.VariableRecord", b =>
@@ -224,6 +172,9 @@ namespace Configo.Database.NpgSql.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
+                    b.Property<int?>("TagId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("UpdatedAtUtc")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -241,6 +192,8 @@ namespace Configo.Database.NpgSql.Migrations
                         .HasDefaultValue("String");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TagId");
 
                     b.ToTable("Variables");
                 });
@@ -303,28 +256,12 @@ namespace Configo.Database.NpgSql.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Configo.Database.Tables.TagRecord", b =>
-                {
-                    b.HasOne("Configo.Database.Tables.TagGroupRecord", null)
-                        .WithMany()
-                        .HasForeignKey("TagGroupId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Configo.Database.Tables.TagVariableRecord", b =>
+            modelBuilder.Entity("Configo.Database.Tables.VariableRecord", b =>
                 {
                     b.HasOne("Configo.Database.Tables.TagRecord", null)
                         .WithMany()
                         .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Configo.Database.Tables.VariableRecord", null)
-                        .WithMany()
-                        .HasForeignKey("VariableId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 #pragma warning restore 612, 618
         }
