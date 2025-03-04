@@ -165,9 +165,9 @@
     {
         var apiKeyModel = new ApiKeyModel
         {
-            Id = _applications?.Count > 0 ? _applications[0].Id : 0,
+            Id = 0,
             Key = "",
-            ApplicationId = 0,
+            ApplicationId = _applications?.Count > 0 ? _applications[0].Id : 0,
             TagIds = new List<int>(),
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddYears(10),

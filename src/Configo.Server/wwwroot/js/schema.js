@@ -35,7 +35,7 @@ export class Schema {
             validate: true, 
             allowComments: false, 
             schemas: [{
-                // If we give the model a name that matches wich this filematch
+                // If we give the model a name that matches with this filematch
                 // monaco will use this schema file for validation
                 fileMatch: [ "schema.json" ],
                 uri: "https://json-schema.org/draft-04/schema",
