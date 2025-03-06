@@ -20,10 +20,10 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
 {
     public const string Collection = "IntegrationTests";
 
-    private PostgreSqlContainer _container = default!;
-    private Respawner _respawner = default!;
-    private TestWebApplicationFactory _testWebApplicationFactory = default!;
-    private string _connectionString = default!;
+    private PostgreSqlContainer _container = null!;
+    private Respawner _respawner = null!;
+    private TestWebApplicationFactory _testWebApplicationFactory = null!;
+    private string _connectionString = null!;
     private readonly IntegrationTestOutputAccessor _outputAccessor = new IntegrationTestOutputAccessor();
     private ILogger<IntegrationTestFixture>? _logger;
 
@@ -38,6 +38,7 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
 
         await _container.StartAsync();
         _connectionString = _container.GetConnectionString();
+        _connectionString = new NpgsqlConnectionStringBuilder(_connectionString) { IncludeErrorDetail = true }.ConnectionString;
 
         _testWebApplicationFactory = new TestWebApplicationFactory(_connectionString, _outputAccessor);
         
@@ -51,10 +52,10 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         await connection.OpenAsync();
         _respawner = await Respawner.CreateAsync(connection, new RespawnerOptions
         {
-            SchemasToInclude = new[]
-            {
+            SchemasToInclude =
+            [
                 "public"
-            },
+            ],
             DbAdapter = DbAdapter.Postgres
         });
         
@@ -200,7 +201,7 @@ public class IntegrationTestLogger : ILogger
 
     public bool IsEnabled(LogLevel logLevel) => logLevel >= _minimumLevel;
 
-    public IDisposable BeginScope<TState>(TState state) where TState : notnull => default!;
+    public IDisposable BeginScope<TState>(TState state) where TState : notnull => null!;
 }
 
 public sealed class IntegrationTestLogger<T> : IntegrationTestLogger, ILogger<T>

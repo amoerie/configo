@@ -8,7 +8,7 @@ namespace Configo.Tests.Server.IntegrationTests;
 public class SaveSchemaEndpointTests : IAsyncLifetime
 {
     private readonly IntegrationTestFixture _fixture;
-    private ApplicationModel _processor = default!;
+    private ApplicationModel _processor = null!;
 
     public SaveSchemaEndpointTests(IntegrationTestFixture fixture, ITestOutputHelper output)
     {
@@ -36,7 +36,7 @@ public class SaveSchemaEndpointTests : IAsyncLifetime
         // Arrange
         var schemaManager = _fixture.GetRequiredService<SchemaManager>();
         using var httpClient = _fixture.CreateClient();
-        var cancellationToken = default(CancellationToken);
+        var cancellationToken = CancellationToken.None;
 
         // Act
         var schema = await File.ReadAllTextAsync("./Server/IntegrationTests/SaveSchemaEndpointTests.schema.json", cancellationToken);

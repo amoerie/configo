@@ -1,5 +1,4 @@
 ﻿using Configo.Client.JsonSchemaGenerator;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,17 +7,12 @@ using Xunit.Abstractions;
 
 namespace Configo.Tests.Client.JsonSchemaGenerator;
 
-public class JsonSchemaGeneratorTests
+public class JsonSchemaGeneratorTests(ITestOutputHelper output)
 {
-    private readonly IntegrationTestOutputAccessor _integrationTestOutputAccessor;
-
-    public JsonSchemaGeneratorTests(ITestOutputHelper output)
+    private readonly IntegrationTestOutputAccessor _integrationTestOutputAccessor = new IntegrationTestOutputAccessor
     {
-        _integrationTestOutputAccessor = new IntegrationTestOutputAccessor
-        {
-            Output = output
-        };
-    }
+        Output = output
+    };
 
     [Fact]
     public async Task ShouldProduceValidSchema()
@@ -51,7 +45,7 @@ public class JsonSchemaGeneratorTests
         services.AddOptions<OtherOptions>().BindConfiguration(OtherOptions.ConfigurationSectionName);
 
         var serviceProvider = services.BuildServiceProvider();
-        
+
         var generator = serviceProvider.GetRequiredService<ConfigoJsonSchemaGenerator>();
 
         // Act
@@ -140,47 +134,47 @@ public class JsonSchemaGeneratorTests
         /// A date time
         /// </summary>
         public DateTime? DateTime { get; set; }
-        
+
         /// <summary>
         /// A time span
         /// </summary>
         public TimeSpan? TimeSpan { get; set; }
-        
+
         /// <summary>
         /// A date only
         /// </summary>
         public DateOnly? DateOnly { get; set; }
-        
+
         /// <summary>
         /// A time only
         /// </summary>
         public TimeOnly? TimeOnly { get; set; }
-        
+
         /// <summary>
         /// Some strings in an IEnumerable
         /// </summary>
         public IEnumerable<string>? StringsEnumerable { get; set; }
-        
+
         /// <summary>
         /// Some strings in an array
         /// </summary>
         public string[]? StringsArray { get; set; }
-        
+
         /// <summary>
         /// Some strings in an IList
         /// </summary>
         public IList<string>? StringsIList { get; set; }
-        
+
         /// <summary>
         /// Some strings in an IList
         /// </summary>
         public List<string>? StringsList { get; set; }
-        
+
         /// <summary>
         /// Some strings in a Dictionary
         /// </summary>
         public Dictionary<string, string>? StringsDictionary { get; set; }
-        
+
         /// <summary>
         /// Some strings in an IDictionary
         /// </summary>

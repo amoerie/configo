@@ -62,6 +62,9 @@ namespace Configo.Database.SqlServer.Migrations
 
                     b.HasIndex("ApplicationId");
 
+                    b.HasIndex("Key")
+                        .IsUnique();
+
                     b.ToTable("ApiKeys");
                 });
 
@@ -112,6 +115,9 @@ namespace Configo.Database.SqlServer.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Name")
+                        .IsUnique();
+
                     b.ToTable("Applications");
                 });
 
@@ -150,6 +156,9 @@ namespace Configo.Database.SqlServer.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.ToTable("Tags");
                 });
@@ -194,6 +203,10 @@ namespace Configo.Database.SqlServer.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("TagId");
+
+                    b.HasIndex("Key", "TagId")
+                        .IsUnique()
+                        .HasFilter("[TagId] IS NOT NULL");
 
                     b.ToTable("Variables");
                 });

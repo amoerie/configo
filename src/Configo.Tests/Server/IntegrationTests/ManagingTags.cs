@@ -1,6 +1,4 @@
-﻿using Configo.Server.Blazor;
-using Configo.Server.Domain;
-using MudBlazor;
+﻿using Configo.Server.Domain;
 using Xunit.Abstractions;
 
 namespace Configo.Tests.Server.IntegrationTests;
@@ -30,33 +28,26 @@ public class ManagingTags : IAsyncLifetime
     public async Task CrudShouldWorkCorrectly()
     {
         // Arrange
-        var tagGroupManager = _fixture.GetRequiredService<TagGroupManager>();
         var tagManager = _fixture.GetRequiredService<TagManager>();
-        CancellationToken cancellationToken = default;
+        CancellationToken cancellationToken = CancellationToken.None;
         
         // Act + Assert
-        var group1 = new TagGroupModel { Name = "Group 1", Icon = TagGroupIcon.GetByName(Icons.Material.Filled.Factory) };
-        await tagGroupManager.SaveTagGroupAsync(group1, cancellationToken);
-        var group2 = new TagGroupModel { Name = "Group 2", Icon = TagGroupIcon.GetByName(Icons.Material.Filled._1k) };
-        await tagGroupManager.SaveTagGroupAsync(group2, cancellationToken);
-        var tag = new TagModel { Name = "Test 1", GroupId = group1.Id, GroupIcon = group1.Icon };
+        var tag = new TagModel { Name = "Test 1" };
         await tagManager.SaveTagAsync(tag, cancellationToken);
-        var tagsOfGroup1 = await tagManager.GetAllTagsAsync(group1.Id, cancellationToken);
-        var tagsOfGroup2 = await tagManager.GetAllTagsAsync(group2.Id, cancellationToken);
+        var allTags = await tagManager.GetAllTagsAsync(cancellationToken);
 
-        tagsOfGroup1.Should().HaveCount(1);
-        tagsOfGroup1.Single().Name.Should().Be("Test 1");
-        tagsOfGroup2.Should().BeEmpty();
+        allTags.Should().HaveCount(1);
+        allTags.Single().Name.Should().Be("Test 1");
 
         tag.Name = "Test 2";
         await tagManager.SaveTagAsync(tag, cancellationToken);
         
-        tagsOfGroup1 = await tagManager.GetAllTagsAsync(group1.Id, cancellationToken);
-        tagsOfGroup1.Should().HaveCount(1);
-        tagsOfGroup1.Single().Name.Should().Be("Test 2");
+        allTags = await tagManager.GetAllTagsAsync(cancellationToken);
+        allTags.Should().HaveCount(1);
+        allTags.Single().Name.Should().Be("Test 2");
 
         await tagManager.DeleteTagAsync(tag, cancellationToken);
-        tagsOfGroup1 = await tagManager.GetAllTagsAsync(group1.Id, cancellationToken);
-        tagsOfGroup1.Should().HaveCount(0);
+        allTags = await tagManager.GetAllTagsAsync(cancellationToken);
+        allTags.Should().HaveCount(0);
     }
 }

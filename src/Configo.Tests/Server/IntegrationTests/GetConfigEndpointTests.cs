@@ -11,12 +11,10 @@ namespace Configo.Tests.Server.IntegrationTests;
 public class GetConfigEndpointTests : IAsyncLifetime
 {
     private readonly IntegrationTestFixture _fixture;
-    private TagGroupModel _environments = default!;
-    private TagModel _benelux = default!;
-    private ApplicationModel _processor = default!;
-    private string _beneluxVariables = default!;
-    private string _processorVariables = default!;
-    private string _processorBeneluxVariables = default!;
+    private TagModel _benelux = null!;
+    private ApplicationModel _processor = null!;
+    private string _processorVariables = null!;
+    private string _processorBeneluxVariables = null!;
 
     public GetConfigEndpointTests(IntegrationTestFixture fixture, ITestOutputHelper output)
     {
@@ -26,32 +24,15 @@ public class GetConfigEndpointTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        var tagGroupManager = _fixture.GetRequiredService<TagGroupManager>();
         var tagManager = _fixture.GetRequiredService<TagManager>();
         var applicationManager = _fixture.GetRequiredService<ApplicationManager>();
         var variableManager = _fixture.GetRequiredService<VariableManager>();
         var cancellationToken = CancellationToken.None;
 
-        _environments = new TagGroupModel { Name = "Environments", Icon = TagGroupIcon.GetByName(Icons.Material.Filled.Map)};
-        await tagGroupManager.SaveTagGroupAsync(_environments, cancellationToken);
-        _benelux = new TagModel { Name = "Benelux", GroupId = _environments.Id, GroupIcon = _environments.Icon };
+        _benelux = new TagModel { Name = "Benelux" };
         await tagManager.SaveTagAsync(_benelux, cancellationToken);
         _processor = new ApplicationModel { Name = "Processor" };
         await applicationManager.SaveApplicationAsync(_processor, cancellationToken);
-
-        // Environment specific config
-        _beneluxVariables = """"
-                           {
-                                "Environment": "Benelux",
-                           }
-                           """";
-        var beneluxVariablesModel = new VariablesEditModel
-        {
-            Json = _beneluxVariables,
-            ApplicationIds = new List<int>(),
-            TagId = new List<int> { _benelux.Id }
-        };
-        await variableManager.SaveAsync(beneluxVariablesModel, cancellationToken);
 
         // Application specific config
         _processorVariables = """"
@@ -62,8 +43,8 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var processorVariablesModel = new VariablesEditModel
         {
             Json = _processorVariables,
-            ApplicationIds = new List<int> { _processor.Id },
-            TagId = new List<int>()
+            ApplicationIds = [_processor.Id],
+            TagId = null
         };
         await variableManager.SaveAsync(processorVariablesModel, cancellationToken);
 
@@ -76,8 +57,8 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var processorBeneluxVariablesModel = new VariablesEditModel
         {
             Json = _processorBeneluxVariables,
-            ApplicationIds = new List<int> { _processor.Id },
-            TagId = new List<int> { _benelux.Id }
+            ApplicationIds = [_processor.Id],
+            TagId = _benelux.Id
         };
         await variableManager.SaveAsync(processorBeneluxVariablesModel, cancellationToken);
     }
@@ -93,7 +74,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
         // Arrange
         var apiKeyManager = _fixture.GetRequiredService<ApiKeyManager>();
         using var httpClient = _fixture.CreateClient();
-        var cancellationToken = default(CancellationToken);
+        var cancellationToken = CancellationToken.None;
         
         // Processor runs in benelux
         var apiKey = new ApiKeyModel
@@ -118,8 +99,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
             """
             {
                 "Application": "Processor",
-                "ApplicationEnvironment": "Processor+Benelux",
-                "Environment": "Benelux"
+                "ApplicationEnvironment": "Processor+Benelux"
             }
             """;
         Assert.Equal(JsonNormalizer.Normalize(expectedConfig), JsonNormalizer.Normalize(actualConfig));
@@ -131,7 +111,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
         // Arrange
         var apiKeyManager = _fixture.GetRequiredService<ApiKeyManager>();
         using var httpClient = _fixture.CreateClient();
-        var cancellationToken = default(CancellationToken);
+        var cancellationToken = CancellationToken.None;
         
         // Processor runs in benelux
         var apiKey = new ApiKeyModel
@@ -159,7 +139,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
         // Arrange
         var apiKeyManager = _fixture.GetRequiredService<ApiKeyManager>();
         using var httpClient = _fixture.CreateClient();
-        var cancellationToken = default(CancellationToken);
+        var cancellationToken = CancellationToken.None;
         
         // Processor runs in benelux
         var apiKey = new ApiKeyModel
@@ -187,7 +167,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
         // Arrange
         var apiKeyGenerator = _fixture.GetRequiredService<ApiKeyGenerator>();
         using var httpClient = _fixture.CreateClient();
-        var cancellationToken = default(CancellationToken);
+        var cancellationToken = CancellationToken.None;
         
         // Processor runs in benelux
         var apiKey = apiKeyGenerator.Generate(64);

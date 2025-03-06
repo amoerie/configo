@@ -24,6 +24,7 @@ public sealed class ApiKeyRecordConfiguration : IEntityTypeConfiguration<ApiKeyR
             .HasForeignKey(a => a.ApplicationId)
             .OnDelete(DeleteBehavior.Cascade);
         builder.Property(r => r.Key).HasMaxLength(64);
+        builder.HasIndex(r => r.Key).IsUnique();
         builder.Property(r => r.CreatedAtUtc).HasDefaultValue(DateTime.UnixEpoch);
         builder.Property(r => r.UpdatedAtUtc).HasDefaultValue(DateTime.UnixEpoch);
         builder.Property(r => r.ActiveSinceUtc).HasDefaultValue(DateTime.UnixEpoch);

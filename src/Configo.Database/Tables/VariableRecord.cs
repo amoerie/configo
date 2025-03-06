@@ -27,5 +27,6 @@ public class VariableRecordConfigurator: IEntityTypeConfiguration<VariableRecord
             .WithMany()
             .HasForeignKey(t => t.TagId)
             .OnDelete(DeleteBehavior.Cascade);
+        builder.HasIndex(r => new { r.Key, r.TagId }).IsUnique();
     }
 }

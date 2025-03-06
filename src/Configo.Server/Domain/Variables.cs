@@ -301,44 +301,33 @@ public sealed record VariableManager
         var variables = dbContext.Variables;
         var applicationVariables = dbContext.ApplicationVariables;
 
-        IQueryable<VariableRecord> existingVariablesQuery = variables;
-
-        existingVariablesQuery = existingVariablesQuery.Where(v => v.TagId == tagId);
-
-        existingVariablesQuery = existingVariablesQuery.Where(v =>
-            !applicationVariables.Any(av => av.VariableId == v.Id && !applicationIds.Contains(av.ApplicationId))
-            && applicationVariables.Count(av => av.VariableId == v.Id) == applicationIds.Count);
-
-        var existingVariables = await existingVariablesQuery.AsTracking().ToListAsync(cancellationToken);
-        var existingVariablesByKey = existingVariables.GroupBy(v => v.Key).ToDictionary(group => group.Key, values => values.ToList());
+        var existingVariables = await variables.Where(v => v.TagId == tagId).AsTracking().ToListAsync(cancellationToken);
         var newVariables = _deserializer.DeserializeFromJson(model.Json, model.TagId);
 
         // Add or update variables
-        var addedVariables = new List<VariableRecord>();
+        var savedVariables = new List<VariableRecord>();
         foreach (var newVariable in newVariables)
         {
             var key = newVariable.Key;
             var value = newVariable.Value;
             var valueType = newVariable.ValueType;
 
-            if (existingVariablesByKey.Remove(key, out var existingVariablesWithSameKey))
+            var existingVariable = existingVariables.SingleOrDefault(v => v.Key == key);
+            if (existingVariable is not null)
             {
-                var existingVariable = existingVariablesWithSameKey[0];
-                if (!string.Equals(value, existingVariable.Value)
-                    || valueType != existingVariable.ValueType)
+                if (!string.Equals(value, existingVariable.Value) || valueType != existingVariable.ValueType)
                 {
                     existingVariable.Value = value;
                     existingVariable.ValueType = valueType;
                     existingVariable.UpdatedAtUtc = DateTime.UtcNow;
                     _logger.LogInformation("Updated existing variable: {@Variable}", existingVariable);
                 }
-                
-                // Somehow we managed to have duplicate keys for the same tag + application combinations, clean those up now
-                foreach (var variableToDelete in existingVariablesWithSameKey.Skip(1))
+                else
                 {
-                    _logger.LogWarning("Deleted existing variable because of duplicate key: {@Variable}", existingVariable);
-                    dbContext.Variables.Remove(variableToDelete);
+                    _logger.LogDebug("Skipped updating existing variable because value or value type did not change: {@Variable}", existingVariable);
                 }
+                
+                savedVariables.Add(existingVariable);
             }
             else
             {
@@ -351,38 +340,57 @@ public sealed record VariableManager
                     CreatedAtUtc = DateTime.UtcNow,
                     UpdatedAtUtc = DateTime.UtcNow
                 };
+                
                 variables.Add(variableToAdd);
 
-                addedVariables.Add(variableToAdd);
+                savedVariables.Add(variableToAdd);
             }
         }
 
         // Delete old variables
-        foreach (var group in existingVariablesByKey.Values)
+        var variablesToDelete = existingVariables.Except(savedVariables).ToList();
+        foreach (var variableToDelete in variablesToDelete)
         {
-            foreach (var variableToDelete in group)
-            {
-                _logger.LogInformation("Deleted existing variable: {@Variable}", variableToDelete);
-                variables.Remove(variableToDelete);
-            }
+            _logger.LogInformation("Deleted existing variable: {@Variable}", variableToDelete);
+            variables.Remove(variableToDelete);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
         // Link new variables to applications and tags
-        foreach (var addedVariable in addedVariables)
+        foreach (var savedVariable in savedVariables)
         {
-            _logger.LogInformation("Added new variable: {@Variable}", addedVariable);
+            _logger.LogInformation("Added new variable: {@Variable}", savedVariable);
+            
+            var existingApplicationVariables = await applicationVariables.Where(av => av.VariableId == savedVariable.Id).ToListAsync(cancellationToken);
 
+            List<ApplicationVariableRecord> savedApplicationVariables = [];
             foreach (var applicationId in applicationIds)
             {
-                applicationVariables.Add(new ApplicationVariableRecord
+                var existingApplicationVariable = existingApplicationVariables.SingleOrDefault(av => av.ApplicationId == applicationId);
+                if (existingApplicationVariable is not null)
                 {
-                    ApplicationId = applicationId,
-                    VariableId = addedVariable.Id
-                });
-                
-                _logger.LogInformation("Linked variable {@VariableId} to application {ApplicationId}", addedVariable, applicationId);
+                    savedApplicationVariables.Add(existingApplicationVariable);
+                    _logger.LogDebug("Variable {@VariableId} is already linked to application {ApplicationId}", savedVariable, applicationId);
+                }
+                else
+                {
+                    var newApplicationVariable = new ApplicationVariableRecord
+                    {
+                        ApplicationId = applicationId,
+                        VariableId = savedVariable.Id
+                    };
+                    applicationVariables.Add(newApplicationVariable);
+                    savedApplicationVariables.Add(newApplicationVariable);
+                }
+                _logger.LogInformation("Linked variable {@VariableId} to application {ApplicationId}", savedVariable, applicationId);
+            }
+            
+            var applicationVariablesToDelete = existingApplicationVariables.Except(savedApplicationVariables).ToList();
+            foreach (var applicationVariableToDelete in applicationVariablesToDelete)
+            {
+                applicationVariables.Remove(applicationVariableToDelete);
+                _logger.LogInformation("Unlinked variable {@VariableId} from application {ApplicationId}", applicationVariableToDelete.VariableId, applicationVariableToDelete.ApplicationId);
             }
         }
 

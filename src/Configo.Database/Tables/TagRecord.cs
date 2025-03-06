@@ -18,6 +18,7 @@ public class TagRecordConfigurator: IEntityTypeConfiguration<TagRecord>
     {
         builder.HasKey(r => r.Id);
         builder.Property(r => r.Name).HasMaxLength(256);
+        builder.HasIndex(r => r.Name).IsUnique();
         builder.HasMany<VariableRecord>()
             .WithOne()
             .HasForeignKey(v => v.TagId)

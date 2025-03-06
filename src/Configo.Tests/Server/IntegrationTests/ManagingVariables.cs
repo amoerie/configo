@@ -1,6 +1,4 @@
-﻿using Configo.Server.Blazor;
-using Configo.Server.Domain;
-using MudBlazor;
+﻿using Configo.Server.Domain;
 using Xunit.Abstractions;
 
 namespace Configo.Tests.Server.IntegrationTests;
@@ -9,42 +7,28 @@ namespace Configo.Tests.Server.IntegrationTests;
 public class ManagingVariables : IAsyncLifetime
 {
     private readonly IntegrationTestFixture _fixture;
-    private TagGroupModel _environments = default!;
-    private TagGroupModel _machines = default!;
-    private TagModel _benelux = default!;
-    private TagModel _nordics = default!;
-    private TagModel _blade1 = default!;
-    private TagModel _blade2 = default!;
-    private ApplicationModel _processor = default!;
-    private ApplicationModel _router = default!;
-    private ApplicationModel _otherApplication = default!;
-    private TagModel _otherTag = default!;
-    private string _blade1Variables = default!;
-    private string _blade2Variables = default!;
-    private string _beneluxVariables = default!;
-    private string _nordicsVariables = default!;
-    private string _beneluxBlade1Variables = default!;
-    private string _beneluxBlade2Variables = default!;
-    private string _nordicsBlade1Variables = default!;
-    private string _nordicsBlade2Variables = default!;
-    private string _processorVariables = default!;
-    private string _routerVariables = default!;
-    private string _processorBlade1Variables = default!;
-    private string _processorBlade2Variables = default!;
-    private string _routerBlade1Variables = default!;
-    private string _routerBlade2Variables = default!;
-    private string _processorBeneluxVariables = default!;
-    private string _processorNordicsVariables = default!;
-    private string _routerBeneluxVariables = default!;
-    private string _routerNordicsVariables = default!;
-    private string _processorBeneluxBlade1Variables = default!;
-    private string _processorBeneluxBlade2Variables = default!;
-    private string _processorNordicsBlade1Variables = default!;
-    private string _processorNordicsBlade2Variables = default!;
-    private string _routerBeneluxBlade1Variables = default!;
-    private string _routerBeneluxBlade2Variables = default!;
-    private string _routerNordicsBlade1Variables = default!;
-    private string _routerNordicsBlade2Variables = default!;
+    private TagModel _benelux = null!;
+    private TagModel _nordics = null!;
+    private TagModel _blade1 = null!;
+    private TagModel _blade2 = null!;
+    private ApplicationModel _processor = null!;
+    private ApplicationModel _router = null!;
+    private ApplicationModel _otherApplication = null!;
+    private TagModel _otherTag = null!;
+    private string _blade1Variables = null!;
+    private string _blade2Variables = null!;
+    private string _beneluxVariables = null!;
+    private string _nordicsVariables = null!;
+    private string _processorVariables = null!;
+    private string _routerVariables = null!;
+    private string _processorBlade1Variables = null!;
+    private string _processorBlade2Variables = null!;
+    private string _routerBlade1Variables = null!;
+    private string _routerBlade2Variables = null!;
+    private string _processorBeneluxVariables = null!;
+    private string _processorNordicsVariables = null!;
+    private string _routerBeneluxVariables = null!;
+    private string _routerNordicsVariables = null!;
 
     public ManagingVariables(IntegrationTestFixture fixture, ITestOutputHelper output)
     {
@@ -54,23 +38,16 @@ public class ManagingVariables : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        var tagGroupManager = _fixture.GetRequiredService<TagGroupManager>();
         var tagManager = _fixture.GetRequiredService<TagManager>();
         var applicationManager = _fixture.GetRequiredService<ApplicationManager>();
         var variableManager = _fixture.GetRequiredService<VariableManager>();
         var cancellationToken = CancellationToken.None;
 
-        _environments = new TagGroupModel { Name = "Environments", Icon = TagGroupIcon.GetByName(Icons.Material.Filled.Factory)};
-        _machines = new TagGroupModel { Name = "Machines", Icon = TagGroupIcon.GetByName(Icons.Material.Filled.Computer)};
-        var otherTagGroup = new TagGroupModel { Name = "Other", Icon = TagGroupIcon.GetByName(Icons.Material.Filled.QuestionMark) };
-        await tagGroupManager.SaveTagGroupAsync(_environments, cancellationToken);
-        await tagGroupManager.SaveTagGroupAsync(_machines, cancellationToken);
-        await tagGroupManager.SaveTagGroupAsync(otherTagGroup, cancellationToken);
-        _benelux = new TagModel { Name = "Benelux", GroupId = _environments.Id, GroupIcon = _environments.Icon };
-        _nordics = new TagModel { Name = "Nordics", GroupId = _environments.Id, GroupIcon = _environments.Icon };
-        _blade1 = new TagModel { Name = "Blade 1", GroupId = _machines.Id, GroupIcon = _machines.Icon };
-        _blade2 = new TagModel { Name = "Blade 2", GroupId = _machines.Id, GroupIcon = _machines.Icon };
-        _otherTag = new TagModel { Name = "Other Tag", GroupId = otherTagGroup.Id, GroupIcon = otherTagGroup.Icon };
+        _benelux = new TagModel { Name = "Benelux" };
+        _nordics = new TagModel { Name = "Nordics" };
+        _blade1 = new TagModel { Name = "Blade 1" };
+        _blade2 = new TagModel { Name = "Blade 2" };
+        _otherTag = new TagModel { Name = "Other Tag" };
         await tagManager.SaveTagAsync(_benelux, cancellationToken);
         await tagManager.SaveTagAsync(_nordics, cancellationToken);
         await tagManager.SaveTagAsync(_blade1, cancellationToken);
@@ -91,8 +68,8 @@ public class ManagingVariables : IAsyncLifetime
                        "Some": "Other"
                    }
                    """",
-            ApplicationIds = new List<int> { _otherApplication.Id },
-            TagId = new List<int> { _otherTag.Id }
+            ApplicationIds = [_otherApplication.Id],
+            TagId = _otherTag.Id
         };
         await variableManager.SaveAsync(otherVariablesModel, cancellationToken);
 
@@ -106,36 +83,36 @@ public class ManagingVariables : IAsyncLifetime
         var blade1VariablesModel = new VariablesEditModel
         {
             Json = _blade1Variables,
-            ApplicationIds = new List<int>(),
-            TagId = new List<int> { _blade1.Id }
+            ApplicationIds = [_processor.Id, _router.Id],
+            TagId = _blade1.Id
         };
         _blade2Variables = """"
-                          {
-                               "Machine": "Blade2",
-                               "Common": "Common from Blade2"
-                          }
-                          """";
+                           {
+                                "Machine": "Blade2",
+                                "Common": "Common from Blade2"
+                           }
+                           """";
         var blade2VariablesModel = new VariablesEditModel
         {
             Json = _blade2Variables,
-            ApplicationIds = new List<int>(),
-            TagId = new List<int> { _blade2.Id }
+            ApplicationIds = [_processor.Id, _router.Id],
+            TagId = _blade2.Id
         };
         await variableManager.SaveAsync(blade1VariablesModel, cancellationToken);
         await variableManager.SaveAsync(blade2VariablesModel, cancellationToken);
 
         // Environment specific config
         _beneluxVariables = """"
-                           {
-                                "Environment": "Benelux",
-                                "Common": "Common from Benelux"
-                           }
-                           """";
+                            {
+                                 "Environment": "Benelux",
+                                 "Common": "Common from Benelux"
+                            }
+                            """";
         var beneluxVariablesModel = new VariablesEditModel
         {
             Json = _beneluxVariables,
-            ApplicationIds = new List<int>(),
-            TagId = new List<int> { _benelux.Id }
+            ApplicationIds = [_processor.Id, _router.Id],
+            TagId = _benelux.Id
         };
         _nordicsVariables = """"
                             {
@@ -146,65 +123,11 @@ public class ManagingVariables : IAsyncLifetime
         var nordicsVariablesModel = new VariablesEditModel
         {
             Json = _nordicsVariables,
-            ApplicationIds = new List<int>(),
-            TagId = new List<int> { _nordics.Id }
+            ApplicationIds = [_processor.Id, _router.Id],
+            TagId = _nordics.Id
         };
         await variableManager.SaveAsync(beneluxVariablesModel, cancellationToken);
         await variableManager.SaveAsync(nordicsVariablesModel, cancellationToken);
-
-        // Environment + Machine specific config
-        _beneluxBlade1Variables = """"
-                                  {
-                                       "EnvironmentMachine": "Benelux+Blade1",
-                                       "Common": "Common from Benelux+Blade1"
-                                  }
-                                  """";
-        var beneluxBlade1VariablesModel = new VariablesEditModel
-        {
-            Json = _beneluxBlade1Variables,
-            ApplicationIds = new List<int>(),
-            TagId = new List<int> { _benelux.Id, _blade1.Id }
-        };
-        _beneluxBlade2Variables = """"
-                                  {
-                                       "EnvironmentMachine": "Benelux+Blade2",
-                                       "Common": "Common from Benelux+Blade2"
-                                  }
-                                  """";
-        var beneluxBlade2VariablesModel = new VariablesEditModel
-        {
-            Json = _beneluxBlade2Variables,
-            ApplicationIds = new List<int>(),
-            TagId = new List<int> { _benelux.Id, _blade2.Id }
-        };
-        _nordicsBlade1Variables = """"
-                                  {
-                                       "EnvironmentMachine": "Nordics+Blade1",
-                                       "Common": "Common from Nordics+Blade1"
-                                  }
-                                  """";
-        var nordicsBlade1VariablesModel = new VariablesEditModel
-        {
-            Json = _nordicsBlade1Variables,
-            ApplicationIds = new List<int>(),
-            TagId = new List<int> { _nordics.Id, _blade1.Id }
-        };
-        _nordicsBlade2Variables = """"
-                                  {
-                                       "EnvironmentMachine": "Nordics+Blade2",
-                                       "Common": "Common from Nordics+Blade2"
-                                  }
-                                  """";
-        var nordicsBlade2VariablesModel = new VariablesEditModel
-        {
-            Json = _nordicsBlade2Variables,
-            ApplicationIds = new List<int>(),
-            TagId = new List<int> { _nordics.Id, _blade2.Id }
-        };
-        await variableManager.SaveAsync(beneluxBlade1VariablesModel, cancellationToken);
-        await variableManager.SaveAsync(beneluxBlade2VariablesModel, cancellationToken);
-        await variableManager.SaveAsync(nordicsBlade1VariablesModel, cancellationToken);
-        await variableManager.SaveAsync(nordicsBlade2VariablesModel, cancellationToken);
 
         // Application specific config
         _processorVariables = """"
@@ -216,8 +139,8 @@ public class ManagingVariables : IAsyncLifetime
         var processorVariablesModel = new VariablesEditModel
         {
             Json = _processorVariables,
-            ApplicationIds = new List<int> { _processor.Id },
-            TagId = new List<int>()
+            ApplicationIds = [_processor.Id],
+            TagId = null
         };
         _routerVariables = """"
                            {
@@ -228,8 +151,8 @@ public class ManagingVariables : IAsyncLifetime
         var routerVariablesModel = new VariablesEditModel
         {
             Json = _routerVariables,
-            ApplicationIds = new List<int> { _router.Id },
-            TagId = new List<int>()
+            ApplicationIds = [_router.Id],
+            TagId = null
         };
         await variableManager.SaveAsync(processorVariablesModel, cancellationToken);
         await variableManager.SaveAsync(routerVariablesModel, cancellationToken);
@@ -244,8 +167,8 @@ public class ManagingVariables : IAsyncLifetime
         var processorBlade1VariablesModel = new VariablesEditModel
         {
             Json = _processorBlade1Variables,
-            ApplicationIds = new List<int> { _processor.Id },
-            TagId = new List<int> { _blade1.Id }
+            ApplicationIds = [_processor.Id],
+            TagId = _blade1.Id
         };
         _processorBlade2Variables = """"
                                     {
@@ -256,8 +179,8 @@ public class ManagingVariables : IAsyncLifetime
         var processorBlade2VariablesModel = new VariablesEditModel
         {
             Json = _processorBlade2Variables,
-            ApplicationIds = new List<int> { _processor.Id },
-            TagId = new List<int> { _blade2.Id }
+            ApplicationIds = [_processor.Id],
+            TagId = _blade2.Id
         };
         _routerBlade1Variables = """"
                                  {
@@ -268,8 +191,8 @@ public class ManagingVariables : IAsyncLifetime
         var routerBlade1VariablesModel = new VariablesEditModel
         {
             Json = _routerBlade1Variables,
-            ApplicationIds = new List<int> { _router.Id },
-            TagId = new List<int> { _blade1.Id }
+            ApplicationIds = [_router.Id],
+            TagId = _blade1.Id
         };
         _routerBlade2Variables = """"
                                  {
@@ -280,8 +203,8 @@ public class ManagingVariables : IAsyncLifetime
         var routerBlade2VariablesModel = new VariablesEditModel
         {
             Json = _routerBlade2Variables,
-            ApplicationIds = new List<int> { _router.Id },
-            TagId = new List<int> { _blade2.Id }
+            ApplicationIds = [_router.Id],
+            TagId = _blade2.Id
         };
         await variableManager.SaveAsync(processorBlade1VariablesModel, cancellationToken);
         await variableManager.SaveAsync(processorBlade2VariablesModel, cancellationToken);
@@ -298,8 +221,8 @@ public class ManagingVariables : IAsyncLifetime
         var processorBeneluxVariablesModel = new VariablesEditModel
         {
             Json = _processorBeneluxVariables,
-            ApplicationIds = new List<int> { _processor.Id },
-            TagId = new List<int> { _benelux.Id }
+            ApplicationIds = [_processor.Id],
+            TagId = _benelux.Id
         };
         _processorNordicsVariables = """"
                                      {
@@ -310,8 +233,8 @@ public class ManagingVariables : IAsyncLifetime
         var processorNordicsVariablesModel = new VariablesEditModel
         {
             Json = _processorNordicsVariables,
-            ApplicationIds = new List<int> { _processor.Id },
-            TagId = new List<int> { _nordics.Id }
+            ApplicationIds = [_processor.Id],
+            TagId = _nordics.Id
         };
         _routerBeneluxVariables = """"
                                   {
@@ -322,8 +245,8 @@ public class ManagingVariables : IAsyncLifetime
         var routerBeneluxVariablesModel = new VariablesEditModel
         {
             Json = _routerBeneluxVariables,
-            ApplicationIds = new List<int> { _router.Id },
-            TagId = new List<int> { _benelux.Id }
+            ApplicationIds = [_router.Id],
+            TagId = _benelux.Id
         };
         _routerNordicsVariables = """"
                                   {
@@ -334,119 +257,13 @@ public class ManagingVariables : IAsyncLifetime
         var routerNordicsVariablesModel = new VariablesEditModel
         {
             Json = _routerNordicsVariables,
-            ApplicationIds = new List<int> { _router.Id },
-            TagId = new List<int> { _nordics.Id }
+            ApplicationIds = [_router.Id],
+            TagId = _nordics.Id
         };
         await variableManager.SaveAsync(processorBeneluxVariablesModel, cancellationToken);
         await variableManager.SaveAsync(processorNordicsVariablesModel, cancellationToken);
         await variableManager.SaveAsync(routerBeneluxVariablesModel, cancellationToken);
         await variableManager.SaveAsync(routerNordicsVariablesModel, cancellationToken);
-
-        // Application + Environment + Machine specific config
-        _processorBeneluxBlade1Variables = """"
-                                           {
-                                               "ApplicationEnvironmentMachine": "Processor+Benelux+Blade1",
-                                               "Common": "Common from Processor+Benelux+Blade1"
-                                           }
-                                           """";
-        var processorBeneluxBlade1VariablesModel = new VariablesEditModel
-        {
-            Json = _processorBeneluxBlade1Variables,
-            ApplicationIds = new List<int> { _processor.Id },
-            TagId = new List<int> { _benelux.Id, _blade1.Id }
-        };
-        _processorBeneluxBlade2Variables = """"
-                                           {
-                                                "ApplicationEnvironmentMachine": "Processor+Benelux+Blade2",
-                                                "Common": "Common from Processor+Benelux+Blade2"
-                                           }
-                                           """";
-        var processorBeneluxBlade2VariablesModel = new VariablesEditModel
-        {
-            Json = _processorBeneluxBlade2Variables,
-            ApplicationIds = new List<int> { _processor.Id },
-            TagId = new List<int> { _benelux.Id, _blade2.Id }
-        };
-        _processorNordicsBlade1Variables = """"
-                                           {
-                                                "ApplicationEnvironmentMachine": "Processor+Nordics+Blade1",
-                                                "Common": "Common from Processor+Nordics+Blade1"
-                                           }
-                                           """";
-        var processorNordicsBlade1VariablesModel = new VariablesEditModel
-        {
-            Json = _processorNordicsBlade1Variables,
-            ApplicationIds = new List<int> { _processor.Id },
-            TagId = new List<int> { _nordics.Id, _blade1.Id }
-        };
-        _processorNordicsBlade2Variables = """"
-                                           {
-                                                "ApplicationEnvironmentMachine": "Processor+Nordics+Blade2",
-                                                "Common": "Common from Processor+Nordics+Blade2"
-                                           }
-                                           """";
-        var processorNordicsBlade2VariablesModel = new VariablesEditModel
-        {
-            Json = _processorNordicsBlade2Variables,
-            ApplicationIds = new List<int> { _processor.Id },
-            TagId = new List<int> { _nordics.Id, _blade2.Id }
-        };
-        _routerBeneluxBlade1Variables = """"
-                                        {
-                                             "ApplicationEnvironmentMachine": "Router+Benelux+Blade1",
-                                             "Common": "Common from Router+Benelux+Blade1"
-                                        }
-                                        """";
-        var routerBeneluxBlade1VariablesModel = new VariablesEditModel
-        {
-            Json = _routerBeneluxBlade1Variables,
-            ApplicationIds = new List<int> { _router.Id },
-            TagId = new List<int> { _benelux.Id, _blade1.Id }
-        };
-        _routerBeneluxBlade2Variables = """"
-                                        {
-                                            "ApplicationEnvironmentMachine": "Router+Benelux+Blade2",
-                                            "Common": "Common from Router+Benelux+Blade2"
-                                        }
-                                        """";
-        var routerBeneluxBlade2VariablesModel = new VariablesEditModel
-        {
-            Json = _routerBeneluxBlade2Variables,
-            ApplicationIds = new List<int> { _router.Id },
-            TagId = new List<int> { _benelux.Id, _blade2.Id }
-        };
-        _routerNordicsBlade1Variables = """"
-                                        {
-                                            "ApplicationEnvironmentMachine": "Router+Nordics+Blade1",
-                                            "Common": "Common from Router+Nordics+Blade1"
-                                        }
-                                        """";
-        var routerNordicsBlade1VariablesModel = new VariablesEditModel
-        {
-            Json = _routerNordicsBlade1Variables,
-            ApplicationIds = new List<int> { _router.Id },
-            TagId = new List<int> { _nordics.Id, _blade1.Id }
-        };
-        _routerNordicsBlade2Variables = """"
-                                        {
-                                             "ApplicationEnvironmentMachine": "Router+Nordics+Blade2",
-                                             "Common": "Common from Router+Nordics+Blade2"
-                                        }
-                                        """";
-        var routerNordicsBlade2VariablesModel = new VariablesEditModel
-        {
-            Json = _routerNordicsBlade2Variables,
-            ApplicationIds = new List<int> { _router.Id },
-            TagId = new List<int> { _nordics.Id, _blade2.Id }
-        };
-        await variableManager.SaveAsync(processorBeneluxBlade1VariablesModel, cancellationToken);
-        await variableManager.SaveAsync(processorBeneluxBlade2VariablesModel, cancellationToken);
-        await variableManager.SaveAsync(processorNordicsBlade1VariablesModel, cancellationToken);
-        await variableManager.SaveAsync(processorNordicsBlade2VariablesModel, cancellationToken);
-        await variableManager.SaveAsync(routerBeneluxBlade1VariablesModel, cancellationToken);
-        await variableManager.SaveAsync(routerBeneluxBlade2VariablesModel, cancellationToken);
-        await variableManager.SaveAsync(routerNordicsBlade1VariablesModel, cancellationToken);
-        await variableManager.SaveAsync(routerNordicsBlade2VariablesModel, cancellationToken);
     }
 
     public Task DisposeAsync()
@@ -460,8 +277,8 @@ public class ManagingVariables : IAsyncLifetime
         // Arrange
         var apiKeyManager = _fixture.GetRequiredService<ApiKeyManager>();
         var variableManager = _fixture.GetRequiredService<VariableManager>();
-        var cancellationToken = default(CancellationToken);
-        
+        var cancellationToken = CancellationToken.None;
+
         // Processor runs on both blades for both environments
         // Router runs on blade 1 for benelux and on blade 2 for nordics
         var processorBlade1BeneluxApiKey = new ApiKeyModel
@@ -535,9 +352,8 @@ public class ManagingVariables : IAsyncLifetime
             {
                 "Application": "Processor",
                 "ApplicationEnvironment": "Processor+Benelux",
-                "ApplicationEnvironmentMachine": "Processor+Benelux+Blade1",
                 "ApplicationMachine": "Processor+Blade1",
-                "Common": "Common from Processor+Benelux+Blade1",
+                "Common": "Common from Blade1",
                 "Environment": "Benelux",
                 "EnvironmentMachine": "Benelux+Blade1",
                 "Machine": "Blade1"
@@ -548,9 +364,8 @@ public class ManagingVariables : IAsyncLifetime
             {
                 "Application": "Processor",
                 "ApplicationEnvironment": "Processor+Benelux",
-                "ApplicationEnvironmentMachine": "Processor+Benelux+Blade2",
                 "ApplicationMachine": "Processor+Blade2",
-                "Common": "Common from Processor+Benelux+Blade2",
+                "Common": "Common from Blade2",
                 "Environment": "Benelux",
                 "EnvironmentMachine": "Benelux+Blade2",
                 "Machine": "Blade2"
@@ -561,9 +376,8 @@ public class ManagingVariables : IAsyncLifetime
             {
                 "Application": "Processor",
                 "ApplicationEnvironment": "Processor+Nordics",
-                "ApplicationEnvironmentMachine": "Processor+Nordics+Blade1",
                 "ApplicationMachine": "Processor+Blade1",
-                "Common": "Common from Processor+Nordics+Blade1",
+                "Common": "Common from Blade1",
                 "Environment": "Nordics",
                 "EnvironmentMachine": "Nordics+Blade1",
                 "Machine": "Blade1"
@@ -574,7 +388,6 @@ public class ManagingVariables : IAsyncLifetime
             {
                 "Application": "Processor",
                 "ApplicationEnvironment": "Processor+Nordics",
-                "ApplicationEnvironmentMachine": "Processor+Nordics+Blade2",
                 "ApplicationMachine": "Processor+Blade2",
                 "Common": "Common from Processor+Nordics+Blade2",
                 "Environment": "Nordics",
@@ -587,7 +400,6 @@ public class ManagingVariables : IAsyncLifetime
             {
                 "Application": "Router",
                 "ApplicationEnvironment": "Router+Benelux",
-                "ApplicationEnvironmentMachine": "Router+Benelux+Blade1",
                 "ApplicationMachine": "Router+Blade1",
                 "Common": "Common from Router+Benelux+Blade1",
                 "Environment": "Benelux",
@@ -600,7 +412,6 @@ public class ManagingVariables : IAsyncLifetime
             {
                 "Application": "Router",
                 "ApplicationEnvironment": "Router+Nordics",
-                "ApplicationEnvironmentMachine": "Router+Nordics+Blade2",
                 "ApplicationMachine": "Router+Blade2",
                 "Common": "Common from Router+Nordics+Blade2",
                 "Environment": "Nordics",
@@ -615,171 +426,99 @@ public class ManagingVariables : IAsyncLifetime
         Assert.Equal(JsonNormalizer.Normalize(expectedRouterBlade1BeneluxConfig), JsonNormalizer.Normalize(routerBlade1BeneluxConfig));
         Assert.Equal(JsonNormalizer.Normalize(expectedRouterBlade2NordicsConfig), JsonNormalizer.Normalize(routerBlade2NordicsConfig));
     }
-    
+
     [Fact]
     public async Task GettingConfigViaApplicationIdsAndTagIds()
     {
         // Arrange
         var variableManager = _fixture.GetRequiredService<VariableManager>();
-        var cancellationToken = default(CancellationToken);
-        
+        var cancellationToken = CancellationToken.None;
+
         // Act
         var actualBlade1VariablesModel = await variableManager.GetConfigAsync(
-            new List<int>(),
-            new List<int> { _blade1.Id },
+            [_processor.Id, _router.Id],
+            _blade1.Id,
             cancellationToken
         );
 
         var actualBlade2VariablesModel = await variableManager.GetConfigAsync(
-            new List<int>(),
-            new List<int> { _blade2.Id },
+            [_processor.Id, _router.Id],
+            _blade2.Id,
             cancellationToken
         );
 
         var actualBeneluxVariablesModel = await variableManager.GetConfigAsync(
-            new List<int>(),
-            new List<int> { _benelux.Id },
+            [_processor.Id, _router.Id],
+            _benelux.Id,
             cancellationToken
         );
 
         var actualNordicsVariablesModel = await variableManager.GetConfigAsync(
-            new List<int>(),
-            new List<int> { _nordics.Id },
-            cancellationToken
-        );
-
-        var actualBeneluxBlade1VariablesModel = await variableManager.GetConfigAsync(
-            new List<int>(),
-            new List<int> { _benelux.Id, _blade1.Id },
-            cancellationToken
-        );
-
-        var actualBeneluxBlade2VariablesModel = await variableManager.GetConfigAsync(
-            new List<int>(),
-            new List<int> { _benelux.Id, _blade2.Id },
-            cancellationToken
-        );
-
-        var actualNordicsBlade1VariablesModel = await variableManager.GetConfigAsync(
-            new List<int>(),
-            new List<int> { _nordics.Id, _blade1.Id },
-            cancellationToken
-        );
-
-        var actualNordicsBlade2VariablesModel = await variableManager.GetConfigAsync(
-            new List<int>(),
-            new List<int> { _nordics.Id, _blade2.Id },
+            [_processor.Id, _router.Id],
+            _nordics.Id,
             cancellationToken
         );
 
         var actualProcessorVariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _processor.Id },
-            new List<int>(),
+            [_processor.Id],
+            null,
             cancellationToken
         );
 
         var actualRouterVariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _router.Id },
-            new List<int>(),
+            [_router.Id],
+            null,
             cancellationToken
         );
 
         var actualProcessorBlade1VariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _processor.Id },
-            new List<int> { _blade1.Id },
+            [_processor.Id],
+            _blade1.Id,
             cancellationToken
         );
 
         var actualProcessorBlade2VariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _processor.Id },
-            new List<int> { _blade2.Id },
+            [_processor.Id],
+            _blade2.Id,
             cancellationToken
         );
 
         var actualRouterBlade1VariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _router.Id },
-            new List<int> { _blade1.Id },
+            [_router.Id],
+            _blade1.Id,
             cancellationToken
         );
 
         var actualRouterBlade2VariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _router.Id },
-            new List<int> { _blade2.Id },
+            [_router.Id],
+            _blade2.Id,
             cancellationToken
         );
 
         var actualProcessorBeneluxVariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _processor.Id },
-            new List<int> { _benelux.Id },
+            [_processor.Id],
+            _benelux.Id,
             cancellationToken
         );
 
         var actualProcessorNordicsVariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _processor.Id },
-            new List<int> { _nordics.Id },
+            [_processor.Id],
+            _nordics.Id,
             cancellationToken
         );
 
         var actualRouterBeneluxVariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _router.Id },
-            new List<int> { _benelux.Id },
+            [_router.Id],
+            _benelux.Id,
             cancellationToken
         );
 
         var actualRouterNordicsVariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _router.Id },
-            new List<int> { _nordics.Id },
+            [_router.Id],
+            _nordics.Id,
             cancellationToken
         );
 
-        var actualProcessorBeneluxBlade1VariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _processor.Id },
-            new List<int> { _benelux.Id, _blade1.Id },
-            cancellationToken
-        );
-
-        var actualProcessorBeneluxBlade2VariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _processor.Id },
-            new List<int> { _benelux.Id, _blade2.Id },
-            cancellationToken
-        );
-
-        var actualProcessorNordicsBlade1VariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _processor.Id },
-            new List<int> { _nordics.Id, _blade1.Id },
-            cancellationToken
-        );
-
-        var actualProcessorNordicsBlade2VariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _processor.Id },
-            new List<int> { _nordics.Id, _blade2.Id },
-            cancellationToken
-        );
-
-        var actualRouterBeneluxBlade1VariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _router.Id },
-            new List<int> { _benelux.Id, _blade1.Id },
-            cancellationToken
-        );
-
-        var actualRouterBeneluxBlade2VariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _router.Id },
-            new List<int> { _benelux.Id, _blade2.Id },
-            cancellationToken
-        );
-
-        var actualRouterNordicsBlade1VariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _router.Id },
-            new List<int> { _nordics.Id, _blade1.Id },
-            cancellationToken
-        );
-
-        var actualRouterNordicsBlade2VariablesModel = await variableManager.GetConfigAsync(
-            new List<int> { _router.Id },
-            new List<int> { _nordics.Id, _blade2.Id },
-            cancellationToken
-        );
-        
         // Assert
         Assert.Equal(
             JsonNormalizer.Normalize(_blade1Variables),
@@ -796,22 +535,6 @@ public class ManagingVariables : IAsyncLifetime
         Assert.Equal(
             JsonNormalizer.Normalize(_nordicsVariables),
             JsonNormalizer.Normalize(actualNordicsVariablesModel)
-        );
-        Assert.Equal(
-            JsonNormalizer.Normalize(_beneluxBlade1Variables),
-            JsonNormalizer.Normalize(actualBeneluxBlade1VariablesModel)
-        );
-        Assert.Equal(
-            JsonNormalizer.Normalize(_beneluxBlade2Variables),
-            JsonNormalizer.Normalize(actualBeneluxBlade2VariablesModel)
-        );
-        Assert.Equal(
-            JsonNormalizer.Normalize(_nordicsBlade1Variables),
-            JsonNormalizer.Normalize(actualNordicsBlade1VariablesModel)
-        );
-        Assert.Equal(
-            JsonNormalizer.Normalize(_nordicsBlade2Variables),
-            JsonNormalizer.Normalize(actualNordicsBlade2VariablesModel)
         );
         Assert.Equal(
             JsonNormalizer.Normalize(_processorVariables),
@@ -853,74 +576,41 @@ public class ManagingVariables : IAsyncLifetime
             JsonNormalizer.Normalize(_routerNordicsVariables),
             JsonNormalizer.Normalize(actualRouterNordicsVariablesModel)
         );
-        Assert.Equal(
-            JsonNormalizer.Normalize(_processorBeneluxBlade1Variables),
-            JsonNormalizer.Normalize(actualProcessorBeneluxBlade1VariablesModel)
-        );
-        Assert.Equal(
-            JsonNormalizer.Normalize(_processorBeneluxBlade2Variables),
-            JsonNormalizer.Normalize(actualProcessorBeneluxBlade2VariablesModel)
-        );
-        Assert.Equal(
-            JsonNormalizer.Normalize(_processorNordicsBlade1Variables),
-            JsonNormalizer.Normalize(actualProcessorNordicsBlade1VariablesModel)
-        );
-        Assert.Equal(
-            JsonNormalizer.Normalize(_processorNordicsBlade2Variables),
-            JsonNormalizer.Normalize(actualProcessorNordicsBlade2VariablesModel)
-        );
-        Assert.Equal(
-            JsonNormalizer.Normalize(_routerBeneluxBlade1Variables),
-            JsonNormalizer.Normalize(actualRouterBeneluxBlade1VariablesModel)
-        );
-        Assert.Equal(
-            JsonNormalizer.Normalize(_routerBeneluxBlade2Variables),
-            JsonNormalizer.Normalize(actualRouterBeneluxBlade2VariablesModel)
-        );
-        Assert.Equal(
-            JsonNormalizer.Normalize(_routerNordicsBlade1Variables),
-            JsonNormalizer.Normalize(actualRouterNordicsBlade1VariablesModel)
-        );
-        Assert.Equal(
-            JsonNormalizer.Normalize(_routerNordicsBlade2Variables),
-            JsonNormalizer.Normalize(actualRouterNordicsBlade2VariablesModel)
-        );
-
     }
-    
+
     [Fact]
     public async Task UpdatingExistingConfig()
     {
         // Arrange
         var variableManager = _fixture.GetRequiredService<VariableManager>();
-        var cancellationToken = default(CancellationToken);
+        var cancellationToken = CancellationToken.None;
         var newBlade1Variables = """"
-                           {
-                                "Machine": "Blade1-Modified",
-                                "Common": "Common from Blade1-Modified"
-                           }
-                           """";
+                                 {
+                                      "Machine": "Blade1-Modified",
+                                      "Common": "Common from Blade1-Modified"
+                                 }
+                                 """";
 
         // Ensure we are really testing something
         Assert.NotEqual(
-            JsonNormalizer.Normalize(_blade1Variables), 
+            JsonNormalizer.Normalize(_blade1Variables),
             JsonNormalizer.Normalize(newBlade1Variables)
         );
-        
+
         // Act
         await variableManager.SaveAsync(new VariablesEditModel
         {
             Json = newBlade1Variables,
-            ApplicationIds = new List<int>(),
-            TagId = new List<int> { _blade1.Id }
+            ApplicationIds = [_processor.Id, _router.Id],
+            TagId = _blade1.Id
         }, cancellationToken);
-        
+
         var actualBlade1VariablesModel = await variableManager.GetConfigAsync(
-            new List<int>(),
-            new List<int> { _blade1.Id },
+            [_processor.Id, _router.Id],
+            _blade1.Id,
             cancellationToken
         );
-        
+
         // Assert
         Assert.Equal(
             JsonNormalizer.Normalize(newBlade1Variables),

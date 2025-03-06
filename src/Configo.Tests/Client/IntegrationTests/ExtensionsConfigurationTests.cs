@@ -1,9 +1,7 @@
 ﻿using Configo.Client;
 using Configo.Client.Configuration;
-using Configo.Server.Blazor;
 using Configo.Server.Domain;
 using Microsoft.Extensions.Configuration;
-using MudBlazor;
 using Xunit.Abstractions;
 
 namespace Configo.Tests.Client.IntegrationTests;
@@ -12,12 +10,10 @@ namespace Configo.Tests.Client.IntegrationTests;
 public class ExtensionsConfigurationTests : IAsyncLifetime
 {
     private readonly IntegrationTestFixture _fixture;
-    private TagGroupModel _environments = default!;
-    private TagModel _benelux = default!;
-    private ApplicationModel _processor = default!;
-    private string _beneluxVariables = default!;
-    private string _processorVariables = default!;
-    private string _processorBeneluxVariables = default!;
+    private TagModel _benelux = null!;
+    private ApplicationModel _processor = null!;
+    private string _processorVariables = null!;
+    private string _processorBeneluxVariables = null!;
 
     public ExtensionsConfigurationTests(IntegrationTestFixture fixture, ITestOutputHelper output)
     {
@@ -27,36 +23,23 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        var tagGroupManager = _fixture.GetRequiredService<TagGroupManager>();
         var tagManager = _fixture.GetRequiredService<TagManager>();
         var applicationManager = _fixture.GetRequiredService<ApplicationManager>();
         var variableManager = _fixture.GetRequiredService<VariableManager>();
         var cancellationToken = CancellationToken.None;
 
-        _environments = new TagGroupModel { Name = "Environments", Icon = TagGroupIcon.GetByName(Icons.Material.Filled.Map)};
-        await tagGroupManager.SaveTagGroupAsync(_environments, cancellationToken);
-        _benelux = new TagModel { Name = "Benelux", GroupId = _environments.Id, GroupIcon = _environments.Icon };
+        _benelux = new TagModel { Name = "Benelux" };
         await tagManager.SaveTagAsync(_benelux, cancellationToken);
         _processor = new ApplicationModel { Name = "Processor" };
         await applicationManager.SaveApplicationAsync(_processor, cancellationToken);
 
-        // Environment specific config
-        _beneluxVariables = """{ "Environment": { "Name": "Benelux" } }""";
-        var beneluxVariablesModel = new VariablesEditModel
-        {
-            Json = _beneluxVariables,
-            ApplicationIds = new List<int>(),
-            TagId = new List<int> { _benelux.Id }
-        };
-        await variableManager.SaveAsync(beneluxVariablesModel, cancellationToken);
-
-        // Application specific config
+        // Application specific config without tag
         _processorVariables = """{ "Application": { "Name": "Processor" } }""";
         var processorVariablesModel = new VariablesEditModel
         {
             Json = _processorVariables,
-            ApplicationIds = new List<int> { _processor.Id },
-            TagId = new List<int>()
+            ApplicationIds = [_processor.Id],
+            TagId = null
         };
         await variableManager.SaveAsync(processorVariablesModel, cancellationToken);
 
@@ -65,8 +48,8 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         var processorBeneluxVariablesModel = new VariablesEditModel
         {
             Json = _processorBeneluxVariables,
-            ApplicationIds = new List<int> { _processor.Id },
-            TagId = new List<int> { _benelux.Id }
+            ApplicationIds = [_processor.Id],
+            TagId = _benelux.Id
         };
         await variableManager.SaveAsync(processorBeneluxVariablesModel, cancellationToken);
     }
@@ -80,10 +63,10 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
     public async Task ValidApiKey()
     {
         // Arrange
-        var cancellationToken = default(CancellationToken);
+        var cancellationToken = CancellationToken.None;
         var apiKeyManager = _fixture.GetRequiredService<ApiKeyManager>();
         using var httpClient = _fixture.CreateClient();
-        
+
         // Processor runs in benelux
         var apiKey = new ApiKeyModel
         {
@@ -99,10 +82,9 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         var configuration = new ConfigurationBuilder()
             .AddConfigo(httpClient, new ConfigoOptions { Url = null, ApiKey = apiKey.Key })
             .Build();
-        
+
         // Assert
-        configuration.GetChildren().Count().Should().Be(3);
-        configuration["Environment:Name"].Should().Be("Benelux");
+        configuration.GetChildren().Count().Should().Be(2);
         configuration["Application:Name"].Should().Be("Processor");
         configuration["ApplicationEnvironment:Name"].Should().Be("Processor+Benelux");
     }
@@ -112,10 +94,10 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
     {
         // Arrange
         var cacheFileName = Path.Combine(Path.GetTempPath(), $"appsettings.configo.{Guid.NewGuid()}.json");
-        var cancellationToken = default(CancellationToken);
+        var cancellationToken = CancellationToken.None;
         var apiKeyManager = _fixture.GetRequiredService<ApiKeyManager>();
         using var httpClient = _fixture.CreateClient();
-        
+
         // Processor runs in benelux
         var apiKey = new ApiKeyModel
         {
@@ -135,17 +117,15 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
                 .Build();
 
             // Assert
-            configuration.GetChildren().Count().Should().Be(3);
-            configuration["Environment:Name"].Should().Be("Benelux");
+            configuration.GetChildren().Count().Should().Be(2);
             configuration["Application:Name"].Should().Be("Processor");
             configuration["ApplicationEnvironment:Name"].Should().Be("Processor+Benelux");
 
             configuration = new ConfigurationBuilder()
                 .AddJsonFile(cacheFileName, optional: false, reloadOnChange: false)
                 .Build();
-            
-            configuration.GetChildren().Count().Should().Be(3);
-            configuration["Environment:Name"].Should().Be("Benelux");
+
+            configuration.GetChildren().Count().Should().Be(2);
             configuration["Application:Name"].Should().Be("Processor");
             configuration["ApplicationEnvironment:Name"].Should().Be("Processor+Benelux");
         }
@@ -166,11 +146,11 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
     public async Task ValidApiKeyWithReload()
     {
         // Arrange
-        var cancellationToken = default(CancellationToken);
+        var cancellationToken = CancellationToken.None;
         var apiKeyManager = _fixture.GetRequiredService<ApiKeyManager>();
         var variableManager = _fixture.GetRequiredService<VariableManager>();
         using var httpClient = _fixture.CreateClient();
-        
+
         // Processor runs in benelux
         var apiKey = new ApiKeyModel
         {
@@ -191,27 +171,26 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
                 ReloadInterval = TimeSpan.FromSeconds(1),
             })
             .Build();
-        
+
         // Update config
-        _beneluxVariables = """{ "Environment": { "Name": "Benelux Updated" } }""";
-        var beneluxVariablesModel = new VariablesEditModel
+        _processorVariables = """{ "Application": { "Name": "Processor Updated" } }""";
+        var processorVariablesModel = new VariablesEditModel
         {
-            Json = _beneluxVariables,
-            ApplicationIds = new List<int>(),
-            TagId = new List<int> { _benelux.Id }
+            Json = _processorVariables,
+            ApplicationIds = [_processor.Id],
+            TagId = null
         };
-        await variableManager.SaveAsync(beneluxVariablesModel, cancellationToken);
-        
+        await variableManager.SaveAsync(processorVariablesModel, cancellationToken);
+
         // Allow some time for reload interval to trigger
         await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
 
         // Assert
-        configuration.GetChildren().Count().Should().Be(3);
-        configuration["Environment:Name"].Should().Be("Benelux Updated");
-        configuration["Application:Name"].Should().Be("Processor");
+        configuration.GetChildren().Count().Should().Be(2);
+        configuration["Application:Name"].Should().Be("Processor Updated");
         configuration["ApplicationEnvironment:Name"].Should().Be("Processor+Benelux");
     }
-    
+
     [Fact]
     public void InvalidApiKey()
     {
@@ -229,11 +208,11 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
                 ReloadInterval = null,
                 CacheFileName = null
             });
-        
+
         // Assert
         configurationBuilder.Invoking(b => b.Build()).Should().Throw<ConfigoConfigurationException>();
     }
-    
+
     [Fact]
     public void InvalidUrl()
     {
@@ -251,7 +230,7 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
                 ReloadInterval = null,
                 CacheFileName = null
             });
-        
+
         // Assert
         configurationBuilder.Invoking(b => b.Build()).Should().Throw<ConfigoConfigurationException>();
     }
