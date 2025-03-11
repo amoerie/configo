@@ -69,14 +69,19 @@
                     </MudAvatar>
                 </CardHeaderAvatar>
                 <CardHeaderContent>
-                    <MudText>Applications</MudText>
+                    <MudText>Schema to use for autocomplete</MudText>
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent Class="py-0">
-                <MudSelect Class="py-0" T="int?" Value="_selectedApplicationId" ValueChanged="OnSelectApplication">
+                <MudSelect T="int?" Value="_selectedApplicationId" ValueChanged="OnSelectApplication"
+                           Variant="Variant.Outlined"
+                           Clearable="true"
+                           Margin="Margin.Dense"
+                           Dense="true"
+                           Class="py-0" >
                     @foreach (var application in _applications)
                     {
-                        <MudSelectItem Value="@application.Id">@application.Name</MudSelectItem>
+                        <MudSelectItem T="int?" Value="@application.Id">@application.Name</MudSelectItem>
                     }
                 </MudSelect>
             </MudCardContent>
