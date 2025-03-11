@@ -130,7 +130,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var response = await httpClient.SendAsync(request, cancellationToken);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
     
     [Fact]
@@ -158,7 +158,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var response = await httpClient.SendAsync(request, cancellationToken);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
     
     [Fact]
@@ -179,6 +179,6 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var response = await httpClient.SendAsync(request, cancellationToken);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }

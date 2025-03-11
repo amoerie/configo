@@ -54,8 +54,7 @@ public class JsonSchemaGeneratorTests(ITestOutputHelper output)
         // Assert
         var actual = schema.ToJson(Formatting.Indented);
         var expected = await File.ReadAllTextAsync("./Client/JsonSchemaGenerator/JsonSchemaGeneratorTests.schema.json", cancellationToken);
-        JsonNormalizer.Normalize(actual)
-            .Should().Be(JsonNormalizer.Normalize(expected));
+        Assert.Equal(JsonNormalizer.Normalize(expected), JsonNormalizer.Normalize(actual));
     }
 
     /// <summary>

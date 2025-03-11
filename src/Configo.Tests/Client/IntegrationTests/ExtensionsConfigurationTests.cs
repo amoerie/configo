@@ -84,9 +84,9 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
             .Build();
 
         // Assert
-        configuration.GetChildren().Count().Should().Be(2);
-        configuration["Application:Name"].Should().Be("Processor");
-        configuration["ApplicationEnvironment:Name"].Should().Be("Processor+Benelux");
+        Assert.Equal(2, configuration.GetChildren().Count());
+        Assert.Equal("Processor", configuration["Application:Name"]);
+        Assert.Equal("Processor+Benelux", configuration["ApplicationEnvironment:Name"]);
     }
 
     [Fact]
@@ -117,17 +117,17 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
                 .Build();
 
             // Assert
-            configuration.GetChildren().Count().Should().Be(2);
-            configuration["Application:Name"].Should().Be("Processor");
-            configuration["ApplicationEnvironment:Name"].Should().Be("Processor+Benelux");
+            Assert.Equal(2, configuration.GetChildren().Count());
+            Assert.Equal("Processor", configuration["Application:Name"]);
+            Assert.Equal("Processor+Benelux", configuration["ApplicationEnvironment:Name"]);
 
             configuration = new ConfigurationBuilder()
                 .AddJsonFile(cacheFileName, optional: false, reloadOnChange: false)
                 .Build();
 
-            configuration.GetChildren().Count().Should().Be(2);
-            configuration["Application:Name"].Should().Be("Processor");
-            configuration["ApplicationEnvironment:Name"].Should().Be("Processor+Benelux");
+            Assert.Equal(2, configuration.GetChildren().Count());
+            Assert.Equal("Processor", configuration["Application:Name"]);
+            Assert.Equal("Processor+Benelux", configuration["ApplicationEnvironment:Name"]);
         }
         finally
         {
@@ -186,9 +186,9 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
 
         // Assert
-        configuration.GetChildren().Count().Should().Be(2);
-        configuration["Application:Name"].Should().Be("Processor Updated");
-        configuration["ApplicationEnvironment:Name"].Should().Be("Processor+Benelux");
+        Assert.Equal(2, configuration.GetChildren().Count());
+        Assert.Equal("Processor Updated", configuration["Application:Name"]);
+        Assert.Equal("Processor+Benelux", configuration["ApplicationEnvironment:Name"]);
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
             });
 
         // Assert
-        configurationBuilder.Invoking(b => b.Build()).Should().Throw<ConfigoConfigurationException>();
+        Assert.Throws<ConfigoConfigurationException>(() => configurationBuilder.Build());
     }
 
     [Fact]
@@ -232,6 +232,6 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
             });
 
         // Assert
-        configurationBuilder.Invoking(b => b.Build()).Should().Throw<ConfigoConfigurationException>();
+        Assert.Throws<ConfigoConfigurationException>(() => configurationBuilder.Build());
     }
 }

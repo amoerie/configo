@@ -36,18 +36,18 @@ public class ManagingTags : IAsyncLifetime
         await tagManager.SaveTagAsync(tag, cancellationToken);
         var allTags = await tagManager.GetAllTagsAsync(cancellationToken);
 
-        allTags.Should().HaveCount(1);
-        allTags.Single().Name.Should().Be("Test 1");
+        Assert.Single(allTags);
+        Assert.Equal("Test 1", allTags.Single().Name);
 
         tag.Name = "Test 2";
         await tagManager.SaveTagAsync(tag, cancellationToken);
         
         allTags = await tagManager.GetAllTagsAsync(cancellationToken);
-        allTags.Should().HaveCount(1);
-        allTags.Single().Name.Should().Be("Test 2");
+        Assert.Single(allTags);
+        Assert.Equal("Test 2", allTags.Single().Name);
 
         await tagManager.DeleteTagAsync(tag, cancellationToken);
         allTags = await tagManager.GetAllTagsAsync(cancellationToken);
-        allTags.Should().HaveCount(0);
+        Assert.Empty(allTags);
     }
 }

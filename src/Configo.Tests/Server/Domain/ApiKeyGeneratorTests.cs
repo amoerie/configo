@@ -23,7 +23,7 @@ public class ApiKeyGeneratorTests
         var output = _generator.Generate(length);
 
         // Assert
-        output.Length.Should().Be(length);
+        Assert.Equal(length, output.Length);
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class ApiKeyGeneratorTests
         }
 
         // Assert
-        outputs.Count.Should().Be(1000);
+        Assert.Equal(1000, outputs.Count);
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class ApiKeyGeneratorTests
             var output = _generator.Generate(6);
             foreach (var character in output)
             {
-                (char.IsUpper(character) || char.IsDigit(character)).Should().BeTrue();
+                Assert.True((char.IsUpper(character) || char.IsDigit(character)));
             }
         }
     }
@@ -65,7 +65,7 @@ public class ApiKeyGeneratorTests
         for (var i = 0; i < 1000; i++)
         {
             var output = new HashSet<char>(_generator.Generate(6));
-            forbiddenCharacters.Overlaps(output).Should().BeFalse();
+            Assert.False(forbiddenCharacters.Overlaps(output));
         }
     }
 
@@ -84,6 +84,6 @@ public class ApiKeyGeneratorTests
         }
 
         // Assert
-        allowedCharacters.SetEquals(usedCharacters).Should().BeTrue();
+        Assert.True(allowedCharacters.SetEquals(usedCharacters));
     }
 }

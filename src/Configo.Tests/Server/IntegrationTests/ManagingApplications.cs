@@ -36,18 +36,18 @@ public class ManagingApplications : IAsyncLifetime
         await applicationManager.SaveApplicationAsync(application, cancellationToken);
         var applications = await applicationManager.GetAllApplicationsAsync(cancellationToken);
 
-        applications.Should().HaveCount(1);
-        applications.Single().Name.Should().Be("Test 1");
+        Assert.Single(applications);
+        Assert.Equal("Test 1", applications.Single().Name);
 
         application.Name = "Test 2";
         await applicationManager.SaveApplicationAsync(application, cancellationToken);
         
         applications = await applicationManager.GetAllApplicationsAsync(cancellationToken);
-        applications.Should().HaveCount(1);
-        applications.Single().Name.Should().Be("Test 2");
+        Assert.Single(applications);
+        Assert.Equal("Test 2", applications.Single().Name);
 
         await applicationManager.DeleteApplicationAsync(application, cancellationToken);
         applications = await applicationManager.GetAllApplicationsAsync(cancellationToken);
-        applications.Should().HaveCount(0);
+        Assert.Empty(applications);
     }
 }

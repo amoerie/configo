@@ -52,10 +52,10 @@ public class ManagingApiKeys : IAsyncLifetime
         await apiKeyManager.SaveApiKeyAsync(apiKey, cancellationToken);
         var apiKeys = await apiKeyManager.GetAllApiKeysAsync(cancellationToken);
 
-        apiKeys.Should().HaveCount(1);
+        Assert.Single(apiKeys);
         var apiKeyListModel = apiKeys.Single();
-        apiKeyListModel.ApplicationId.Should().Be(application.Id);
-        apiKeyListModel.TagIds.Should().BeEquivalentTo(apiKey.TagIds);
+        Assert.Equal(application.Id, apiKeyListModel.ApplicationId);
+        Assert.Equivalent(apiKey.TagIds, apiKeyListModel.TagIds);
 
         apiKey = apiKey with
         {
@@ -66,13 +66,13 @@ public class ManagingApiKeys : IAsyncLifetime
         await apiKeyManager.SaveApiKeyAsync(apiKey, cancellationToken);
         
         apiKeys = await apiKeyManager.GetAllApiKeysAsync(cancellationToken);
-        apiKeys.Should().HaveCount(1);
+        Assert.Single(apiKeys);
         apiKeyListModel = apiKeys.Single();
-        apiKeyListModel.ApplicationId.Should().Be(application.Id);
-        apiKeyListModel.TagIds.Should().BeEquivalentTo(apiKey.TagIds);
+        Assert.Equal(application.Id, apiKeyListModel.ApplicationId);
+        Assert.Equivalent(apiKey.TagIds, apiKeyListModel.TagIds);
 
         await apiKeyManager.DeleteApiKeyAsync(apiKey, cancellationToken);
         apiKeys = await apiKeyManager.GetAllApiKeysAsync(cancellationToken);
-        apiKeys.Should().HaveCount(0);
+        Assert.Empty(apiKeys);
     }
 }
