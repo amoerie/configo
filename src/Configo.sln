@@ -1,11 +1,11 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34202.233
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configo.Server", "Configo.Server\Configo.Server.csproj", "{3126016D-5F7E-4AC8-B668-AA9B3B406A43}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Configo.Server", "Configo.Server\Configo.Server.csproj", "{3126016D-5F7E-4AC8-B668-AA9B3B406A43}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configo.Tests", "Configo.Tests\Configo.Tests.csproj", "{11C8D936-2DE3-404C-B1B0-6EBFC490DC99}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Configo.Tests", "Configo.Tests\Configo.Tests.csproj", "{11C8D936-2DE3-404C-B1B0-6EBFC490DC99}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{831353AE-CAA7-4D1C-8C81-F92652D1ED45}"
 	ProjectSection(SolutionItems) = preProject
@@ -25,13 +25,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{29A8
 		..\.github\workflows\build.yml = ..\.github\workflows\build.yml
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configo.Database.SqlServer", "Configo.Database.SqlServer\Configo.Database.SqlServer.csproj", "{90217652-E981-4324-A36A-E083C28BBD13}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Configo.Database.SqlServer", "Configo.Database.SqlServer\Configo.Database.SqlServer.csproj", "{90217652-E981-4324-A36A-E083C28BBD13}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configo.Database.NpgSql", "Configo.Database.NpgSql\Configo.Database.NpgSql.csproj", "{684A3278-384A-4ACE-9684-316D400A4281}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Configo.Database.NpgSql", "Configo.Database.NpgSql\Configo.Database.NpgSql.csproj", "{684A3278-384A-4ACE-9684-316D400A4281}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configo.Database", "Configo.Database\Configo.Database.csproj", "{3436F6CE-1843-4827-A112-0ABD485D1769}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Configo.Database", "Configo.Database\Configo.Database.csproj", "{3436F6CE-1843-4827-A112-0ABD485D1769}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configo.Client", "Configo.Client\Configo.Client.csproj", "{AC8EB727-5B27-44D6-8BE1-D80D20404E61}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Configo.Client", "Configo.Client\Configo.Client.csproj", "{AC8EB727-5B27-44D6-8BE1-D80D20404E61}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

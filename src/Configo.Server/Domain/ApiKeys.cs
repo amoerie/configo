@@ -226,7 +226,7 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
 {
     private readonly IOptionsMonitor<ApiKeyAuthenticationOptions> _options;
     private readonly ILogger<ApiKeyAuthenticationHandler> _logger;
-    private readonly ISystemClock _clock;
+    private readonly TimeProvider _timeProvider;
     private readonly ApiKeyManager _apiKeyManager;
     
     public const string AuthenticationScheme = "Configo-Api-Key";
@@ -237,11 +237,11 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
         ILoggerFactory loggerFactory,
         ILogger<ApiKeyAuthenticationHandler> logger,
         UrlEncoder encoder,
-        ISystemClock clock, ApiKeyManager apiKeyManager) : base(options, loggerFactory, encoder, clock)
+        TimeProvider timeProvider, ApiKeyManager apiKeyManager) : base(options, loggerFactory, encoder)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _apiKeyManager = apiKeyManager ?? throw new ArgumentNullException(nameof(apiKeyManager));
     }
 
@@ -269,7 +269,7 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
             return AuthenticateResult.NoResult();
         }
 
-        var utcNow = _clock.UtcNow.DateTime;
+        var utcNow = _timeProvider.GetUtcNow().DateTime;
         if (apiKey.ActiveSinceUtc.Subtract(_options.CurrentValue.ClockSkew) > utcNow)
         {
             _logger.LogWarning("Authentication failed - API key not yet active: {Key}", keyForLogging);

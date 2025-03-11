@@ -9,6 +9,7 @@ namespace Configo.Client.JsonSchemaGenerator;
 public sealed class ConfigoJsonSchemaGeneratorException : Exception
 {
     /// <inheritdoc />
+    [Obsolete]
     public ConfigoJsonSchemaGeneratorException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     
     /// <inheritdoc />

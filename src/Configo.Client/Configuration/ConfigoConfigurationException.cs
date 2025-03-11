@@ -9,6 +9,7 @@ namespace Configo.Client.Configuration;
 public sealed class ConfigoConfigurationException : Exception
 {
     /// <inheritdoc />
+    [Obsolete]
     public ConfigoConfigurationException(SerializationInfo info, StreamingContext context) : base(info, context) { }
     
     /// <inheritdoc />
