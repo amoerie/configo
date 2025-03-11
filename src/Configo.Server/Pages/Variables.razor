@@ -73,20 +73,12 @@
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent Class="py-0">
-                <MudList Class="py-0" Gutters="false" T="ApplicationModel">
+                <MudSelect Class="py-0" T="int" @bind-Value="_selectedApplicationId" ValueChanged="async () => await UpdateEditorAsync()">
                     @foreach (var application in _applications)
                     {
-                        <MudListItem Dense="true" T="ApplicationModel">
-                            <MudCheckBox T="bool"
-                                         Dense="true"
-                                         Size="Size.Small"
-                                         Label="@application.Name"
-                                         Value="_selectedApplicationIds.Contains(application.Id)"
-                                         ValueChanged="isChecked => OnCheckApplication(isChecked, application.Id)">
-                            </MudCheckBox>
-                        </MudListItem>
+                        <MudSelectItem Value="@application.Id">@application.Name</MudSelectItem>
                     }
-                </MudList>
+                </MudSelect>
             </MudCardContent>
         </MudCard>
 
@@ -122,27 +114,18 @@
     <MudItem sm="12" md="7" lg="8" xl="9">
         <MudCard>
             <MudCardHeader>
-                @if (_selectedApplicationIds.Count == 0)
-                {
-                    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Info">
-                        Select applications and/or a tag to edit their configuration
-                    </MudAlert>
-                }
-                else
-                {
-                    <MudChipSet T="string">
-                        @foreach (var application in _selectedApplications)
-                        {
-                            <MudChip T="string" Icon="@Icons.Material.Filled.Cloud"
-                                     Color="Color.Primary" Text="@application.Name" />
-                        }
-                        @if (_selectedTag is not null)
-                        {
-                            <MudChip T="string" Icon="@Icons.Material.Filled.Tag"
-                                     Color="Color.Primary" Text="@_selectedTag.Name" />
-                        }
-                    </MudChipSet>
-                }
+                <MudChipSet T="string">
+                    @if(_selectedApplication is not null)
+                    {
+                        <MudChip T="string" Icon="@Icons.Material.Filled.Cloud"
+                                 Color="Color.Primary" Text="@_selectedApplication.Name" />
+                    }
+                    @if (_selectedTag is not null)
+                    {
+                        <MudChip T="string" Icon="@Icons.Material.Filled.Tag"
+                                 Color="Color.Primary" Text="@_selectedTag.Name" />
+                    }
+                </MudChipSet>
             </MudCardHeader>
             <MudCardContent>
                 @* Editors go here *@
@@ -165,10 +148,10 @@
     private bool _showPendingChangesDiff;
     private bool _hasPendingChanges;
     private int? _selectedTagId;
+    private int? _selectedApplicationId;
     private TagModel? _selectedTag;
+    private ApplicationModel? _selectedApplication;
 
-    private readonly List<int> _selectedApplicationIds = new List<int>();
-    private readonly List<ApplicationModel> _selectedApplications = new List<ApplicationModel>();
     private Dictionary<int, ApplicationModel> _applicationsById = new Dictionary<int, ApplicationModel>();
     private Dictionary<int, TagModel> _tagsById = new Dictionary<int, TagModel>();
 
@@ -210,7 +193,6 @@
         await VariableManager.SaveToPendingAsync(new VariablesEditModel
         {
             Json = variables,
-            ApplicationIds = _selectedApplicationIds.ToList(),
             TagId = _selectedTagId
         }, CancellationToken);
 
@@ -243,45 +225,30 @@
 
     private async Task UpdateEditorAsync()
     {
-        _selectedApplications.Clear();
-        _selectedApplications.AddRange(_selectedApplicationIds.Select(id => _applicationsById[id]));
+        _selectedApplication = _selectedApplicationId is null ? null : _applicationsById[_selectedApplicationId.Value];
         _selectedTag = _selectedTagId is null ? null : _tagsById[_selectedTagId.Value];
         _objectReference ??= DotNetObjectReference.Create(this);
-        var schema = await SchemaManager.GetSchemaAsync(_selectedApplicationIds, CancellationToken);
+        var schema = await SchemaManager.GetSchemaAsync(_selectedApplicationId, CancellationToken);
         var isReadonly = _showMerged || _showPendingChangesDiff;
         List<int> selectedTagIds = _selectedTagId is null ? [] : [_selectedTagId.Value]; 
         if (_showPendingChangesDiff)
         {
             var originalConfig = _showMerged
-                ? await VariableManager.GetMergedConfigAsync(_selectedApplicationIds, selectedTagIds, CancellationToken)
-                : await VariableManager.GetConfigAsync(_selectedApplicationIds, _selectedTagId, CancellationToken);
+                ? await VariableManager.GetMergedConfigAsync(selectedTagIds, CancellationToken)
+                : await VariableManager.GetConfigAsync(_selectedTagId, CancellationToken);
             var modifiedConfig = _showMerged
-                ? await VariableManager.GetMergedConfigWithPendingChangesAsync(_selectedApplicationIds, selectedTagIds, CancellationToken)
-                : await VariableManager.GetConfigWithPendingChangesAsync(_selectedApplicationIds, _selectedTagId, CancellationToken);
+                ? await VariableManager.GetMergedConfigWithPendingChangesAsync(selectedTagIds, CancellationToken)
+                : await VariableManager.GetConfigWithPendingChangesAsync(_selectedTagId, CancellationToken);
 
             await JsRuntime.InvokeVoidAsync("variables.updateDiffEditor", CancellationToken, _objectReference, originalConfig, modifiedConfig, schema);
         }
         else
         {
             var config = _showMerged
-                ? await VariableManager.GetMergedConfigWithPendingChangesAsync(_selectedApplicationIds, selectedTagIds, CancellationToken)
-                : await VariableManager.GetConfigWithPendingChangesAsync(_selectedApplicationIds, _selectedTagId, CancellationToken);
+                ? await VariableManager.GetMergedConfigWithPendingChangesAsync(selectedTagIds, CancellationToken)
+                : await VariableManager.GetConfigWithPendingChangesAsync(_selectedTagId, CancellationToken);
             await JsRuntime.InvokeVoidAsync("variables.updateEditor", CancellationToken, _objectReference, config, schema, isReadonly);
         }
-    }
-
-    private async Task OnCheckApplication(bool? isChecked, int applicationId)
-    {
-        if (isChecked == true)
-        {
-            _selectedApplicationIds.Add(applicationId);
-        }
-        else
-        {
-            _selectedApplicationIds.Remove(applicationId);
-        }
-
-        await UpdateEditorAsync();
     }
 
     private async Task OnCheckTag(bool? isChecked, int tagId)

@@ -12,8 +12,8 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
     private readonly IntegrationTestFixture _fixture;
     private TagModel _benelux = null!;
     private ApplicationModel _processor = null!;
-    private string _processorVariables = null!;
-    private string _processorBeneluxVariables = null!;
+    private string _globalVariables = null!;
+    private string _beneluxVariables = null!;
 
     public ExtensionsConfigurationTests(IntegrationTestFixture fixture, ITestOutputHelper output)
     {
@@ -33,22 +33,18 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         _processor = new ApplicationModel { Name = "Processor" };
         await applicationManager.SaveApplicationAsync(_processor, cancellationToken);
 
-        // Application specific config without tag
-        _processorVariables = """{ "Application": { "Name": "Processor" } }""";
+        _globalVariables = """{ "Company": { "Name": "Lexisoft" } }""";
         var processorVariablesModel = new VariablesEditModel
         {
-            Json = _processorVariables,
-            ApplicationIds = [_processor.Id],
+            Json = _globalVariables,
             TagId = null
         };
         await variableManager.SaveAsync(processorVariablesModel, cancellationToken);
 
-        // Application + Environment specific config
-        _processorBeneluxVariables = """{ "ApplicationEnvironment": { "Name": "Processor+Benelux" } }""";
+        _beneluxVariables = """{ "Environment": { "Name": "Benelux" } }""";
         var processorBeneluxVariablesModel = new VariablesEditModel
         {
-            Json = _processorBeneluxVariables,
-            ApplicationIds = [_processor.Id],
+            Json = _beneluxVariables,
             TagId = _benelux.Id
         };
         await variableManager.SaveAsync(processorBeneluxVariablesModel, cancellationToken);
@@ -85,8 +81,8 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(2, configuration.GetChildren().Count());
-        Assert.Equal("Processor", configuration["Application:Name"]);
-        Assert.Equal("Processor+Benelux", configuration["ApplicationEnvironment:Name"]);
+        Assert.Equal("Lexisoft", configuration["Company:Name"]);
+        Assert.Equal("Benelux", configuration["Environment:Name"]);
     }
 
     [Fact]
@@ -118,16 +114,16 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
 
             // Assert
             Assert.Equal(2, configuration.GetChildren().Count());
-            Assert.Equal("Processor", configuration["Application:Name"]);
-            Assert.Equal("Processor+Benelux", configuration["ApplicationEnvironment:Name"]);
+            Assert.Equal("Lexisoft", configuration["Company:Name"]);
+            Assert.Equal("Benelux", configuration["Environment:Name"]);
 
             configuration = new ConfigurationBuilder()
                 .AddJsonFile(cacheFileName, optional: false, reloadOnChange: false)
                 .Build();
 
             Assert.Equal(2, configuration.GetChildren().Count());
-            Assert.Equal("Processor", configuration["Application:Name"]);
-            Assert.Equal("Processor+Benelux", configuration["ApplicationEnvironment:Name"]);
+            Assert.Equal("Lexisoft", configuration["Company:Name"]);
+            Assert.Equal("Benelux", configuration["Environment:Name"]);
         }
         finally
         {
@@ -173,11 +169,10 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
             .Build();
 
         // Update config
-        _processorVariables = """{ "Application": { "Name": "Processor Updated" } }""";
+        _globalVariables = """{ "Company": { "Name": "Lexisoft Updated" } }""";
         var processorVariablesModel = new VariablesEditModel
         {
-            Json = _processorVariables,
-            ApplicationIds = [_processor.Id],
+            Json = _globalVariables,
             TagId = null
         };
         await variableManager.SaveAsync(processorVariablesModel, cancellationToken);
@@ -187,8 +182,8 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(2, configuration.GetChildren().Count());
-        Assert.Equal("Processor Updated", configuration["Application:Name"]);
-        Assert.Equal("Processor+Benelux", configuration["ApplicationEnvironment:Name"]);
+        Assert.Equal("Lexisoft Updated", configuration["Company:Name"]);
+        Assert.Equal("Benelux", configuration["Environment:Name"]);
     }
 
     [Fact]

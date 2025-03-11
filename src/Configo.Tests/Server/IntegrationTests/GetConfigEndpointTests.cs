@@ -13,8 +13,8 @@ public class GetConfigEndpointTests : IAsyncLifetime
     private readonly IntegrationTestFixture _fixture;
     private TagModel _benelux = null!;
     private ApplicationModel _processor = null!;
-    private string _processorVariables = null!;
-    private string _processorBeneluxVariables = null!;
+    private string _globalVariables = null!;
+    private string _beneluxVariables = null!;
 
     public GetConfigEndpointTests(IntegrationTestFixture fixture, ITestOutputHelper output)
     {
@@ -34,33 +34,29 @@ public class GetConfigEndpointTests : IAsyncLifetime
         _processor = new ApplicationModel { Name = "Processor" };
         await applicationManager.SaveApplicationAsync(_processor, cancellationToken);
 
-        // Application specific config
-        _processorVariables = """"
-                              {
-                                  "Application": "Processor",
-                              }
-                              """";
-        var processorVariablesModel = new VariablesEditModel
+        _globalVariables = """"
+                           {
+                               "Company": "Lexisoft",
+                           }
+                           """";
+        var globalVariables = new VariablesEditModel
         {
-            Json = _processorVariables,
-            ApplicationIds = [_processor.Id],
+            Json = _globalVariables,
             TagId = null
         };
-        await variableManager.SaveAsync(processorVariablesModel, cancellationToken);
+        await variableManager.SaveAsync(globalVariables, cancellationToken);
 
-        // Application + Environment specific config
-        _processorBeneluxVariables = """"
-                                     {
-                                         "ApplicationEnvironment": "Processor+Benelux",
-                                     }
-                                     """";
-        var processorBeneluxVariablesModel = new VariablesEditModel
+        _beneluxVariables = """"
+                            {
+                                "Environment": "Benelux",
+                            }
+                            """";
+        var beneluxVariables = new VariablesEditModel
         {
-            Json = _processorBeneluxVariables,
-            ApplicationIds = [_processor.Id],
+            Json = _beneluxVariables,
             TagId = _benelux.Id
         };
-        await variableManager.SaveAsync(processorBeneluxVariablesModel, cancellationToken);
+        await variableManager.SaveAsync(beneluxVariables, cancellationToken);
     }
 
     public Task DisposeAsync()
@@ -75,7 +71,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var apiKeyManager = _fixture.GetRequiredService<ApiKeyManager>();
         using var httpClient = _fixture.CreateClient();
         var cancellationToken = CancellationToken.None;
-        
+
         // Processor runs in benelux
         var apiKey = new ApiKeyModel
         {
@@ -89,7 +85,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
         // Act
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/config");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey.Key);
-        
+
         var response = await httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
         var actualConfig = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -98,13 +94,13 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var expectedConfig =
             """
             {
-                "Application": "Processor",
-                "ApplicationEnvironment": "Processor+Benelux"
+                "Company": "Lexisoft",
+                "Environment": Benelux
             }
             """;
         Assert.Equal(JsonNormalizer.Normalize(expectedConfig), JsonNormalizer.Normalize(actualConfig));
     }
-    
+
     [Fact]
     public async Task ExpiredApiKey()
     {
@@ -112,7 +108,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var apiKeyManager = _fixture.GetRequiredService<ApiKeyManager>();
         using var httpClient = _fixture.CreateClient();
         var cancellationToken = CancellationToken.None;
-        
+
         // Processor runs in benelux
         var apiKey = new ApiKeyModel
         {
@@ -126,13 +122,13 @@ public class GetConfigEndpointTests : IAsyncLifetime
         // Act
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/config");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey.Key);
-        
+
         var response = await httpClient.SendAsync(request, cancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
-    
+
     [Fact]
     public async Task InactiveApiKey()
     {
@@ -140,7 +136,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var apiKeyManager = _fixture.GetRequiredService<ApiKeyManager>();
         using var httpClient = _fixture.CreateClient();
         var cancellationToken = CancellationToken.None;
-        
+
         // Processor runs in benelux
         var apiKey = new ApiKeyModel
         {
@@ -154,13 +150,13 @@ public class GetConfigEndpointTests : IAsyncLifetime
         // Act
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/config");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey.Key);
-        
+
         var response = await httpClient.SendAsync(request, cancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
-    
+
     [Fact]
     public async Task UnknownApiKey()
     {
@@ -168,14 +164,14 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var apiKeyGenerator = _fixture.GetRequiredService<ApiKeyGenerator>();
         using var httpClient = _fixture.CreateClient();
         var cancellationToken = CancellationToken.None;
-        
+
         // Processor runs in benelux
         var apiKey = apiKeyGenerator.Generate(64);
 
         // Act
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/config");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        
+
         var response = await httpClient.SendAsync(request, cancellationToken);
 
         // Assert

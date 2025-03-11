@@ -16,8 +16,13 @@ public class SchemaManager
         _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
     }
     
-    public async Task<string> GetSchemaAsync(int applicationId, CancellationToken cancellationToken)
+    public async Task<string> GetSchemaAsync(int? applicationId, CancellationToken cancellationToken)
     {
+        if (applicationId is null)
+        {
+            return "{}";
+        }
+        
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         _logger.LogDebug("Getting JSON schema of application {ApplicationId}", applicationId);

@@ -20,7 +20,6 @@ public sealed record VariableModel
 public sealed record VariablesEditModel
 {
     public required string Json { get; set; }
-    public required List<int> ApplicationIds { get; set; }
     public required int? TagId { get; set; }
 }
 
@@ -76,53 +75,39 @@ public sealed record VariableManager
             .Select(akt => akt.TagId)
             .ToListAsync(cancellationToken);
 
-        var applicationIds = new List<int> { apiKey.ApplicationId };
-
-        return await GetMergedConfigAsync(applicationIds, tagIds, cancellationToken);
+        return await GetMergedConfigAsync(tagIds, cancellationToken);
     }
 
     /// <summary>
-    /// Gets configuration variables that are defined for the specified applications and tags, or a subset thereof
+    /// Gets configuration variables that are defined for the specified tags, or a subset thereof
     /// If multiple variables with the same key exist, the one linked to the last tag will win
     /// </summary>
-    public async Task<string> GetMergedConfigAsync(List<int> applicationIds, List<int> tagIds, CancellationToken cancellationToken)
+    public async Task<string> GetMergedConfigAsync(List<int> tagIds, CancellationToken cancellationToken)
     {
-        return await GetMergedConfigAsync(applicationIds, tagIds, includePendingChanges: false, cancellationToken);
+        return await GetMergedConfigAsync(tagIds, includePendingChanges: false, cancellationToken);
     }
 
     /// <summary>
     /// Gets configuration variables that are defined for the specified applications and tags, or a subset thereof, including any pending changes
     /// The most specific variable is the one constrained to the highest number of applications and tags
     /// </summary>
-    public async Task<string> GetMergedConfigWithPendingChangesAsync(List<int> applicationIds, List<int> tagIds, CancellationToken cancellationToken)
+    public async Task<string> GetMergedConfigWithPendingChangesAsync(List<int> tagIds, CancellationToken cancellationToken)
     {
-        return await GetMergedConfigAsync(applicationIds, tagIds, includePendingChanges: true, cancellationToken);
+        return await GetMergedConfigAsync(tagIds, includePendingChanges: true, cancellationToken);
     }
     
-    private async Task<string> GetMergedConfigAsync(List<int> applicationIds, List<int> tagIds, bool includePendingChanges, CancellationToken cancellationToken)
+    private async Task<string> GetMergedConfigAsync(List<int> tagIds, bool includePendingChanges, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        _logger.LogDebug("Getting merged config for applications {@ApplicationIds} and tags {@TagIds}", applicationIds, tagIds);
+        _logger.LogDebug("Getting merged config for tags {@TagIds}", tagIds);
 
         var variablesDbSet = dbContext.Variables;
-        var applicationVariablesDbSet = dbContext.ApplicationVariables;
         
         var variablesQuery = variablesDbSet
             // If a variable is linked to any other tag, then it is not relevant
             .Where(v => v.TagId == null || tagIds.Contains(v.TagId.Value));
 
-        if (applicationIds.Count > 0)
-        {
-            variablesQuery = variablesQuery.Where(v => 
-                applicationVariablesDbSet.Any(av => av.VariableId == v.Id && applicationIds.Contains(av.ApplicationId))
-                || !applicationVariablesDbSet.Any(av => av.VariableId == v.Id));
-        }
-        else
-        {
-            variablesQuery = variablesQuery.Where(v => !applicationVariablesDbSet.Any(av => av.VariableId == v.Id));
-        }
-        
         var variables = await variablesQuery
             .Select(v => new VariableModel
                 {
@@ -148,15 +133,6 @@ public sealed record VariableManager
 
             var matchingPendingChanges = pendingChanges.Where(c => c.TagId is null || tagIds.Contains(c.TagId.Value));
 
-            if (applicationIds.Count > 0)
-            {
-                matchingPendingChanges = matchingPendingChanges.Where(c => c.ApplicationIds.Any(applicationIds.Contains) || c.ApplicationIds.Count == 0);
-            }
-            else
-            {
-                matchingPendingChanges = matchingPendingChanges.Where(c => c.ApplicationIds.Count == 0);
-            }
-
             foreach (var pendingChange in matchingPendingChanges)
             {
                 var pendingVariables = _deserializer.DeserializeFromJson(pendingChange.Json, pendingChange.TagId);
@@ -170,47 +146,40 @@ public sealed record VariableManager
             .Select(group => group.MaxBy(g => g.TagId is null ? -1 : tagIds.IndexOf(g.TagId.Value))!)
             .ToList();
 
-        _logger.LogInformation("Got {NumberOfVariables} variables for applications {@ApplicationIds} and tags {@TagIds}", mergedVariables.Count, applicationIds, tagIds);
+        _logger.LogInformation("Got {NumberOfVariables} variables for tags {@TagIds}", mergedVariables.Count, tagIds);
 
         return _serializer.SerializeToJson(mergedVariables);
     }
     
     /// <summary>
-    /// Gets configuration variables that are defined exactly for this combination of applications and tag
+    /// Gets configuration variables that are defined exactly for this tag
     /// </summary>
-    public async Task<string> GetConfigAsync(List<int> applicationIds, int? tagId, CancellationToken cancellationToken)
+    public async Task<string> GetConfigAsync(int? tagId, CancellationToken cancellationToken)
     {
-        return await GetConfigAsync(applicationIds, tagId, includePendingChanges: false, cancellationToken);
+        return await GetConfigAsync(tagId, includePendingChanges: false, cancellationToken);
     }
     
     /// <summary>
-    /// Gets configuration variables that are defined exactly for this combination of applications and tags, including any pending changes
+    /// Gets configuration variables that are defined exactly for this tag, including any pending changes
     /// </summary>
-    public async Task<string> GetConfigWithPendingChangesAsync(List<int> applicationIds, int? tagId, CancellationToken cancellationToken)
+    public async Task<string> GetConfigWithPendingChangesAsync(int? tagId, CancellationToken cancellationToken)
     {
-        return await GetConfigAsync(applicationIds, tagId, includePendingChanges: true, cancellationToken);
+        return await GetConfigAsync(tagId, includePendingChanges: true, cancellationToken);
     }
     
     /// <summary>
-    /// Gets configuration variables that are defined exactly for this combination of applications and tag
+    /// Gets configuration variables that are defined exactly for this tag
     /// </summary>
-    public async Task<string> GetConfigAsync(List<int> applicationIds, int? tagId, bool includePendingChanges, CancellationToken cancellationToken)
+    public async Task<string> GetConfigAsync(int? tagId, bool includePendingChanges, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        _logger.LogDebug("Getting config for applications {@ApplicationIds} and tag {@TagId}", applicationIds, tagId);
+        _logger.LogDebug("Getting config for tag {@TagId}", tagId);
 
         var variables = dbContext.Variables;
-        var applicationVariables = dbContext.ApplicationVariables;
 
         var variablesQuery = variables
-            .Where(variable => variable.TagId == tagId)
-            .Where(variable => !applicationVariables.Any(av => av.VariableId == variable.Id && !applicationIds.Contains(av.ApplicationId)));
-
-        foreach (var applicationId in applicationIds)
-        {
-            variablesQuery = variablesQuery.Where(variable => applicationVariables.Any(av => av.VariableId == variable.Id && av.ApplicationId == applicationId));
-        }
+            .Where(variable => variable.TagId == tagId);
 
         var matchingVariables = await variablesQuery
             .Select(variable => new VariableModel
@@ -239,14 +208,8 @@ public sealed record VariableManager
             pendingChanges.Reverse();
 
             var matchingPendingChanges = pendingChanges
-                .Where(pendingChange => pendingChange.TagId == tagId)
-                .Where(pendingChange => pendingChange.ApplicationIds.All(applicationIds.Contains));
+                .Where(pendingChange => pendingChange.TagId == tagId);
 
-            foreach (var applicationId in applicationIds)
-            {
-                matchingPendingChanges = matchingPendingChanges.Where(pendingChange => pendingChange.ApplicationIds.Contains(applicationId));
-            }
-            
             foreach (var pendingChange in matchingPendingChanges)
             {
                 matchingVariables.AddRange(_deserializer.DeserializeFromJson(pendingChange.Json, pendingChange.TagId));
@@ -260,20 +223,17 @@ public sealed record VariableManager
                 .ToList();
         }
 
-        _logger.LogInformation("Got {NumberOfVariables} variables for applications {@ApplicationIds} and tag {@TagId}", matchingVariables.Count, applicationIds, tagId);
+        _logger.LogInformation("Got {NumberOfVariables} variables for tag {@TagId}", matchingVariables.Count, tagId);
 
         return _serializer.SerializeToJson(matchingVariables);
     }
     
     public async Task SaveToPendingAsync(VariablesEditModel model, CancellationToken cancellationToken)
     {
-        model.ApplicationIds.Sort();
         await _pendingChangesLock.WaitAsync(cancellationToken);
         try
         {
-            var existing = _pendingChanges.EditModels.SingleOrDefault(m =>
-                m.ApplicationIds.SequenceEqual(model.ApplicationIds)
-                && m.TagId == model.TagId);
+            var existing = _pendingChanges.EditModels.SingleOrDefault(m => m.TagId == model.TagId);
 
             if (existing != null)
             {
@@ -295,12 +255,9 @@ public sealed record VariableManager
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         var tagId = model.TagId;
-        var applicationIds = model.ApplicationIds;
-        _logger.LogDebug("Saving variables for applications {@ApplicationIds} and tag {@TagId}", applicationIds, tagId);
+        _logger.LogDebug("Saving variables for tag {@TagId}", tagId);
 
         var variables = dbContext.Variables;
-        var applicationVariables = dbContext.ApplicationVariables;
-
         var existingVariables = await variables.Where(v => v.TagId == tagId).AsTracking().ToListAsync(cancellationToken);
         var newVariables = _deserializer.DeserializeFromJson(model.Json, model.TagId);
 
@@ -353,45 +310,6 @@ public sealed record VariableManager
         {
             _logger.LogInformation("Deleted existing variable: {@Variable}", variableToDelete);
             variables.Remove(variableToDelete);
-        }
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        // Link new variables to applications and tags
-        foreach (var savedVariable in savedVariables)
-        {
-            _logger.LogInformation("Added new variable: {@Variable}", savedVariable);
-            
-            var existingApplicationVariables = await applicationVariables.Where(av => av.VariableId == savedVariable.Id).ToListAsync(cancellationToken);
-
-            List<ApplicationVariableRecord> savedApplicationVariables = [];
-            foreach (var applicationId in applicationIds)
-            {
-                var existingApplicationVariable = existingApplicationVariables.SingleOrDefault(av => av.ApplicationId == applicationId);
-                if (existingApplicationVariable is not null)
-                {
-                    savedApplicationVariables.Add(existingApplicationVariable);
-                    _logger.LogDebug("Variable {@VariableId} is already linked to application {ApplicationId}", savedVariable, applicationId);
-                }
-                else
-                {
-                    var newApplicationVariable = new ApplicationVariableRecord
-                    {
-                        ApplicationId = applicationId,
-                        VariableId = savedVariable.Id
-                    };
-                    applicationVariables.Add(newApplicationVariable);
-                    savedApplicationVariables.Add(newApplicationVariable);
-                }
-                _logger.LogInformation("Linked variable {@VariableId} to application {ApplicationId}", savedVariable, applicationId);
-            }
-            
-            var applicationVariablesToDelete = existingApplicationVariables.Except(savedApplicationVariables).ToList();
-            foreach (var applicationVariableToDelete in applicationVariablesToDelete)
-            {
-                applicationVariables.Remove(applicationVariableToDelete);
-                _logger.LogInformation("Unlinked variable {@VariableId} from application {ApplicationId}", applicationVariableToDelete.VariableId, applicationVariableToDelete.ApplicationId);
-            }
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);

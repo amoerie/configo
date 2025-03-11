@@ -10,7 +10,6 @@ public class ConfigoDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<ApiKeyTagRecord> ApiKeyTags => Set<ApiKeyTagRecord>();
     public DbSet<ApplicationRecord> Applications => Set<ApplicationRecord>();
     
-    public DbSet<ApplicationVariableRecord> ApplicationVariables => Set<ApplicationVariableRecord>();
     public DbSet<VariableRecord> Variables => Set<VariableRecord>();
     public DbSet<TagRecord> Tags => Set<TagRecord>();
     
