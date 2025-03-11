@@ -17,7 +17,7 @@ namespace Configo.Database.SqlServer.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.13")
+                .HasAnnotation("ProductVersion", "9.0.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -119,21 +119,6 @@ namespace Configo.Database.SqlServer.Migrations
                         .IsUnique();
 
                     b.ToTable("Applications");
-                });
-
-            modelBuilder.Entity("Configo.Database.Tables.ApplicationVariableRecord", b =>
-                {
-                    b.Property<int>("ApplicationId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("VariableId")
-                        .HasColumnType("int");
-
-                    b.HasKey("ApplicationId", "VariableId");
-
-                    b.HasIndex("VariableId");
-
-                    b.ToTable("ApplicationVariables");
                 });
 
             modelBuilder.Entity("Configo.Database.Tables.TagRecord", b =>
@@ -250,21 +235,6 @@ namespace Configo.Database.SqlServer.Migrations
                     b.HasOne("Configo.Database.Tables.TagRecord", null)
                         .WithMany()
                         .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Configo.Database.Tables.ApplicationVariableRecord", b =>
-                {
-                    b.HasOne("Configo.Database.Tables.ApplicationRecord", null)
-                        .WithMany()
-                        .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Configo.Database.Tables.VariableRecord", null)
-                        .WithMany()
-                        .HasForeignKey("VariableId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
