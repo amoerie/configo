@@ -34,15 +34,15 @@
              CommittedItemChanges="(TagModel model) => SaveTag(model)">
     <Columns>
         <PropertyColumn Property="(TagModel x) => x.Name" Title="Name"/>
-        <TemplateColumn Title="# Variables" IsEditable="false" Filterable="false"
+        <TemplateColumn Title="# Variables" Editable="false" Filterable="false"
                         Sortable="true" SortBy="(TagModel model) => model.NumberOfVariables">
             <CellTemplate>
                 <MudChip Color="Color.Primary">@context.Item.NumberOfVariables</MudChip>
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="(TagModel x) => x.UpdatedAtUtc" Title="Updated" IsEditable="false" Format="u"
+        <PropertyColumn Property="(TagModel x) => x.UpdatedAtUtc" Title="Updated" Editable="false" Format="u"
                         Filterable="false"/>
-        <TemplateColumn IsEditable="false" Filterable="false" Sortable="false">
+        <TemplateColumn Editable="false" Filterable="false" Sortable="false">
             <CellTemplate>
                 <MudStack Row>
                     <MudIconButton Size="@Size.Small"
@@ -75,7 +75,7 @@
         var parameters = new DialogParameters<DeleteDialog> { { x => x.ThingThatWillBeDeleted, tag.Name } };
         var dialog = await DialogService.ShowAsync<DeleteDialog>("Delete", parameters, options);
         var result = await dialog.Result;
-        if (!result.Canceled)
+        if (result is not null && !result.Canceled)
         {
             await TagManager.DeleteTagAsync(tag, CancellationToken);
             _tags!.Remove(tag);

@@ -79,7 +79,7 @@
                 </MudSelect>
             </EditTemplate>
         </TemplateColumn>
-        <TemplateColumn T="ApiKeyModel" Title="Key" Sortable="false" Filterable="false" IsEditable="false">
+        <TemplateColumn T="ApiKeyModel" Title="Key" Sortable="false" Filterable="false" Editable="false">
             <CellTemplate>
                 @if (context.Item.Key.Length > 10)
                 {
@@ -91,12 +91,12 @@
             </CellTemplate>
         </TemplateColumn>
         <PropertyColumn T="ApiKeyModel" TProperty="DateTime" Property="x => x.ActiveSinceUtc" Title="Active Since" 
-                        IsEditable="true" Filterable="false" Sortable="true" Format="u" />
+                        Editable="true" Filterable="false" Sortable="true" Format="u" />
         <PropertyColumn T="ApiKeyModel" TProperty="DateTime" Property="x => x.ActiveUntilUtc" Title="Active Until" 
-                        IsEditable="true" Filterable="false" Sortable="true" Format="u" />
+                        Editable="true" Filterable="false" Sortable="true" Format="u" />
         <PropertyColumn T="ApiKeyModel" TProperty="DateTime" Property="x => x.UpdatedAtUtc" Title="Updated" 
-                        IsEditable="true" Filterable="false" Sortable="true" Format="u" />
-        <TemplateColumn IsEditable="false" Filterable="false" Sortable="false">
+                        Editable="true" Filterable="false" Sortable="true" Format="u" />
+        <TemplateColumn Editable="false" Filterable="false" Sortable="false">
             <CellTemplate>
                 <MudStack Row>
                     <MudIconButton Size="@Size.Small"
@@ -141,7 +141,7 @@
         var parameters = new DialogParameters<DeleteDialog> { { x => x.ThingThatWillBeDeleted, label } };
         var dialog = await DialogService.ShowAsync<DeleteDialog>("Delete", parameters, options);
         var result = await dialog.Result;
-        if (!result.Canceled)
+        if (result is not null && !result.Canceled)
         {
             await ApiKeyManager.DeleteApiKeyAsync(apiKey, CancellationToken);
             _apiKeys!.Remove(apiKey);

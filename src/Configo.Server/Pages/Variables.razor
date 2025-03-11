@@ -31,15 +31,15 @@
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent Class="py-0">
-                <MudSwitch T="bool" Checked="@_showMerged"
-                           CheckedChanged="isChecked => OnShowMerged((bool?) isChecked)">Show merged
+                <MudSwitch T="bool" Value="@_showMerged"
+                           ValueChanged="isChecked => OnShowMerged((bool?) isChecked)">Show merged
                 </MudSwitch>
-                <MudSwitch T="bool" Checked="@_showPendingChangesDiff"
-                           CheckedChanged="isChecked => OnShowPendingChanges((bool?) isChecked)">Show pending changes
+                <MudSwitch T="bool" Value="@_showPendingChangesDiff"
+                           ValueChanged="isChecked => OnShowPendingChanges((bool?) isChecked)">Show pending changes
                     diff
                 </MudSwitch>
             </MudCardContent>
-            <MudCardActions Clas>
+            <MudCardActions>
                 <MudButtonGroup OverrideStyles="false">
                     <MudButton Color="Color.Success"
                                Size="Size.Small"
@@ -73,16 +73,16 @@
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent Class="py-0">
-                <MudList Class="py-0" DisableGutters="true">
+                <MudList Class="py-0" Gutters="false" T="ApplicationModel">
                     @foreach (var application in _applications)
                     {
-                        <MudListItem Dense="true">
+                        <MudListItem Dense="true" T="ApplicationModel">
                             <MudCheckBox T="bool"
                                          Dense="true"
                                          Size="Size.Small"
                                          Label="@application.Name"
-                                         Checked="_selectedApplicationIds.Contains(application.Id)"
-                                         CheckedChanged="isChecked => OnCheckApplication(isChecked, application.Id)">
+                                         Value="_selectedApplicationIds.Contains(application.Id)"
+                                         ValueChanged="isChecked => OnCheckApplication(isChecked, application.Id)">
                             </MudCheckBox>
                         </MudListItem>
                     }
@@ -102,16 +102,16 @@
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent Class="py-0">
-                <MudList Class="py-0" DisableGutters="true">
+                <MudList Class="py-0" Gutters="false" T="TagModel">
                     @foreach (var tag in _tags)
                     {
-                        <MudListItem Dense="true">
+                        <MudListItem Dense="true" T="TagModel">
                             <MudCheckBox T="bool"
                                          Dense="true"
                                          Size="Size.Small"
                                          Label="@tag.Name"
-                                         Checked="_selectedTagId == tag.Id"
-                                         CheckedChanged="isChecked => OnCheckTag(isChecked, tag.Id)">
+                                         Value="_selectedTagId == tag.Id"
+                                         ValueChanged="isChecked => OnCheckTag(isChecked, tag.Id)">
                             </MudCheckBox>
                         </MudListItem>
                     }
@@ -130,16 +130,16 @@
                 }
                 else
                 {
-                    <MudChipSet>
+                    <MudChipSet T="string">
                         @foreach (var application in _selectedApplications)
                         {
-                            <MudChip Icon="@Icons.Material.Filled.Cloud"
-                                     Color="Color.Primary">@application.Name</MudChip>
+                            <MudChip T="string" Icon="@Icons.Material.Filled.Cloud"
+                                     Color="Color.Primary" Text="@application.Name" />
                         }
                         @if (_selectedTag is not null)
                         {
-                            <MudChip Icon="@Icons.Material.Filled.Tag"
-                                     Color="Color.Primary">@_selectedTag.Name</MudChip>
+                            <MudChip T="string" Icon="@Icons.Material.Filled.Tag"
+                                     Color="Color.Primary" Text="@_selectedTag.Name" />
                         }
                     </MudChipSet>
                 }

@@ -35,9 +35,9 @@
     <Columns>
         <PropertyColumn Property="(ApplicationModel x) => x.Name" Title="Name"/>
         <PropertyColumn Property="(ApplicationModel x) => x.UpdatedAtUtc" Title="Updated" 
-                        IsEditable="false" Filterable="false"
+                        Editable="false" Filterable="false"
                         Format="u"/>
-        <TemplateColumn IsEditable="false" Filterable="false" Sortable="false">
+        <TemplateColumn Editable="false" Filterable="false" Sortable="false">
             <CellTemplate>
                 <MudStack Row>
                     <MudButton Href="@(Routes.Schema(context.Item.Name))"
@@ -75,7 +75,7 @@
         var parameters = new DialogParameters<DeleteDialog> { { x => x.ThingThatWillBeDeleted, application.Name } };
         var dialog = await DialogService.ShowAsync<DeleteDialog>("Delete", parameters, options);
         var result = await dialog.Result;
-        if (!result.Canceled)
+        if (result is not null && !result.Canceled)
         {
             await ApplicationManager.DeleteApplicationAsync(application, CancellationToken);
             _applications!.Remove(application);

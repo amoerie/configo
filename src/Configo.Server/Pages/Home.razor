@@ -19,7 +19,10 @@
         <MudCard>
             <MudCardHeader>
                 <CardHeaderContent>
-                    <MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Category"/> Tags</MudText>
+                    <MudText Typo="Typo.h6">
+                        <MudIcon Icon="@Icons.Material.Filled.Category"/>
+                        Tags
+                    </MudText>
                     <MudText Typo="Typo.caption">
                         Tags describe a characteristic of a deployed application.
                         Possible tags are environments, timezones, machines, ...
@@ -27,12 +30,10 @@
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent>
-                <MudList DisableGutters="true">
+                <MudList Gutters="false" T="string">
                     @foreach (var tag in _tags)
                     {
-                        <MudListItem>
-                            @tag.Name
-                        </MudListItem>
+                        <MudListItem Text="@tag.Name"/>
                     }
                 </MudList>
             </MudCardContent>
@@ -46,19 +47,20 @@
         <MudCard>
             <MudCardHeader>
                 <CardHeaderContent>
-                    <MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Cloud"/> Applications</MudText>
+                    <MudText Typo="Typo.h6">
+                        <MudIcon Icon="@Icons.Material.Filled.Cloud"/>
+                        Applications
+                    </MudText>
                     <MudText Typo="Typo.caption">
                         Applications are unique types of processes, each with a different JSON configuration schema.
                     </MudText>
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent>
-                <MudList DisableGutters="true">
+                <MudList Gutters="false" T="string">
                     @foreach (var application in _applications)
                     {
-                        <MudListItem>
-                            @application.Name
-                        </MudListItem>
+                        <MudListItem Text="@application.Name"/>
                     }
                 </MudList>
             </MudCardContent>
@@ -72,7 +74,10 @@
         <MudCard>
             <MudCardHeader>
                 <CardHeaderContent>
-                    <MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Category"/> API Keys</MudText>
+                    <MudText Typo="Typo.h6">
+                        <MudIcon Icon="@Icons.Material.Filled.Category"/>
+                        API Keys
+                    </MudText>
                     <MudText Typo="Typo.caption">
                         API keys give a single instance of a deployed application access to its configuration.
                         An API key is constrained to one application and zero or more tags
@@ -80,12 +85,10 @@
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent>
-                <MudList DisableGutters="true">
+                <MudList Gutters="false" T="string">
                     @foreach (var apiKey in _apiKeys)
                     {
-                        <MudListItem>
-                            @apiKey.Key.Substring(0, 5)...
-                        </MudListItem>
+                        <MudListItem Text="@(apiKey.Key.Substring(0, 5) + "...")"></MudListItem>
                     }
                 </MudList>
             </MudCardContent>
