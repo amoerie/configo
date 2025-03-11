@@ -1,8 +1,6 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
-using Configo.Server.Blazor;
 using Configo.Server.Domain;
-using MudBlazor;
 using Xunit.Abstractions;
 
 namespace Configo.Tests.Server.IntegrationTests;
@@ -95,7 +93,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
             """
             {
                 "Company": "Lexisoft",
-                "Environment": Benelux
+                "Environment": "Benelux"
             }
             """;
         Assert.Equal(JsonNormalizer.Normalize(expectedConfig), JsonNormalizer.Normalize(actualConfig));

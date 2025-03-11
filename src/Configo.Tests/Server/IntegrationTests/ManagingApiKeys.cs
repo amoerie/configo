@@ -1,5 +1,4 @@
-﻿using Configo.Server.Blazor;
-using Configo.Server.Domain;
+﻿using Configo.Server.Domain;
 using Xunit.Abstractions;
 
 namespace Configo.Tests.Server.IntegrationTests;

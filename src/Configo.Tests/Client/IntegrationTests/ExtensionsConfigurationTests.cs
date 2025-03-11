@@ -170,12 +170,12 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
 
         // Update config
         _globalVariables = """{ "Company": { "Name": "Lexisoft Updated" } }""";
-        var processorVariablesModel = new VariablesEditModel
+        var globalVariablesModel = new VariablesEditModel
         {
             Json = _globalVariables,
             TagId = null
         };
-        await variableManager.SaveAsync(processorVariablesModel, cancellationToken);
+        await variableManager.SaveAsync(globalVariablesModel, cancellationToken);
 
         // Allow some time for reload interval to trigger
         await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
