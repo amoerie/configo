@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using NJsonSchema.Generation;
+using NJsonSchema.NewtonsoftJson.Generation;
 
 namespace Configo.Client.JsonSchemaGenerator;
 
@@ -13,7 +14,7 @@ internal sealed class ConfigoJsonSchemaGenerator
     private readonly BoundConfigurationSectionsDiscoverer _boundConfigurationSectionsDiscoverer;
     private readonly ConnectionStringsDiscoverer _connectionStringsDiscoverer;
 
-    private readonly JsonSchemaGeneratorSettings _jsonSchemaGeneratorSettings = new JsonSchemaGeneratorSettings
+    private readonly JsonSchemaGeneratorSettings _jsonSchemaGeneratorSettings = new NewtonsoftJsonSchemaGeneratorSettings
     {
         DefaultReferenceTypeNullHandling = ReferenceTypeNullHandling.NotNull,
         DefaultDictionaryValueReferenceTypeNullHandling = ReferenceTypeNullHandling.NotNull,
@@ -31,7 +32,6 @@ internal sealed class ConfigoJsonSchemaGenerator
         },
         // NJSonSchema does not support serializing schemas with System.Text.Json (yet)
         // See https://github.com/RicoSuter/NSwag/issues/2243 
-        SerializerOptions = null
     };
 
     public ConfigoJsonSchemaGenerator(

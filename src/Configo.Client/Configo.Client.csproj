@@ -23,6 +23,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="NJsonSchema" />
+    <PackageReference Include="NJsonSchema.NewtonsoftJson" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\configo.png">

@@ -32,19 +32,29 @@ internal sealed class ConfigoJsonContractResolver : DefaultContractResolver
     protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
     {
         JsonProperty property = base.CreateProperty(member, memberSerialization);
-        Type propertyType = property.PropertyType;
+        Type? propertyType = property.PropertyType;
+
+        if (propertyType is null)
+        {
+            property.ShouldSerialize = _ => false;
+            property.ShouldDeserialize = _ => false;
+            return property;
+        }
 
         if (propertyType.Namespace?.StartsWith("System.Collections") != true && (propertyType.IsInterface || propertyType.IsAbstract))
         {
             property.ShouldSerialize = _ => false;
             property.ShouldDeserialize = _ => false;
+            return property;
         }
-        else if (propertyType.IsGenericType)
+
+        if (propertyType.IsGenericType)
         {
             if (GenericTypesToIgnore.Contains(propertyType.GetGenericTypeDefinition()))
             {
                 property.ShouldSerialize = _ => false;
                 property.ShouldDeserialize = _ => false;
+                return property;
             }
         }
         else
@@ -55,7 +65,7 @@ internal sealed class ConfigoJsonContractResolver : DefaultContractResolver
                 property.ShouldDeserialize = _ => false;
             }
         }
-        
+
         return property;
     }
 }
