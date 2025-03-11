@@ -73,7 +73,7 @@
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent Class="py-0">
-                <MudSelect Class="py-0" T="int" @bind-Value="_selectedApplicationId" ValueChanged="async () => await UpdateEditorAsync()">
+                <MudSelect Class="py-0" T="int?" Value="_selectedApplicationId" ValueChanged="OnSelectApplication">
                     @foreach (var application in _applications)
                     {
                         <MudSelectItem Value="@application.Id">@application.Name</MudSelectItem>
@@ -261,6 +261,13 @@
         {
             _selectedTagId = null;
         }
+
+        await UpdateEditorAsync();
+    }
+
+    private async Task OnSelectApplication(int? selectedApplicationId)
+    {
+        _selectedApplicationId = selectedApplicationId;
 
         await UpdateEditorAsync();
     }
