@@ -18,6 +18,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		configo.png = configo.png
 		CHANGELOG.md = CHANGELOG.md
 		publish.ps1 = publish.ps1
+		global.json = global.json
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{29A8D25B-8A75-43EB-A1B7-866D11D7DAD2}"
