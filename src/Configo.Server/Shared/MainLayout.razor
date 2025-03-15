@@ -1,4 +1,8 @@
-﻿@inherits LayoutComponentBase
+﻿@using Configo.Server.Domain
+@inherits LayoutComponentBase
+
+@inject AuthenticationStateProvider  AuthenticationStateProvider
+@inject UserManager  UserManager
 
 <MudThemeProvider IsDarkMode="true"/>
 <MudDialogProvider/>
@@ -9,6 +13,12 @@
     <MudAppBar Color="Color.Transparent" Elevation="0" Fixed="false">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit"
                        Edge="Edge.Start" OnClick="@(() => DrawerToggle())"/>
+        @if (_user is not null)
+        {
+            <MudButton
+                StartIcon="@Icons.Material.Filled.VerifiedUser" Color="Color.Success">@_user.Email
+            </MudButton>
+        }
     </MudAppBar>
     <MudDrawer @bind-Open="@_drawerOpen" Color="Color.Transparent" Elevation="0">
         <NavMenu/>
@@ -22,10 +32,18 @@
 
 @code {
     bool _drawerOpen = true;
+    private UserModel? _user;
 
     void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _user = await UserManager.GetOrCreateUserAsync(authenticationState.User, CancellationToken.None);
+    }
 }

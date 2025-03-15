@@ -2,14 +2,19 @@ using System.IO.Compression;
 using Configo.Database;
 using Configo.Database.NpgSql;
 using Configo.Database.SqlServer;
+using Configo.Server;
 using Configo.Server.Database;
 using Configo.Server.Domain;
 using Configo.Server.Endpoints;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Options;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +29,9 @@ host.UseDefaultServiceProvider(o =>
     o.ValidateScopes = true;
     o.ValidateOnBuild = true;
 });
+
+// Configuration
+configuration.AddEnvironmentVariables("CONFIGO_");
 
 // Dependency Injection
 // --------------------
@@ -55,8 +63,28 @@ services.AddDataProtection()
     .PersistKeysToDbContext<ConfigoDbContext>();
 
 // Authentication
-services.AddAuthentication()
+services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = MicrosoftAccountDefaults.AuthenticationScheme;
+    })
+    .AddCookie()
+    .AddMicrosoftAccount()
     .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(ApiKeyAuthenticationHandler.AuthenticationScheme, "Configo API Key", _ => {});
+services.AddOptions<ConfigoAuthenticationOptions>().BindConfiguration(ConfigoAuthenticationOptions.SectionName);
+services.AddOptions<MicrosoftAccountOptions>(MicrosoftAccountDefaults.AuthenticationScheme)
+    .Configure((MicrosoftAccountOptions options, IOptions<ConfigoAuthenticationOptions> configoAuthenticationOptions) =>
+    {
+        options.ClientId = configoAuthenticationOptions.Value.Microsoft.ClientId;
+        options.ClientSecret = configoAuthenticationOptions.Value.Microsoft.ClientSecret;
+    });
+
+/* Authorization */
+var requireAuthenticatedUserPolicy = new AuthorizationPolicyBuilder()
+    .RequireAuthenticatedUser()
+    .Build();
+services.AddAuthorizationBuilder().SetFallbackPolicy(requireAuthenticatedUserPolicy);
+
 
 // SQL Server Database
 services.AddDbContextFactory<ConfigoDbContext>(dbContextOptions =>
@@ -134,23 +162,23 @@ if (!app.Environment.IsDevelopment())
 // Note: don't enforce HTTPS/HSTS to support SSL offloading
 
 app.UseStaticFiles();
+app.UseAntiforgery();
 app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
-
 
 // Routing
 // ---------
 app.MapBlazorHub();
-var api = app.MapGroup("/api");
-
-api.MapGet("/config", GetConfigEndpoint.HandleAsync)
+var api = app.MapGroup("/api")
     .RequireAuthorization(authorizationPolicyBuilder =>
     {
         authorizationPolicyBuilder.AddAuthenticationSchemes(ApiKeyAuthenticationHandler.AuthenticationScheme);
         authorizationPolicyBuilder.RequireClaim(ApiKeyAuthenticationHandler.ApiKeyIdClaim);
     });
-api.MapPost("/applications/{applicationId}/schema", SaveSchemaEndpoint.HandleAsync);
 
+api.MapGet("/config", GetConfigEndpoint.HandleAsync);
+api.MapPost("/applications/{applicationId}/schema", SaveSchemaEndpoint.HandleAsync);
 app.MapFallbackToPage("/_Host");
 
 // Let's go
