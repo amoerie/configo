@@ -12,6 +12,8 @@ public sealed record ConfigoAuthenticationOptions
 
 public sealed record MicrosoftOptions
 {
+    public required string? TenantId { get; set; }
+    
     [Required]
     public required string ClientId { get; set; }
     

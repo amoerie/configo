@@ -65,7 +65,7 @@ services.AddDataProtection()
 // Authentication
 services.AddAuthentication(options =>
     {
-        options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = MicrosoftAccountDefaults.AuthenticationScheme;
     })
     .AddCookie()
@@ -76,8 +76,14 @@ services.AddOptions<ConfigoAuthenticationOptions>().BindConfiguration(ConfigoAut
 services.AddOptions<MicrosoftAccountOptions>(MicrosoftAccountDefaults.AuthenticationScheme)
     .Configure((MicrosoftAccountOptions options, IOptions<ConfigoAuthenticationOptions> configoAuthenticationOptions) =>
     {
-        options.ClientId = configoAuthenticationOptions.Value.Microsoft.ClientId;
-        options.ClientSecret = configoAuthenticationOptions.Value.Microsoft.ClientSecret;
+        MicrosoftOptions microsoftOptions = configoAuthenticationOptions.Value.Microsoft;
+        if (microsoftOptions.TenantId is not null)
+        {
+            options.AuthorizationEndpoint = $"https://login.microsoftonline.com/{microsoftOptions.TenantId}/oauth2/authorize";
+            options.TokenEndpoint = $"https://login.microsoftonline.com/{microsoftOptions.TenantId}/oauth2/v2.0/token";
+        }
+        options.ClientId = microsoftOptions.ClientId;
+        options.ClientSecret = microsoftOptions.ClientSecret;
     });
 
 /* Authorization */
@@ -131,9 +137,10 @@ services.AddDbContextFactory<ConfigoDbContext>(dbContextOptions =>
             throw new InvalidOperationException("Unsupported database provider, only SqlServer and Postgres are supported: " + provider);
     }
 });
-services.AddHostedService<DatabaseMigrator>();
+services.AddHostedService<DatabaseMigratorHostedService>();
 
 // Domain
+services.AddSingleton<UserManager>();
 services.AddSingleton<TagManager>();
 services.AddSingleton<ApplicationManager>();
 services.AddSingleton<ApiKeyManager>();

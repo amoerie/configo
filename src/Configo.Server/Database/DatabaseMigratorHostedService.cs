@@ -5,13 +5,13 @@ using Npgsql;
 
 namespace Configo.Server.Database;
 
-public class DatabaseMigrator : IHostedService
+public class DatabaseMigratorHostedService : IHostedService
 {
     private readonly IDbContextFactory<ConfigoDbContext> _dbContextFactory;
-    private readonly ILogger<DatabaseMigrator> _logger;
+    private readonly ILogger<DatabaseMigratorHostedService> _logger;
 
-    public DatabaseMigrator(IDbContextFactory<ConfigoDbContext> dbContextFactory,
-        ILogger<DatabaseMigrator> logger)
+    public DatabaseMigratorHostedService(IDbContextFactory<ConfigoDbContext> dbContextFactory,
+        ILogger<DatabaseMigratorHostedService> logger)
     {
         _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
