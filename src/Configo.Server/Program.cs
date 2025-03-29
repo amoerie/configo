@@ -70,7 +70,8 @@ services.AddAuthentication(options =>
     })
     .AddCookie()
     .AddMicrosoftAccount()
-    .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(ApiKeyAuthenticationHandler.AuthenticationScheme, "Configo API Key", _ => {});
+    .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(ApiKeyAuthenticationHandler.AuthenticationScheme, "Configo API Key", _ => { });
+
 services.AddOptions<ConfigoAuthenticationOptions>().BindConfiguration(ConfigoAuthenticationOptions.SectionName);
 services.AddOptions<MicrosoftAccountOptions>(MicrosoftAccountDefaults.AuthenticationScheme)
     .Configure((MicrosoftAccountOptions options, IOptions<ConfigoAuthenticationOptions> configoAuthenticationOptions) =>
@@ -111,10 +112,7 @@ services.AddDbContextFactory<ConfigoDbContext>(dbContextOptions =>
      */
     dbContextOptions.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
 
-    dbContextOptions.ConfigureWarnings(warnings =>
-    {
-        warnings.Throw(RelationalEventId.MultipleCollectionIncludeWarning);
-    });
+    dbContextOptions.ConfigureWarnings(warnings => { warnings.Throw(RelationalEventId.MultipleCollectionIncludeWarning); });
 
     /* Support both SQL server and Postgres */
     var provider = configuration.GetValue("Provider", "SqlServer");
@@ -122,16 +120,12 @@ services.AddDbContextFactory<ConfigoDbContext>(dbContextOptions =>
     switch (provider)
     {
         case "SqlServer":
-            dbContextOptions.UseSqlServer(configuration.GetConnectionString("Configo"), sqlServerOptions =>
-            {
-                sqlServerOptions.MigrationsAssembly(typeof(SqlServerMigrations).Assembly.GetName().Name);
-            });
+            dbContextOptions.UseSqlServer(configuration.GetConnectionString("Configo"),
+                sqlServerOptions => { sqlServerOptions.MigrationsAssembly(typeof(SqlServerMigrations).Assembly.GetName().Name); });
             break;
         case "Postgres":
-            dbContextOptions.UseNpgsql(configuration.GetConnectionString("Configo"), npgSqlOptions =>
-            {
-                npgSqlOptions.MigrationsAssembly(typeof(NpgSqlMigrations).Assembly.GetName().Name);
-            });
+            dbContextOptions.UseNpgsql(configuration.GetConnectionString("Configo"),
+                npgSqlOptions => { npgSqlOptions.MigrationsAssembly(typeof(NpgSqlMigrations).Assembly.GetName().Name); });
             break;
         default:
             throw new InvalidOperationException("Unsupported database provider, only SqlServer and Postgres are supported: " + provider);
