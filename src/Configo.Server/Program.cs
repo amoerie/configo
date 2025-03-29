@@ -171,13 +171,7 @@ app.UseAuthorization();
 // Routing
 // ---------
 app.MapBlazorHub();
-var api = app.MapGroup("/api")
-    .RequireAuthorization(authorizationPolicyBuilder =>
-    {
-        authorizationPolicyBuilder.AddAuthenticationSchemes(ApiKeyAuthenticationHandler.AuthenticationScheme);
-        authorizationPolicyBuilder.RequireClaim(ApiKeyAuthenticationHandler.ApiKeyIdClaim);
-    });
-
+var api = app.MapGroup("/api");
 api.MapGet("/config", GetConfigEndpoint.HandleAsync);
 api.MapPost("/applications/{applicationId}/schema", SaveSchemaEndpoint.HandleAsync);
 app.MapFallbackToPage("/_Host");
