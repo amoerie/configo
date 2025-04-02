@@ -29,10 +29,13 @@ public class ManagingTags : IAsyncLifetime
     {
         // Arrange
         var tagManager = _fixture.GetRequiredService<TagManager>();
+        var tagGroupManager = _fixture.GetRequiredService<TagGroupManager>();
         CancellationToken cancellationToken = CancellationToken.None;
         
         // Act + Assert
-        var tag = new TagModel { Name = "Test 1" };
+        var tagGroup = new TagGroupModel { Name = "Group 1" };
+        await tagGroupManager.SaveTagGroupAsync(tagGroup, cancellationToken);
+        var tag = new TagModel { Name = "Test 1", TagGroupId = tagGroup.Id };
         await tagManager.SaveTagAsync(tag, cancellationToken);
         var allTags = await tagManager.GetAllTagsAsync(cancellationToken);
 

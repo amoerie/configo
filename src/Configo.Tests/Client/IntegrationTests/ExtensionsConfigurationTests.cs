@@ -14,6 +14,7 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
     private ApplicationModel _processor = null!;
     private string _globalVariables = null!;
     private string _beneluxVariables = null!;
+    private TagGroupModel _environments = null!;
 
     public ExtensionsConfigurationTests(IntegrationTestFixture fixture, ITestOutputHelper output)
     {
@@ -24,11 +25,14 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         var tagManager = _fixture.GetRequiredService<TagManager>();
+        var tagGroupManager = _fixture.GetRequiredService<TagGroupManager>();
         var applicationManager = _fixture.GetRequiredService<ApplicationManager>();
         var variableManager = _fixture.GetRequiredService<VariableManager>();
         var cancellationToken = CancellationToken.None;
 
-        _benelux = new TagModel { Name = "Benelux" };
+        _environments = new TagGroupModel { Name = "Environments" };
+        await tagGroupManager.SaveTagGroupAsync(_environments, cancellationToken);
+        _benelux = new TagModel { Name = "Benelux", TagGroupId = _environments.Id };
         await tagManager.SaveTagAsync(_benelux, cancellationToken);
         _processor = new ApplicationModel { Name = "Processor" };
         await applicationManager.SaveApplicationAsync(_processor, cancellationToken);

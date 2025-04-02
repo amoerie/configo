@@ -23,11 +23,14 @@ public class GetConfigEndpointTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         var tagManager = _fixture.GetRequiredService<TagManager>();
+        var tagGroupManager = _fixture.GetRequiredService<TagGroupManager>();
         var applicationManager = _fixture.GetRequiredService<ApplicationManager>();
         var variableManager = _fixture.GetRequiredService<VariableManager>();
         var cancellationToken = CancellationToken.None;
 
-        _benelux = new TagModel { Name = "Benelux" };
+        var environments = new TagGroupModel { Name = "Environments" };
+        await tagGroupManager.SaveTagGroupAsync(environments, cancellationToken);
+        _benelux = new TagModel { Name = "Benelux", TagGroupId = environments.Id };
         await tagManager.SaveTagAsync(_benelux, cancellationToken);
         _processor = new ApplicationModel { Name = "Processor" };
         await applicationManager.SaveApplicationAsync(_processor, cancellationToken);

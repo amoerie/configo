@@ -2,11 +2,18 @@
 @using Configo.Server.Domain
 @using System.Collections.ObjectModel
 @inject TagManager TagManager
+@inject TagGroupManager TagGroupManager
 @inject IDialogService DialogService
 
-@if (_tags == null)
+@if (_tags is null || _tagGroups is null)
 {
     <MudProgressCircular Color="Color.Primary" Indeterminate="true"/>
+    return;
+}
+
+@if (_tagGroups.Count == 0)
+{
+    <MudAlert Severity="Severity.Warning">Please create a tag group first</MudAlert>
     return;
 }
 
@@ -63,9 +70,11 @@
 @code {
     private ObservableCollection<TagModel>? _tags;
     private MudDataGrid<TagModel>? _dataGrid;
+    private List<TagGroupModel>? _tagGroups;
 
     protected override async Task OnParametersSetAsync()
     {
+        _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken);
         _tags = new ObservableCollection<TagModel>(await TagManager.GetAllTagsAsync(CancellationToken));
     }
 
@@ -101,6 +110,8 @@
         {
             Id = 0,
             Name = "",
+            // TODO Alex use the last chosen tag group instead of the first one
+            TagGroupId = _tagGroups!.First().Id,
             NumberOfVariables = 0, 
             UpdatedAtUtc = DateTime.UtcNow
         };

@@ -9,6 +9,7 @@ public sealed record TagModel
 {
     public int Id { get; set; }
     public required string Name { get; set; }
+    public required int TagGroupId { get; set; }
     public DateTime UpdatedAtUtc { get; set; }
     public int NumberOfVariables { get; set; }
 }
@@ -65,6 +66,7 @@ public sealed class TagManager
                 {
                     Id = tag.Id,
                     Name = tag.Name,
+                    TagGroupId = tag.TagGroupId,
                     UpdatedAtUtc = tag.UpdatedAtUtc,
                     NumberOfVariables = variables.Count()
                 })
@@ -82,6 +84,11 @@ public sealed class TagManager
 
         _logger.LogDebug("Saving tag {@Tag}", model);
 
+        if (!await dbContext.TagGroups.AnyAsync(t => t.Id == model.TagGroupId, cancellationToken))
+        {
+            throw new ArgumentException($"Tag group with id {model.TagGroupId} does not exist");
+        }
+        
         TagRecord tagRecord;
         if (model.Id is 0)
         {
@@ -93,6 +100,7 @@ public sealed class TagManager
             tagRecord = new TagRecord
             {
                 Name = model.Name,
+                TagGroupId = model.TagGroupId,
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
             };

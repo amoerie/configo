@@ -30,15 +30,18 @@ public class ManagingVariables : IAsyncLifetime
     public async Task InitializeAsync()
     {
         var tagManager = _fixture.GetRequiredService<TagManager>();
+        var tagGroupManager = _fixture.GetRequiredService<TagGroupManager>();
         var applicationManager = _fixture.GetRequiredService<ApplicationManager>();
         var variableManager = _fixture.GetRequiredService<VariableManager>();
         var cancellationToken = CancellationToken.None;
 
-        _benelux = new TagModel { Name = "Benelux" };
-        _nordics = new TagModel { Name = "Nordics" };
-        _blade1 = new TagModel { Name = "Blade 1" };
-        _blade2 = new TagModel { Name = "Blade 2" };
-        _otherTag = new TagModel { Name = "Other Tag" };
+        var environments = new TagGroupModel { Name = "Environments" };
+        await tagGroupManager.SaveTagGroupAsync(environments, cancellationToken);
+        _benelux = new TagModel { Name = "Benelux", TagGroupId = environments.Id };
+        _nordics = new TagModel { Name = "Nordics", TagGroupId = environments.Id };
+        _blade1 = new TagModel { Name = "Blade 1", TagGroupId = environments.Id };
+        _blade2 = new TagModel { Name = "Blade 2", TagGroupId = environments.Id };
+        _otherTag = new TagModel { Name = "Other Tag", TagGroupId = environments.Id };
         await tagManager.SaveTagAsync(_benelux, cancellationToken);
         await tagManager.SaveTagAsync(_nordics, cancellationToken);
         await tagManager.SaveTagAsync(_blade1, cancellationToken);

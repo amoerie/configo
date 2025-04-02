@@ -141,6 +141,7 @@ services.AddHostedService<DatabaseMigratorHostedService>();
 
 // Domain
 services.AddSingleton<UserManager>();
+services.AddSingleton<TagGroupManager>();
 services.AddSingleton<TagManager>();
 services.AddSingleton<ApplicationManager>();
 services.AddSingleton<ApiKeyManager>();

@@ -121,7 +121,7 @@ namespace Configo.Database.NpgSql.Migrations
                     b.ToTable("Applications");
                 });
 
-            modelBuilder.Entity("Configo.Database.Tables.TagRecord", b =>
+            modelBuilder.Entity("Configo.Database.Tables.TagGroupRecord", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -144,6 +144,38 @@ namespace Configo.Database.NpgSql.Migrations
 
                     b.HasIndex("Name")
                         .IsUnique();
+
+                    b.ToTable("TagGroups");
+                });
+
+            modelBuilder.Entity("Configo.Database.Tables.TagRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("TagGroupId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("TagGroupId");
 
                     b.ToTable("Tags");
                 });
@@ -269,6 +301,15 @@ namespace Configo.Database.NpgSql.Migrations
                     b.HasOne("Configo.Database.Tables.TagRecord", null)
                         .WithMany()
                         .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Configo.Database.Tables.TagRecord", b =>
+                {
+                    b.HasOne("Configo.Database.Tables.TagGroupRecord", null)
+                        .WithMany()
+                        .HasForeignKey("TagGroupId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

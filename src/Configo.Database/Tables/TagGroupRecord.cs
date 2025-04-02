@@ -3,30 +3,25 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Configo.Database.Tables;
 
-public sealed record TagRecord
+public sealed record TagGroupRecord
 {
     public int Id { get; set; }
     public required string Name { get; set; }
-    public required int TagGroupId { get; set; }
-
+    
     public required DateTime CreatedAtUtc { get; set; }
     public required DateTime UpdatedAtUtc { get; set; }
 }
 
-public class TagRecordConfigurator: IEntityTypeConfiguration<TagRecord>
+public class TagGroupRecordConfigurator: IEntityTypeConfiguration<TagGroupRecord>
 {
-    public void Configure(EntityTypeBuilder<TagRecord> builder)
+    public void Configure(EntityTypeBuilder<TagGroupRecord> builder)
     {
         builder.HasKey(r => r.Id);
         builder.Property(r => r.Name).HasMaxLength(256);
         builder.HasIndex(r => r.Name).IsUnique();
-        builder.HasOne<TagGroupRecord>()
-            .WithMany()
-            .HasForeignKey(r => r.TagGroupId)
-            .OnDelete(DeleteBehavior.Cascade);
-        builder.HasMany<VariableRecord>()
+        builder.HasMany<TagRecord>()
             .WithOne()
-            .HasForeignKey(v => v.TagId)
+            .HasForeignKey(v => v.TagGroupId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
