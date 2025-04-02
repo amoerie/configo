@@ -7,6 +7,7 @@ public sealed record TagGroupRecord
 {
     public int Id { get; set; }
     public required string Name { get; set; }
+    public required int Order { get; set; }
     
     public required DateTime CreatedAtUtc { get; set; }
     public required DateTime UpdatedAtUtc { get; set; }
@@ -19,6 +20,7 @@ public class TagGroupRecordConfigurator: IEntityTypeConfiguration<TagGroupRecord
         builder.HasKey(r => r.Id);
         builder.Property(r => r.Name).HasMaxLength(256);
         builder.HasIndex(r => r.Name).IsUnique();
+        builder.HasIndex(r => r.Order).IsUnique();
         builder.HasMany<TagRecord>()
             .WithOne()
             .HasForeignKey(v => v.TagGroupId)

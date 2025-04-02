@@ -8,6 +8,7 @@ public sealed record TagGroupModel
 {
     public int Id { get; set; }
     public required string Name { get; set; }
+    public int Order { get; set; }
     public DateTime UpdatedAtUtc { get; set; }
     public int NumberOfTags { get; set; }
 }
@@ -24,20 +25,18 @@ public sealed class TagGroupManager(ILogger<TagGroupManager> logger, IDbContextF
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        logger.LogDebug("Getting all tag groups");
-
-        var tagGroupRecords = await dbContext.TagGroups
-            .Select(t => new { t.Id, t.Name })
-            .ToListAsync(cancellationToken);
-
-        logger.LogInformation("Got {NumberOfTagGroups} tag groups", tagGroupRecords.Count);
-        
-        return tagGroupRecords.Select(tagGroupRecord => new TagGroupDropdownModel
+        var tagGroups = await dbContext.TagGroups
+            .OrderBy(tagGroupRecord => tagGroupRecord.Order)
+            .Select(tagGroupRecord => new TagGroupDropdownModel
             {
                 Id = tagGroupRecord.Id,
                 Name = tagGroupRecord.Name
             })
-            .ToList();
+            .ToListAsync(cancellationToken);
+        
+        logger.LogInformation("Got {NumberOfTagGroups} tag groups", tagGroups.Count);
+
+        return tagGroups;
     }
     
     public async Task<List<TagGroupModel>> GetAllTagGroupsAsync(CancellationToken cancellationToken)
@@ -55,10 +54,11 @@ public sealed class TagGroupManager(ILogger<TagGroupManager> logger, IDbContextF
                 {
                     Id = tagGroup.Id,
                     Name = tagGroup.Name,
+                    Order = tagGroup.Order,
                     UpdatedAtUtc = tagGroup.UpdatedAtUtc,
                     NumberOfTags = tags.Count()
                 })
-            .OrderBy(t => t.Name)
+            .OrderBy(t => t.Order)
             .ToListAsync(cancellationToken);
 
         logger.LogInformation("Got {NumberOfTagGroups} tag groups", tagGroups.Count);
@@ -83,6 +83,7 @@ public sealed class TagGroupManager(ILogger<TagGroupManager> logger, IDbContextF
             tagGroupRecord = new TagGroupRecord
             {
                 Name = model.Name,
+                Order = model.Order,
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
             };
