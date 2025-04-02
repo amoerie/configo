@@ -66,13 +66,20 @@ public sealed record VariableManager
         var apiKeyTags = dbContext.ApiKeyTags;
         
         // Get API key
-        var apiKey = await apiKeys.SingleAsync(a => a.Id == apiKeyId, cancellationToken);
+        var apiKey = await apiKeys.FirstOrDefaultAsync(a => a.Id == apiKeyId, cancellationToken);
+
+        if (apiKey is null)
+        {
+            throw new ArgumentException("API key with id {ApiKeyId} not found", nameof(apiKeyId));
+        }
 
         // Get tags of API key
         var tagIds = await apiKeyTags
             .Where(akt => akt.ApiKeyId == apiKeyId)
-            .OrderBy(akt => akt.Order)
-            .Select(akt => akt.TagId)
+            .Join(dbContext.Tags, a => a.TagId, t => t.Id, (apiKeyTag, tag) => new { ApiKeyTag = apiKeyTag, Tag = tag })
+            .Join(dbContext.TagGroups, a => a.Tag.TagGroupId, t => t.Id, (apiKeyTagAndTag, tagGroup) => new { apiKeyTagAndTag.ApiKeyTag, apiKeyTagAndTag.Tag, TagGroup = tagGroup })
+            .OrderBy(x => x.TagGroup.Order)
+            .Select(x => x.Tag.Id)
             .ToListAsync(cancellationToken);
 
         return await GetMergedConfigAsync(tagIds, cancellationToken);

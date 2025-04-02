@@ -57,7 +57,8 @@ public sealed class ApiKeyManager
             var apiKeyTagIds = await dbContext.ApiKeyTags
                 .Where(apiKeyTag => apiKeyTag.ApiKeyId == apiKeyRecord.Id)
                 .Join(dbContext.Tags, a => a.TagId, t => t.Id, (apiKeyTag, tag) => new { ApiKeyTag = apiKeyTag, Tag = tag })
-                .OrderBy(result => result.ApiKeyTag.Order)
+                .Join(dbContext.TagGroups, a => a.Tag.TagGroupId, t => t.Id, (apiKeyTagAndTag, tagGroup) => new { apiKeyTagAndTag.ApiKeyTag, apiKeyTagAndTag.Tag, TagGroup = tagGroup })
+                .OrderBy(result => result.TagGroup.Order)
                 .Select(result => result.Tag.Id)
                 .ToListAsync(cancellationToken);
 
@@ -141,17 +142,14 @@ public sealed class ApiKeyManager
 
         _logger.LogInformation("Saved {@ApiKey}", apiKeyRecord);
 
-        var index = 0;
         foreach (var tagId in model.TagIds)
         {
             var apiKeyTagRecord = new ApiKeyTagRecord
             {
                 ApiKeyId = apiKeyRecord.Id,
                 TagId = tagId,
-                Order = index
             };
             dbContext.ApiKeyTags.Add(apiKeyTagRecord);
-            index++;
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -159,7 +157,8 @@ public sealed class ApiKeyManager
         var apiKeyTagIds = await dbContext.ApiKeyTags
             .Where(apiKeyTag => apiKeyTag.ApiKeyId == apiKeyRecord.Id)
             .Join(dbContext.Tags, a => a.TagId, t => t.Id, (apiKeyTag, tag) => new { ApiKeyTag = apiKeyTag, Tag = tag })
-            .OrderBy(result => result.ApiKeyTag.Order)
+            .Join(dbContext.TagGroups, a => a.Tag.TagGroupId, t => t.Id, (apiKeyTagAndTag, tagGroup) => new { apiKeyTagAndTag.ApiKeyTag, apiKeyTagAndTag.Tag, TagGroup = tagGroup })
+            .OrderBy(result => result.TagGroup.Order)
             .Select(result => result.Tag.Id)
             .ToListAsync(cancellationToken);
 

@@ -76,9 +76,6 @@ namespace Configo.Database.NpgSql.Migrations
                     b.Property<int>("TagId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Order")
-                        .HasColumnType("integer");
-
                     b.HasKey("ApiKeyId", "TagId");
 
                     b.HasIndex("TagId");
@@ -137,12 +134,18 @@ namespace Configo.Database.NpgSql.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<int>("Order")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("Order")
                         .IsUnique();
 
                     b.ToTable("TagGroups");
