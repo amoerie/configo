@@ -1,6 +1,5 @@
 ﻿using Configo.Database;
 using Configo.Database.Tables;
-using Configo.Server.Blazor;
 using Microsoft.EntityFrameworkCore;
 
 namespace Configo.Server.Domain;
