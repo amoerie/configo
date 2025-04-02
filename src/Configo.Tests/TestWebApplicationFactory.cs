@@ -2,22 +2,17 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Configo.Tests;
 
-public class TestWebApplicationFactory : WebApplicationFactory<Configo.Server.Program>
+public class TestWebApplicationFactory(string connectionString, IntegrationTestOutputAccessor outputAccessor) : WebApplicationFactory<Configo.Server.Program>
 {
-    private readonly string _connectionString;
-    private readonly IntegrationTestOutputAccessor _outputAccessor;
-
-    public TestWebApplicationFactory(string connectionString, IntegrationTestOutputAccessor outputAccessor)
-    {
-        _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
-        _outputAccessor = outputAccessor ?? throw new ArgumentNullException(nameof(outputAccessor));
-    }
+    private readonly string _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
+    private readonly IntegrationTestOutputAccessor _outputAccessor = outputAccessor ?? throw new ArgumentNullException(nameof(outputAccessor));
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -36,12 +31,13 @@ public class TestWebApplicationFactory : WebApplicationFactory<Configo.Server.Pr
             }).ConfigureServices(services =>
             {
                 // Test specific authentication
+                services.AddHostedService<RemoveUnsupportedAuthenticationSchemesHostedService>();
                 services.AddAuthentication(o =>
                     {
-                        o.DefaultScheme = TestAuthenticationOptions.AuthenticationScheme;
-                        o.DefaultChallengeScheme = TestAuthenticationOptions.AuthenticationScheme;
+                        o.DefaultScheme = TestAuthenticationHandler.AuthenticationScheme;
+                        o.DefaultChallengeScheme = TestAuthenticationHandler.AuthenticationScheme;
                     })
-                    .AddScheme<TestAuthenticationOptions, TestAuthenticationHandler>(TestAuthenticationOptions.AuthenticationScheme,
+                    .AddScheme<TestAuthenticationOptions, TestAuthenticationHandler>(TestAuthenticationHandler.AuthenticationScheme,
                         options =>
                         {
                             options.Authenticate = () =>
@@ -53,9 +49,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Configo.Server.Pr
                                     new Claim(ClaimTypes.Name, "John Doe"),
                                     new Claim(ClaimTypes.Email, "john.doe@configo.com")
                                 ];
-                                var claimsIdentity = new ClaimsIdentity(claims, TestAuthenticationOptions.AuthenticationScheme);
+                                var claimsIdentity = new ClaimsIdentity(claims, TestAuthenticationHandler.AuthenticationScheme);
                                 var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
-                                var authenticationTicket = new AuthenticationTicket(claimsPrincipal, TestAuthenticationOptions.AuthenticationScheme);
+                                var authenticationTicket = new AuthenticationTicket(claimsPrincipal, TestAuthenticationHandler.AuthenticationScheme);
                                 var authenticateResult = AuthenticateResult.Success(authenticationTicket);
                                 return Task.FromResult(authenticateResult);
                             };

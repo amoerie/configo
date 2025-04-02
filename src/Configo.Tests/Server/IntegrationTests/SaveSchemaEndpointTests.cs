@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Json;
+﻿using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using Configo.Server.Domain;
 using Xunit.Abstractions;
 
@@ -34,9 +35,10 @@ public class SaveSchemaEndpointTests : IAsyncLifetime
     public async Task HappyCase()
     {
         // Arrange
-        var schemaManager = _fixture.GetRequiredService<SchemaManager>();
-        using var httpClient = _fixture.CreateClient();
         var cancellationToken = CancellationToken.None;
+        var schemaManager = _fixture.GetRequiredService<SchemaManager>();
+        
+        using var httpClient = _fixture.CreateClient();
 
         // Act
         var schema = await File.ReadAllTextAsync("./Server/IntegrationTests/SaveSchemaEndpointTests.schema.json", cancellationToken);

@@ -68,9 +68,9 @@ services.AddAuthentication(options =>
         options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = MicrosoftAccountDefaults.AuthenticationScheme;
     })
+    .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(ApiKeyAuthenticationHandler.AuthenticationScheme, "Configo API Key", _ => { })
     .AddCookie()
-    .AddMicrosoftAccount()
-    .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(ApiKeyAuthenticationHandler.AuthenticationScheme, "Configo API Key", _ => { });
+    .AddMicrosoftAccount();
 
 services.AddOptions<ConfigoAuthenticationOptions>().BindConfiguration(ConfigoAuthenticationOptions.SectionName);
 services.AddOptions<MicrosoftAccountOptions>(MicrosoftAccountDefaults.AuthenticationScheme)
@@ -172,7 +172,11 @@ app.UseAuthorization();
 // ---------
 app.MapBlazorHub();
 var api = app.MapGroup("/api");
-api.MapGet("/config", GetConfigEndpoint.HandleAsync);
+api.MapGet("/config", GetConfigEndpoint.HandleAsync).RequireAuthorization(auth =>
+{
+    auth.AddAuthenticationSchemes(ApiKeyAuthenticationHandler.AuthenticationScheme);
+    auth.RequireClaim(ApiKeyAuthenticationHandler.ApiKeyIdClaim);
+});
 api.MapPost("/applications/{applicationId}/schema", SaveSchemaEndpoint.HandleAsync);
 app.MapFallbackToPage("/_Host");
 
