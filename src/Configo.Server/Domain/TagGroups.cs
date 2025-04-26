@@ -8,7 +8,7 @@ public sealed record TagGroupModel
 {
     public int Id { get; set; }
     public required string Name { get; set; }
-    public int Order { get; set; }
+    public int Order { get; init; }
     public DateTime UpdatedAtUtc { get; set; }
     public int NumberOfTags { get; set; }
 }
@@ -79,11 +79,12 @@ public sealed class TagGroupManager(ILogger<TagGroupManager> logger, IDbContextF
             {
                 throw new ArgumentException("Tag group name already in use");
             }
-            
+
+            var maxOrder = await dbContext.TagGroups.Select(o => (int?) o.Order).MaxAsync(cancellationToken);
             tagGroupRecord = new TagGroupRecord
             {
                 Name = model.Name,
-                Order = model.Order,
+                Order = (maxOrder + 1) ?? 0,
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
             };
@@ -130,5 +131,52 @@ public sealed class TagGroupManager(ILogger<TagGroupManager> logger, IDbContextF
         await dbContext.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Deleted tag group {@TagGroup}", tagGroup);
+    }
+
+    public async Task ChangeOrderAsync(int tagGroupId, int newOrder, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        logger.LogDebug("Changing order of tag group {TagGroupId} to {NewOrder}", tagGroupId, newOrder);
+
+        var allTagGroups = await dbContext.TagGroups
+            .AsTracking()
+            .OrderBy(t => t.Order)
+            .ToListAsync(cancellationToken);
+
+        var oldIndex = allTagGroups.FindIndex(tagGroupRecord => tagGroupRecord.Id == tagGroupId);
+        if (oldIndex == -1)
+        {
+            return;
+        }
+        
+        var newIndex = Math.Clamp(newOrder, 0, allTagGroups.Count - 1);
+        if (oldIndex == newIndex)
+        {
+            return;
+        }
+        
+        // To avoid intermediate order values that would conflict with the unique index, assign negative values
+        for (int index = 0; index < allTagGroups.Count; index++)
+        {
+            TagGroupRecord tagGroupRecord = allTagGroups[index];
+            tagGroupRecord.Order = -index;
+        }
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        // Now update the orders
+        var temp = allTagGroups[oldIndex];
+        allTagGroups.RemoveAt(oldIndex);
+        allTagGroups.Insert(newIndex, temp);
+
+        for (int index = 0; index < allTagGroups.Count; index++)
+        {
+            TagGroupRecord tagGroupRecord = allTagGroups[index];
+            tagGroupRecord.Order = index;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Reordered tag groups");
     }
 }

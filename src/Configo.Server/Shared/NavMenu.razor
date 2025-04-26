@@ -2,6 +2,7 @@
     <MudNavLink Href="/" Match="NavLinkMatch.All" ActiveClass="">
         <MudImage Src="configo.png" Alt="Logo" Height="160"></MudImage>
     </MudNavLink>
+    <MudNavLink Href="@($"/{Routes.TagGroups}")" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Category">Tag Groups</MudNavLink>
     <MudNavLink Href="@($"/{Routes.Tags}")" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Tag">Tags</MudNavLink>
     <MudNavLink Href=@($"/{Routes.Applications}") Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Cloud">Applications</MudNavLink>
     <MudNavLink Href=@($"/{Routes.ApiKeys}") Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Key">API Keys</MudNavLink>

@@ -1,0 +1,150 @@
+﻿@page "/tag-groups"
+@using Configo.Server.Domain
+@using System.Collections.ObjectModel
+@inject TagGroupManager TagGroupManager
+@inject IDialogService DialogService
+
+<MudText Typo="Typo.h4" GutterBottom="true">
+    Tag Groups
+</MudText>
+
+@if (_tagGroups == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true"/>
+    return;
+}
+
+<MudButton
+    Variant="Variant.Filled"
+    Size="Size.Large"
+    OnClick="@AddNew" Color="@Color.Success" Class="add-item-btn" StartIcon="@Icons.Material.Filled.Add">
+    Add new
+</MudButton>
+
+<MudDataGrid @ref="_dataGrid"
+             Items="@_tagGroups"
+             Filterable="true"
+             FilterMode="DataGridFilterMode.ColumnFilterRow"
+             FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+             ReadOnly="false"
+             EditDialogOptions="new DialogOptions { FullWidth = true }"
+             EditMode="DataGridEditMode.Form"
+             EditTrigger="DataGridEditTrigger.OnRowClick"
+             CanceledEditingItem="(TagGroupModel model) => DoNotSaveTagGroup(model)"
+             CommittedItemChanges="(TagGroupModel model) => SaveTagGroup(model)">
+    <Columns>
+        <PropertyColumn Property="(TagGroupModel x) => x.Name" Title="Name" Sortable="false" />
+        <TemplateColumn Title="# Tags" 
+                        Editable="false"
+                        Filterable="false" 
+                        Sortable="true"
+                        SortBy="(TagGroupModel model) => model.NumberOfTags">
+            <CellTemplate>
+                <MudChip Color="Color.Primary">@context.Item.NumberOfTags</MudChip> 
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="(TagGroupModel x) => x.UpdatedAtUtc"
+                        Title="Updated" 
+                        Editable="false"
+                        Filterable="false"
+                        Format="u"/>
+        <TemplateColumn Editable="false" Filterable="false" Sortable="false">
+            <CellTemplate>
+                <MudStack Row>
+                    <MudIconButton Size="@Size.Small"
+                                   Icon="@Icons.Material.Filled.Delete"
+                                   Variant="@Variant.Filled"
+                                   Color="@Color.Error"
+                                   @onclick="() => OpenDeleteDialogAsync(context.Item)">
+                    </MudIconButton>
+                    <MudIconButton Size="@Size.Small"
+                                   Icon="@Icons.Material.Filled.ArrowUpward"
+                                   Variant="@Variant.Filled"
+                                   Color="@Color.Primary"
+                                   @onclick="() => MoveUp(context.Item)">
+                    </MudIconButton>
+                    <MudIconButton Size="@Size.Small"
+                                   Icon="@Icons.Material.Filled.ArrowDownward"
+                                   Variant="@Variant.Filled"
+                                   Color="@Color.Primary"
+                                   @onclick="() => MoveDown(context.Item)">
+                    </MudIconButton>
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="TagGroupModel"/>
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    private ObservableCollection<TagGroupModel>? _tagGroups;
+    private MudDataGrid<TagGroupModel>? _dataGrid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _tagGroups = new ObservableCollection<TagGroupModel>(await TagGroupManager.GetAllTagGroupsAsync(CancellationToken));
+    }
+
+    private async Task OpenDeleteDialogAsync(TagGroupModel tagGroup)
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var parameters = new DialogParameters<DeleteDialog> { { x => x.ThingThatWillBeDeleted, tagGroup.Name } };
+        var dialog = await DialogService.ShowAsync<DeleteDialog>("Delete", parameters, options);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled)
+        {
+            await TagGroupManager.DeleteTagGroupAsync(tagGroup, CancellationToken);
+            _tagGroups!.Remove(tagGroup);
+        }
+    }
+
+    private async Task SaveTagGroup(TagGroupModel model)
+    {
+        await TagGroupManager.SaveTagGroupAsync(model, CancellationToken);
+    }
+
+    private void DoNotSaveTagGroup(TagGroupModel model)
+    {
+        if (model.Id == 0)
+        {
+            _tagGroups!.Remove(model);
+        }
+    }
+
+    private async Task AddNew()
+    {
+        var nextOrder = _tagGroups is null ? 0 : _tagGroups.Select(t => t.Order).Max() + 1;
+        var tagGroupModel = new TagGroupModel { Id = 0, Name = "", NumberOfTags = 0, UpdatedAtUtc = DateTime.UtcNow, Order = nextOrder };
+        _tagGroups!.Add(tagGroupModel);
+        await _dataGrid!.SetEditingItemAsync(tagGroupModel);
+    }
+
+    private async Task MoveUp(TagGroupModel tagGroup)
+    {
+        await TagGroupManager.ChangeOrderAsync(tagGroup.Id, tagGroup.Order - 1, CancellationToken);
+        await Refresh();
+    }
+
+    private async Task MoveDown(TagGroupModel tagGroup)
+    {
+        await TagGroupManager.ChangeOrderAsync(tagGroup.Id, tagGroup.Order + 1, CancellationToken);
+        await Refresh();
+    }
+
+    private async Task Refresh()
+    {
+        if (_tagGroups is null)
+        {
+            return;
+        }
+
+        _tagGroups.Clear();
+        var tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken);
+        foreach (var tagGroup in tagGroups)
+        {
+            _tagGroups.Add(tagGroup);
+        }
+    }
+}
