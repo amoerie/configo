@@ -23,6 +23,7 @@
     <ProjectReference Include="..\Configo.Database\Configo.Database.csproj" />
     <ProjectReference Include="..\Configo.Database.NpgSql\Configo.Database.NpgSql.csproj" />
     <ProjectReference Include="..\Configo.Database.SqlServer\Configo.Database.SqlServer.csproj" />
+    <ProjectReference Include="..\Configo.ServiceDefaults\Configo.ServiceDefaults.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="Properties\launchSettings.json" />

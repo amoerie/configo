@@ -152,6 +152,9 @@ services.AddSingleton<VariablesJsonSerializer>();
 services.AddSingleton<VariablesJsonDeserializer>();
 services.AddSingleton<VariablesPendingChanges>();
 
+// Aspire
+builder.AddServiceDefaults();
+
 var app = builder.Build();
 
 // Middleware
