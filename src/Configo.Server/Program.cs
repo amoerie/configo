@@ -161,8 +161,6 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
 }
 
-// Note: don't enforce HTTPS/HSTS to support SSL offloading
-
 app.UseStaticFiles();
 app.UseAntiforgery();
 app.UseRouting();
