@@ -1,0 +1,66 @@
+@using Configo.Server.Domain
+
+@inject TagGroupManager TagGroupManager;
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" Spacing="4">
+            <MudTextField @bind-Value="Tag.Name"                              
+                           For="@(() => Tag.Name)"
+                           Immediate="true"
+                           Label="Name" />
+            <MudSelect @bind-Value="Tag.TagGroupId" Label="Tag group"
+                       Placeholder="Please choose a tag group"
+                       AdornmentIcon="@Icons.Material.Filled.Category"
+                       AdornmentColor="Color.Primary">
+                @if (_tagGroups is not null)
+                {
+                    @foreach (var tagGroup in _tagGroups)
+                    {
+                        <MudSelectItem Value="@tagGroup.Id">@tagGroup.Name</MudSelectItem>
+                    }
+                }
+            </MudSelect>
+        </MudForm>   
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="@(async () => await Submit())">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudForm? _form = null;
+    private List<TagGroupDropdownModel>? _tagGroups = null;
+
+    [CascadingParameter]
+    public required IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public required TagFormModel Tag { get; set; }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        _tagGroups = await TagGroupManager.GetAllTagGroupsForDropdownAsync(CancellationToken);
+    }
+
+    async Task Submit()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+        await _form.Validate();
+
+        if (_form.IsValid)
+        {
+            MudDialog.Close(DialogResult.Ok(Tag));    
+        }
+    }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+}

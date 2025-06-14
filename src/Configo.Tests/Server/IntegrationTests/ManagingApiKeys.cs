@@ -39,8 +39,8 @@ public class ManagingApiKeys : IAsyncLifetime
         await tagGroupManager.SaveTagGroupAsync(tagGroup, cancellationToken);
         var application = new ApplicationModel { Name = "App" };
         await applicationManager.SaveApplicationAsync(application, cancellationToken);
-        var tag1 = new TagModel { Name = "Tag 1", TagGroupId = tagGroup.Id };
-        var tag2 = new TagModel { Name = "Tag 2", TagGroupId = tagGroup.Id };
+        var tag1 = new TagFormModel { Name = "Tag 1", TagGroupId = tagGroup.Id };
+        var tag2 = new TagFormModel { Name = "Tag 2", TagGroupId = tagGroup.Id };
         await tagManager.SaveTagAsync(tag1, cancellationToken);
         await tagManager.SaveTagAsync(tag2, cancellationToken);
         var apiKey = new ApiKeyModel

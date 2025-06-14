@@ -75,9 +75,10 @@ public sealed class TagGroupManager(ILogger<TagGroupManager> logger, IDbContextF
         TagGroupRecord tagGroupRecord;
         if (model.Id is 0)
         {
-            if (await dbContext.TagGroups.AnyAsync(t => t.Name == model.Name, cancellationToken))
+            var existing = await dbContext.TagGroups.FirstOrDefaultAsync(t => t.Name == model.Name, cancellationToken);
+            if (existing is not null)
             {
-                throw new ArgumentException("Tag group name already in use");
+                 throw new ArgumentException($"Tag group name {model.Name} already in use by group {existing.Id}");
             }
 
             var maxOrder = await dbContext.TagGroups.Select(o => (int?) o.Order).MaxAsync(cancellationToken);
@@ -97,10 +98,13 @@ public sealed class TagGroupManager(ILogger<TagGroupManager> logger, IDbContextF
             model.NumberOfTags = 0;
             return;
         }
-        
-        if (await dbContext.TagGroups.AnyAsync(t => t.Id != model.Id && t.Name == model.Name, cancellationToken))
+
         {
-            throw new ArgumentException("TagGroup name already in use");
+            var existing = await dbContext.TagGroups.FirstOrDefaultAsync(t => t.Id != model.Id && t.Name == model.Name, cancellationToken);
+            if (existing is not null)
+            {
+                throw new ArgumentException($"Tag group name {model.Name} already in use by group {existing.Id}");
+            }
         }
 
         tagGroupRecord = await dbContext.TagGroups

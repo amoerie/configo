@@ -99,10 +99,10 @@
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent Class="py-0">
-                <MudList Class="py-0" Gutters="false" T="TagModel">
+                <MudList Class="py-0" Gutters="false" T="TagListModel">
                     @foreach (var tag in _tags)
                     {
-                        <MudListItem Dense="true" T="TagModel">
+                        <MudListItem Dense="true" T="TagListModel">
                             <MudCheckBox T="bool"
                                          Dense="true"
                                          Size="Size.Small"
@@ -147,18 +147,18 @@
 
 @code {
     private DotNetObjectReference<Variables>? _objectReference;
-    private List<TagModel>? _tags;
+    private List<TagListModel>? _tags;
     private List<ApplicationModel>? _applications;
     private bool _showMerged;
     private bool _showPendingChangesDiff;
     private bool _hasPendingChanges;
     private int? _selectedTagId;
     private int? _selectedApplicationId;
-    private TagModel? _selectedTag;
+    private TagListModel? _selectedTag;
     private ApplicationModel? _selectedApplication;
 
     private Dictionary<int, ApplicationModel> _applicationsById = new Dictionary<int, ApplicationModel>();
-    private Dictionary<int, TagModel> _tagsById = new Dictionary<int, TagModel>();
+    private Dictionary<int, TagListModel> _tagsById = new Dictionary<int, TagListModel>();
 
     protected override async Task OnInitializedAsync()
     {

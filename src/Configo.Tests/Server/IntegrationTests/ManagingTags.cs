@@ -35,21 +35,23 @@ public class ManagingTags : IAsyncLifetime
         // Act + Assert
         var tagGroup = new TagGroupModel { Name = "Group 1" };
         await tagGroupManager.SaveTagGroupAsync(tagGroup, cancellationToken);
-        var tag = new TagModel { Name = "Test 1", TagGroupId = tagGroup.Id };
+        var tag = new TagFormModel { Name = "Test 1", TagGroupId = tagGroup.Id };
         await tagManager.SaveTagAsync(tag, cancellationToken);
         var allTags = await tagManager.GetAllTagsAsync(cancellationToken);
 
         Assert.Single(allTags);
-        Assert.Equal("Test 1", allTags.Single().Name);
+        var firstTag = allTags.Single();
+        Assert.Equal("Test 1", firstTag.Name);
 
-        tag.Name = "Test 2";
+        tag = new TagFormModel { Id = firstTag.Id, Name = "Test 2", TagGroupId = tagGroup.Id };
         await tagManager.SaveTagAsync(tag, cancellationToken);
         
         allTags = await tagManager.GetAllTagsAsync(cancellationToken);
         Assert.Single(allTags);
-        Assert.Equal("Test 2", allTags.Single().Name);
+        firstTag = allTags.Single();
+        Assert.Equal("Test 2", firstTag.Name);
 
-        await tagManager.DeleteTagAsync(tag, cancellationToken);
+        await tagManager.DeleteTagAsync(firstTag, cancellationToken);
         allTags = await tagManager.GetAllTagsAsync(cancellationToken);
         Assert.Empty(allTags);
     }

@@ -24,30 +24,28 @@
 <MudButton
     Variant="Variant.Filled"
     Size="Size.Large"
-    OnClick="@AddNew" Color="@Color.Success" Class="add-item-btn" StartIcon="@Icons.Material.Filled.Add">
+    OnClick="@(async () => await Add())" Color="@Color.Success" Class="add-item-btn" StartIcon="@Icons.Material.Filled.Add">
     Add new
 </MudButton>
 
 <MudDataGrid @ref="_dataGrid"
+             T="TagListModel"
              Items="@_tags"
              Filterable="true"
              FilterMode="DataGridFilterMode.ColumnFilterRow"
              FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
-             ReadOnly="false"
-             EditDialogOptions="new DialogOptions { FullWidth = true }"
-             EditMode="DataGridEditMode.Form"
-             EditTrigger="DataGridEditTrigger.OnRowClick"
-             CanceledEditingItem="(TagModel model) => DoNotSaveTag(model)"
-             CommittedItemChanges="(TagModel model) => SaveTag(model)">
+             RowClick="@(async e => await Edit(e.Item))"
+             ReadOnly="true">
     <Columns>
-        <PropertyColumn Property="(TagModel x) => x.Name" Title="Name"/>
+        <PropertyColumn Property="(TagListModel t) => t.TagGroupName" Title="Group"/>
+        <PropertyColumn Property="(TagListModel t) => t.Name" Title="Name"/>
         <TemplateColumn Title="# Variables" Editable="false" Filterable="false"
-                        Sortable="true" SortBy="(TagModel model) => model.NumberOfVariables">
+                        Sortable="true" SortBy="(TagListModel formModel) => formModel.NumberOfVariables">
             <CellTemplate>
                 <MudChip Color="Color.Primary">@context.Item.NumberOfVariables</MudChip>
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="(TagModel x) => x.UpdatedAtUtc" Title="Updated" Editable="false" Format="u"
+        <PropertyColumn Property="(TagListModel x) => x.UpdatedAtUtc" Title="Updated" Editable="false" Format="u"
                         Filterable="false"/>
         <TemplateColumn Editable="false" Filterable="false" Sortable="false">
             <CellTemplate>
@@ -63,22 +61,35 @@
         </TemplateColumn>
     </Columns>
     <PagerContent>
-        <MudDataGridPager T="TagModel"/>
+        <MudDataGridPager T="TagListModel"/>
     </PagerContent>
 </MudDataGrid>
 
 @code {
-    private ObservableCollection<TagModel>? _tags;
-    private MudDataGrid<TagModel>? _dataGrid;
+    private ObservableCollection<TagListModel>? _tags;
+    private MudDataGrid<TagListModel>? _dataGrid;
     private List<TagGroupModel>? _tagGroups;
 
     protected override async Task OnParametersSetAsync()
     {
         _tagGroups = await TagGroupManager.GetAllTagGroupsAsync(CancellationToken);
-        _tags = new ObservableCollection<TagModel>(await TagManager.GetAllTagsAsync(CancellationToken));
+        _tags = new ObservableCollection<TagListModel>(await TagManager.GetAllTagsAsync(CancellationToken));
     }
 
-    private async Task OpenDeleteDialogAsync(TagModel tag)
+    private async Task OpenEditDialogAsync(TagFormModel tag)
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, FullWidth = true };
+        var parameters = new DialogParameters<TagFormDialog> { { x => x.Tag, tag } };
+        var dialog = await DialogService.ShowAsync<TagFormDialog>("Tag Form", parameters, options);
+        var result = await dialog.Result;
+        if (result is { Canceled: false, Data: TagFormModel submittedTagFormModel })
+        {
+            await TagManager.SaveTagAsync(submittedTagFormModel, CancellationToken);
+            await Refresh();
+        }
+    }
+
+    private async Task OpenDeleteDialogAsync(TagListModel tag)
     {
         var options = new DialogOptions { CloseOnEscapeKey = true };
         var parameters = new DialogParameters<DeleteDialog> { { x => x.ThingThatWillBeDeleted, tag.Name } };
@@ -87,36 +98,35 @@
         if (result is not null && !result.Canceled)
         {
             await TagManager.DeleteTagAsync(tag, CancellationToken);
-            _tags!.Remove(tag);
+            await Refresh();
         }
     }
 
-    private async Task SaveTag(TagModel model)
+    private async Task Add()
     {
-        await TagManager.SaveTagAsync(model, CancellationToken);
+        var tagFormModel = new TagFormModel { Name = "", TagGroupId = _tagGroups?.FirstOrDefault()?.Id ?? 0};
+        await OpenEditDialogAsync(tagFormModel);
     }
 
-    private void DoNotSaveTag(TagModel model)
+    private async Task Edit(TagListModel tag)
     {
-        if (model.Id == 0)
+        var tagFormModel = new TagFormModel { Id = tag.Id, Name = tag.Name, TagGroupId = tag.TagGroupId };
+        await OpenEditDialogAsync(tagFormModel);
+    }
+    
+    private async Task Refresh()
+    {
+        if (_tags is null)
         {
-            _tags!.Remove(model);
+            return;
         }
-    }
 
-    private async Task AddNew()
-    {
-        var model = new TagModel
+        _tags.Clear();
+        var tags = await TagManager.GetAllTagsAsync(CancellationToken);
+        foreach (var tag in tags)
         {
-            Id = 0,
-            Name = "",
-            // TODO Alex use the last chosen tag group instead of the first one
-            TagGroupId = _tagGroups!.First().Id,
-            NumberOfVariables = 0, 
-            UpdatedAtUtc = DateTime.UtcNow
-        };
-        _tags!.Add(model);
-        await _dataGrid!.SetEditingItemAsync(model);
+            _tags.Add(tag);
+        }
     }
 
 }

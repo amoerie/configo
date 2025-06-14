@@ -7,14 +7,14 @@ namespace Configo.Tests.Server.IntegrationTests;
 public class ManagingVariables : IAsyncLifetime
 {
     private readonly IntegrationTestFixture _fixture;
-    private TagModel _benelux = null!;
-    private TagModel _nordics = null!;
-    private TagModel _blade1 = null!;
-    private TagModel _blade2 = null!;
+    private TagFormModel _benelux = null!;
+    private TagFormModel _nordics = null!;
+    private TagFormModel _blade1 = null!;
+    private TagFormModel _blade2 = null!;
     private ApplicationModel _processor = null!;
     private ApplicationModel _router = null!;
     private ApplicationModel _otherApplication = null!;
-    private TagModel _otherTag = null!;
+    private TagFormModel _otherTagForm = null!;
     private string _blade1Variables = null!;
     private string _blade2Variables = null!;
     private string _beneluxVariables = null!;
@@ -37,16 +37,16 @@ public class ManagingVariables : IAsyncLifetime
 
         var environments = new TagGroupModel { Name = "Environments" };
         await tagGroupManager.SaveTagGroupAsync(environments, cancellationToken);
-        _benelux = new TagModel { Name = "Benelux", TagGroupId = environments.Id };
-        _nordics = new TagModel { Name = "Nordics", TagGroupId = environments.Id };
-        _blade1 = new TagModel { Name = "Blade 1", TagGroupId = environments.Id };
-        _blade2 = new TagModel { Name = "Blade 2", TagGroupId = environments.Id };
-        _otherTag = new TagModel { Name = "Other Tag", TagGroupId = environments.Id };
+        _benelux = new TagFormModel { Name = "Benelux", TagGroupId = environments.Id };
+        _nordics = new TagFormModel { Name = "Nordics", TagGroupId = environments.Id };
+        _blade1 = new TagFormModel { Name = "Blade 1", TagGroupId = environments.Id };
+        _blade2 = new TagFormModel { Name = "Blade 2", TagGroupId = environments.Id };
+        _otherTagForm = new TagFormModel { Name = "Other Tag", TagGroupId = environments.Id };
         await tagManager.SaveTagAsync(_benelux, cancellationToken);
         await tagManager.SaveTagAsync(_nordics, cancellationToken);
         await tagManager.SaveTagAsync(_blade1, cancellationToken);
         await tagManager.SaveTagAsync(_blade2, cancellationToken);
-        await tagManager.SaveTagAsync(_otherTag, cancellationToken);
+        await tagManager.SaveTagAsync(_otherTagForm, cancellationToken);
         _processor = new ApplicationModel { Name = "Processor" };
         _router = new ApplicationModel { Name = "Router" };
         _otherApplication = new ApplicationModel { Name = "Other" };
@@ -62,7 +62,7 @@ public class ManagingVariables : IAsyncLifetime
                        "Common": "Common from other tag"
                    }
                    """",
-            TagId = _otherTag.Id
+            TagId = _otherTagForm.Id
         };
         await variableManager.SaveAsync(otherVariablesModel, cancellationToken);
 
@@ -192,7 +192,7 @@ public class ManagingVariables : IAsyncLifetime
         var otherApiKeyModel = new ApiKeyModel
         {
             ApplicationId = _otherApplication.Id,
-            TagIds = new List<int> { _otherTag.Id },
+            TagIds = new List<int> { _otherTagForm.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
