@@ -401,3 +401,4 @@ FodyWeavers.xsd
 dist/
 /.idea/.idea.Configo/.idea/cody_project_settings.xml
 /.idea/.sourcegraph/cody_settings.json
+/.idea/.idea.Configo/.idea/aws.xml
