@@ -1,0 +1,65 @@
+﻿@inject NavigationManager Navigation
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <base href="@Navigation.BaseUri"/>
+
+    <!-- Old school libs -->
+    <link rel="stylesheet" href="@Assets["lib/bootstrap/css/bootstrap.min.css"]"/>
+    <link rel="stylesheet" href="@Assets["lib/font-awesome/css/all.min.css"]"/>
+
+    <!-- Blazor libs -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet"/>
+    <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet"/>
+
+    <!-- My css -->
+    <link rel="stylesheet" href="@Assets["dist/schema.css"]"/>
+    
+    <ImportMap />
+    
+    <link rel="icon" type="image/png" href="@Assets["configo.png"]"/>
+    <HeadOutlet @rendermode="InteractiveServer"/>
+    <title>Configo</title>
+</head>
+<body>
+<Routes @rendermode="InteractiveServer"/>
+
+<script src="@Assets["js/monaco-environment.js"]" type="text/javascript"></script>
+<script src="@Assets["dist/schema.js"]" type="module"></script>
+<script src="@Assets["dist/variables.js"]" type="module"></script>
+<script type="module">
+    import {Schema} from "./dist/schema.js";
+    import {Variables} from "./dist/variables.js";
+
+    window.schema = new Schema();
+    window.variables = new Variables();
+</script>
+
+<!-- Blazor libs -->
+<script src="@Assets["_content/MudBlazor/MudBlazor.min.js"]"></script>
+
+<!-- Old school libs -->
+<script src="@Assets["lib/bootstrap/js/bootstrap.bundle.min.js"]" type="text/javascript"></script>
+
+<!-- Old school self written -->
+<script src="@Assets["js/clipboardHelper.js"]" type="text/javascript"></script>
+
+<!-- Blazor itself -->
+<script src="_framework/blazor.server.js" autostart="false"></script>
+<script type="text/javascript">
+    (() => {
+        const fn = () => Blazor.start();
+        // see if DOM is already available
+        if (document.readyState === "complete" || document.readyState === "interactive") {
+            // call on next available tick
+            setTimeout(fn, 1);
+        } else {
+            document.addEventListener("DOMContentLoaded", fn);
+        }
+    })();
+</script>
+</body>
+</html>

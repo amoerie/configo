@@ -1,0 +1,10 @@
+﻿<MudNavMenu>
+    <MudNavLink Href="/" Match="NavLinkMatch.All" ActiveClass="">
+        <MudImage Src="configo.png" Alt="Logo" Height="160"></MudImage>
+    </MudNavLink>
+    <MudNavLink Href="@($"/{Urls.TagGroups}")" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Category">Tag Groups</MudNavLink>
+    <MudNavLink Href="@($"/{Urls.Tags}")" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Tag">Tags</MudNavLink>
+    <MudNavLink Href=@($"/{Urls.Applications}") Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Cloud">Applications</MudNavLink>
+    <MudNavLink Href=@($"/{Urls.ApiKeys}") Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Key">API Keys</MudNavLink>
+    <MudNavLink Href=@($"/{Urls.Variables}") Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.SettingsSuggest">Variables</MudNavLink>
+</MudNavMenu>

@@ -3,6 +3,7 @@ using Configo.Database;
 using Configo.Database.NpgSql;
 using Configo.Database.SqlServer;
 using Configo.Server;
+using Configo.Server.Components;
 using Configo.Server.Database;
 using Configo.Server.Domain;
 using Configo.Server.Endpoints;
@@ -38,10 +39,10 @@ configuration.AddEnvironmentVariables("CONFIGO_");
 var services = builder.Services;
 
 // Web
-services.AddRazorPages();
-services.AddServerSideBlazor();
+services.AddRazorComponents()
+    .AddInteractiveServerComponents();
 
-// Theming
+// MudBlazor Theming
 services.AddMudServices();
 
 // Reverse proxy support
@@ -165,14 +166,16 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStaticFiles();
-app.UseAntiforgery();
 app.UseRouting();
+app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
 
 // Routing
 // ---------
-app.MapBlazorHub();
+app.MapStaticAssets();
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+
 var api = app.MapGroup("/api");
 api.MapGet("/config", GetConfigEndpoint.HandleAsync).RequireAuthorization(auth =>
 {
@@ -180,7 +183,6 @@ api.MapGet("/config", GetConfigEndpoint.HandleAsync).RequireAuthorization(auth =
     auth.RequireClaim(ApiKeyAuthenticationHandler.ApiKeyIdClaim);
 });
 api.MapPost("/applications/{applicationId}/schema", SaveSchemaEndpoint.HandleAsync);
-app.MapFallbackToPage("/_Host");
 
 // Let's go
 // --------

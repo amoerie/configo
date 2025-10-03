@@ -40,7 +40,7 @@
         <TemplateColumn Editable="false" Filterable="false" Sortable="false">
             <CellTemplate>
                 <MudStack Row>
-                    <MudButton Href="@(Routes.Schema(context.Item.Name))"
+                    <MudButton Href="@(Urls.Schema(context.Item.Name))"
                                Size="Size.Small"
                                Variant="Variant.Filled" Color="Color.Secondary">
                         Manage JSON Schema

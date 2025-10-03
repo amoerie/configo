@@ -1,6 +1,6 @@
 ﻿namespace Configo.Server;
 
-public static class Routes
+public static class Urls
 {
     public const string Home = "";
     public const string ApiKeys = "api-keys";
