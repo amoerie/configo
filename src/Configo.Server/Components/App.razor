@@ -8,15 +8,15 @@
     <base href="@Navigation.BaseUri"/>
 
     <!-- Old school libs -->
-    <link rel="stylesheet" href="@Assets["lib/bootstrap/css/bootstrap.min.css"]"/>
-    <link rel="stylesheet" href="@Assets["lib/font-awesome/css/all.min.css"]"/>
+    <link rel="stylesheet" href=@Assets["lib/bootstrap/css/bootstrap.min.css"]/>
+    <link rel="stylesheet" href=@Assets["lib/font-awesome/css/all.min.css"]/>
 
     <!-- Blazor libs -->
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet"/>
-    <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet"/>
+    <link href=@Assets["_content/MudBlazor/MudBlazor.min.css"] rel="stylesheet"/>
 
     <!-- My css -->
-    <link rel="stylesheet" href="@Assets["dist/schema.css"]"/>
+    <link rel="stylesheet" href=@Assets["dist/schema.css"]/>
     
     <ImportMap />
     
@@ -27,9 +27,9 @@
 <body>
 <Routes @rendermode="InteractiveServer"/>
 
-<script src="@Assets["js/monaco-environment.js"]" type="text/javascript"></script>
-<script src="@Assets["dist/schema.js"]" type="module"></script>
-<script src="@Assets["dist/variables.js"]" type="module"></script>
+<script src=@Assets["js/monaco-environment.js"] type="text/javascript"></script>
+<script src=@Assets["dist/schema.js"] type="module"></script>
+<script src=@Assets["dist/variables.js"] type="module"></script>
 <script type="module">
     import {Schema} from "./dist/schema.js";
     import {Variables} from "./dist/variables.js";
@@ -39,13 +39,13 @@
 </script>
 
 <!-- Blazor libs -->
-<script src="@Assets["_content/MudBlazor/MudBlazor.min.js"]"></script>
+<script src=@Assets["_content/MudBlazor/MudBlazor.min.js"]></script>
 
 <!-- Old school libs -->
-<script src="@Assets["lib/bootstrap/js/bootstrap.bundle.min.js"]" type="text/javascript"></script>
+<script src=@Assets["lib/bootstrap/js/bootstrap.bundle.min.js"] type="text/javascript"></script>
 
 <!-- Old school self written -->
-<script src="@Assets["js/clipboardHelper.js"]" type="text/javascript"></script>
+<script src=@Assets["js/clipboardHelper.js"] type="text/javascript"></script>
 
 <!-- Blazor itself -->
 <script src="_framework/blazor.server.js" autostart="false"></script>
