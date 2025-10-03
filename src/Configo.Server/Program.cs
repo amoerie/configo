@@ -73,7 +73,10 @@ services.AddAuthentication(options =>
     .AddCookie()
     .AddMicrosoftAccount();
 
-services.AddOptions<ConfigoAuthenticationOptions>().BindConfiguration(ConfigoAuthenticationOptions.SectionName);
+services.AddOptions<ConfigoAuthenticationOptions>()
+    .BindConfiguration(ConfigoAuthenticationOptions.SectionName)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 services.AddOptions<MicrosoftAccountOptions>(MicrosoftAccountDefaults.AuthenticationScheme)
     .Configure((MicrosoftAccountOptions options, IOptions<ConfigoAuthenticationOptions> configoAuthenticationOptions) =>
     {

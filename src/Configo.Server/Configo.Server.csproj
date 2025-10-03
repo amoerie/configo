@@ -1,30 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-  <PropertyGroup>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
-  </PropertyGroup>
-  <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>Configo.Tests</_Parameter1>
-    </AssemblyAttribute>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="KeyedSemaphores" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" />
-    <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
-    <PackageReference Include="MudBlazor" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Configo.Database\Configo.Database.csproj" />
-    <ProjectReference Include="..\Configo.Database.NpgSql\Configo.Database.NpgSql.csproj" />
-    <ProjectReference Include="..\Configo.Database.SqlServer\Configo.Database.SqlServer.csproj" />
-    <ProjectReference Include="..\Configo.ServiceDefaults\Configo.ServiceDefaults.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Remove="Properties\launchSettings.json" />
-  </ItemGroup>
+    <PropertyGroup>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <EnableDefaultStaticWebAssets>true</EnableDefaultStaticWebAssets>
+    </PropertyGroup>
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>Configo.Tests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="KeyedSemaphores"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount"/>
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer"/>
+        <PackageReference Include="MudBlazor"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Configo.Database\Configo.Database.csproj"/>
+        <ProjectReference Include="..\Configo.Database.NpgSql\Configo.Database.NpgSql.csproj"/>
+        <ProjectReference Include="..\Configo.Database.SqlServer\Configo.Database.SqlServer.csproj"/>
+        <ProjectReference Include="..\Configo.ServiceDefaults\Configo.ServiceDefaults.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <None Remove="Properties\launchSettings.json"/>
+    </ItemGroup>
 </Project>
