@@ -1,7 +1,10 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
 var postgres = builder.AddPostgres("postgres")
-    .WithDataVolume()
+    .WithUserName(builder.AddParameter("DatabaseUser"))
+    .WithPassword(builder.AddParameter("DatabasePassword"))
+    .WithContainerName("configo_db")
+    .WithDataVolume("configo_db_data")
     .WithLifetime(ContainerLifetime.Persistent)
     .AddDatabase("Configo");
 
