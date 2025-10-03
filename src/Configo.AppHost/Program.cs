@@ -1,15 +1,23 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-var postgres = builder.AddPostgres("postgres")
-    .WithUserName(builder.AddParameter("DatabaseUser"))
-    .WithPassword(builder.AddParameter("DatabasePassword"))
+var configoDbUser = builder.AddParameter("DatabaseUser");
+var configoDbPassword = builder.AddParameter("DatabasePassword");
+var configoDb = builder.AddPostgres("configo-db")
+    .WithUserName(configoDbUser)
+    .WithPassword(configoDbPassword)
     .WithContainerName("configo_db")
     .WithDataVolume("configo_db_data")
-    .WithLifetime(ContainerLifetime.Persistent)
-    .AddDatabase("Configo");
+    .WithLifetime(ContainerLifetime.Persistent);
 
-builder.AddProject<Projects.Configo_Server>("server")
-    .WithReference(postgres)
-    .WithEnvironment("CONFIGO_PROVIDER", "Postgres");
+var tenantId = builder.AddParameter("TenantId");
+var clientId = builder.AddParameter("ClientId");
+var clientSecret = builder.AddParameter("ClientSecret");
+
+builder.AddProject<Projects.Configo_Server>("configo-server")
+    .WithReference(configoDb, "Configo")
+    .WithEnvironment("CONFIGO_PROVIDER", "Postgres")
+    .WithEnvironment("CONFIGO_AUTHENTICATION__MICROSOFT__TENANTID", tenantId)
+    .WithEnvironment("CONFIGO_AUTHENTICATION__MICROSOFT__CLIENTID", clientId)
+    .WithEnvironment("CONFIGO_AUTHENTICATION__MICROSOFT__CLIENTSECRET", clientSecret);
 
 builder.Build().Run();
