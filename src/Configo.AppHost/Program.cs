@@ -5,7 +5,6 @@ var configoDbPassword = builder.AddParameter("DatabasePassword");
 var configoDb = builder.AddPostgres("configo-db")
     .WithUserName(configoDbUser)
     .WithPassword(configoDbPassword)
-    .WithHostPort(51300)
     .WithContainerName("configo_db")
     .WithDataVolume("configo_db_data")
     .WithLifetime(ContainerLifetime.Persistent);
