@@ -169,13 +169,13 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
+app.MapStaticAssets();
 app.UseAuthentication();
 app.UseAuthorization();
-
-// Routing
-// ---------
-app.MapStaticAssets();
 app.UseAntiforgery();
+
+// Endpoints
+// ---------
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 var api = app.MapGroup("/api");
