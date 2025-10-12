@@ -115,7 +115,7 @@
 
     private async Task AddNew()
     {
-        var nextOrder = _tagGroups is null ? 0 : _tagGroups.Select(t => t.Order).Max() + 1;
+        var nextOrder = _tagGroups is null || _tagGroups.Count == 0 ? 0 : _tagGroups.Select(t => t.Order).Max() + 1;
         var tagGroupModel = new TagGroupModel { Id = 0, Name = "", NumberOfTags = 0, UpdatedAtUtc = DateTime.UtcNow, Order = nextOrder };
         _tagGroups!.Add(tagGroupModel);
         await _dataGrid!.SetEditingItemAsync(tagGroupModel);
