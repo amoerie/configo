@@ -16,6 +16,7 @@ var clientSecret = builder.AddParameter("ClientSecret");
 
 builder.AddProject<Projects.Configo_Server>("configo-server")
     .WithReference(configoDb, "Configo")
+    .WaitFor(configoDb)
     .WithEnvironment("CONFIGO_PROVIDER", "Postgres")
     .WithEnvironment("CONFIGO_AUTHENTICATION__MICROSOFT__TENANTID", tenantId)
     .WithEnvironment("CONFIGO_AUTHENTICATION__MICROSOFT__CLIENTID", clientId)
