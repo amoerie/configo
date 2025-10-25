@@ -51,6 +51,7 @@ public class ManagingVariables : IAsyncLifetime
         await tagManager.SaveTagAsync(_blade1, cancellationToken);
         await tagManager.SaveTagAsync(_blade2, cancellationToken);
         await tagManager.SaveTagAsync(_otherTagForm, cancellationToken);
+        await tagManager.SaveTagAsync(_global, cancellationToken);
         _processor = new ApplicationModel { Name = "Processor" };
         _router = new ApplicationModel { Name = "Router" };
         _otherApplication = new ApplicationModel { Name = "Other" };
@@ -301,8 +302,8 @@ public class ManagingVariables : IAsyncLifetime
             cancellationToken
         );
 
-        var actualProcessorVariablesModel = await variableManager.GetConfigAsync(
-            null,
+        var actualGlobalVariables = await variableManager.GetConfigAsync(
+            _global.Id,
             cancellationToken
         );
 
@@ -325,7 +326,7 @@ public class ManagingVariables : IAsyncLifetime
         );
         Assert.Equal(
             JsonNormalizer.Normalize(_globalVariables),
-            JsonNormalizer.Normalize(actualProcessorVariablesModel)
+            JsonNormalizer.Normalize(actualGlobalVariables)
         );
     }
 

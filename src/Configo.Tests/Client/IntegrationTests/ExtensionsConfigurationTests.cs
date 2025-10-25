@@ -78,7 +78,7 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         var apiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
-            TagIds = new List<int> { _benelux.Id },
+            TagIds = [_global.Id, _benelux.Id],
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
             Key = "",
@@ -109,7 +109,7 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         var apiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
-            TagIds = new List<int> { _benelux.Id },
+            TagIds = [_global.Id, _benelux.Id],
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
             Key = "",
@@ -162,7 +162,7 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         var apiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
-            TagIds = new List<int> { _benelux.Id },
+            TagIds = [_global.Id, _benelux.Id],
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
             Key = ""

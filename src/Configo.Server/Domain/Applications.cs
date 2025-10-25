@@ -103,12 +103,12 @@ public sealed class ApplicationManager
         {
             if (await dbContext.Applications.AnyAsync(t => t.Name == model.Name, cancellationToken))
             {
-                throw new ArgumentException("Application name already in use");
+                throw new ArgumentException($"Application name {model.Name} already in use by another application");
             }
             
             applicationRecord = new ApplicationRecord
             {
-                Name = model.Name!,
+                Name = model.Name,
                 JsonSchema = "",
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
@@ -130,7 +130,7 @@ public sealed class ApplicationManager
         applicationRecord = await dbContext.Applications
             .AsTracking()
             .SingleAsync(t => t.Id == model.Id, cancellationToken);
-        applicationRecord.Name = model.Name!;
+        applicationRecord.Name = model.Name;
         applicationRecord.UpdatedAtUtc = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Saved {@Application}", applicationRecord);

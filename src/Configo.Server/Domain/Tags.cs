@@ -122,12 +122,13 @@ public sealed class TagManager
             dbContext.Tags.Add(tagRecord);
             await dbContext.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("Saved {@Tag}", tagRecord);
+            formModel.Id = tagRecord.Id;
             return;
         }
         
         if (await dbContext.Tags.AnyAsync(t => t.Id != formModel.Id && t.Name == formModel.Name, cancellationToken))
         {
-            throw new ArgumentException("Tag name already in use");
+            throw new ArgumentException($"Tag name {formModel.Name} already in use by another tag");
         }
 
         tagRecord = await dbContext.Tags
@@ -137,6 +138,7 @@ public sealed class TagManager
         tagRecord.TagGroupId = formModel.TagGroupId;
         tagRecord.UpdatedAtUtc = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
+        
         _logger.LogInformation("Saved {@Tag}", tagRecord);
     }
 

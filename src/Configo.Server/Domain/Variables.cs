@@ -161,24 +161,27 @@ public sealed record VariableManager
     /// <summary>
     /// Gets configuration variables that are defined exactly for this tag
     /// </summary>
-    public async Task<string> GetConfigAsync(int? tagId, CancellationToken cancellationToken)
+    public async Task<string> GetConfigAsync(int tagId, CancellationToken cancellationToken)
     {
+        ArgumentOutOfRangeException.ThrowIfZero(tagId);
         return await GetConfigAsync(tagId, includePendingChanges: false, cancellationToken);
     }
     
     /// <summary>
     /// Gets configuration variables that are defined exactly for this tag, including any pending changes
     /// </summary>
-    public async Task<string> GetConfigWithPendingChangesAsync(int? tagId, CancellationToken cancellationToken)
+    public async Task<string> GetConfigWithPendingChangesAsync(int tagId, CancellationToken cancellationToken)
     {
+        ArgumentOutOfRangeException.ThrowIfZero(tagId);
         return await GetConfigAsync(tagId, includePendingChanges: true, cancellationToken);
     }
     
     /// <summary>
     /// Gets configuration variables that are defined exactly for this tag
     /// </summary>
-    public async Task<string> GetConfigAsync(int? tagId, bool includePendingChanges, CancellationToken cancellationToken)
+    public async Task<string> GetConfigAsync(int tagId, bool includePendingChanges, CancellationToken cancellationToken)
     {
+        ArgumentOutOfRangeException.ThrowIfZero(tagId);
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         _logger.LogDebug("Getting config for tag {@TagId}", tagId);
@@ -259,6 +262,9 @@ public sealed record VariableManager
     
     public async Task SaveAsync(VariablesEditModel model, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(model);
+        ArgumentOutOfRangeException.ThrowIfZero(model.TagId);
+
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         var tagId = model.TagId;

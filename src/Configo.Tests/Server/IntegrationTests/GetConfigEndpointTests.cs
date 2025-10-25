@@ -82,7 +82,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var apiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
-            TagIds = new List<int> { _benelux.Id },
+            TagIds = new List<int> { _global.Id, _benelux.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
@@ -119,7 +119,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var apiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
-            TagIds = new List<int> { _benelux.Id },
+            TagIds = new List<int> { _global.Id, _benelux.Id },
             ActiveSinceUtc = DateTime.UtcNow.AddDays(-5),
             ActiveUntilUtc = DateTime.UtcNow.AddDays(-1),
         };
@@ -147,7 +147,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var apiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
-            TagIds = new List<int> { _benelux.Id },
+            TagIds = new List<int> { _global.Id, _benelux.Id },
             ActiveSinceUtc = DateTime.UtcNow.AddDays(1),
             ActiveUntilUtc = DateTime.UtcNow.AddDays(5),
         };

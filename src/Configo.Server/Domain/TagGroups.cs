@@ -123,6 +123,8 @@ public sealed class TagGroupManager(ILogger<TagGroupManager> logger, IDbContextF
 
     public async Task DeleteTagGroupAsync(TagGroupModel tagGroup, CancellationToken cancellationToken)
     {
+        ArgumentOutOfRangeException.ThrowIfZero(tagGroup.Id);
+
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         logger.LogDebug("Deleting tag group {@TagGroup}", tagGroup);
@@ -139,6 +141,8 @@ public sealed class TagGroupManager(ILogger<TagGroupManager> logger, IDbContextF
 
     public async Task ChangeOrderAsync(int tagGroupId, int newOrder, CancellationToken cancellationToken)
     {
+        ArgumentOutOfRangeException.ThrowIfZero(tagGroupId);
+
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         logger.LogDebug("Changing order of tag group {TagGroupId} to {NewOrder}", tagGroupId, newOrder);
