@@ -9,6 +9,7 @@ namespace Configo.Tests.Server.IntegrationTests;
 public class GetConfigEndpointTests : IAsyncLifetime
 {
     private readonly IntegrationTestFixture _fixture;
+    private TagFormModel _global = null!;
     private TagFormModel _benelux = null!;
     private ApplicationModel _processor = null!;
     private string _globalVariables = null!;
@@ -29,8 +30,12 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var cancellationToken = CancellationToken.None;
 
         var environments = new TagGroupModel { Name = "Environments" };
+        var globalGroup = new TagGroupModel { Name = "Global" };
         await tagGroupManager.SaveTagGroupAsync(environments, cancellationToken);
+        await tagGroupManager.SaveTagGroupAsync(globalGroup, cancellationToken);
+        _global = new TagFormModel { Name = "Global", TagGroupId = globalGroup.Id };
         _benelux = new TagFormModel { Name = "Benelux", TagGroupId = environments.Id };
+        await tagManager.SaveTagAsync(_global, cancellationToken);
         await tagManager.SaveTagAsync(_benelux, cancellationToken);
         _processor = new ApplicationModel { Name = "Processor" };
         await applicationManager.SaveApplicationAsync(_processor, cancellationToken);
@@ -43,7 +48,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var globalVariables = new VariablesEditModel
         {
             Json = _globalVariables,
-            TagId = null
+            TagId = _global.Id
         };
         await variableManager.SaveAsync(globalVariables, cancellationToken);
 

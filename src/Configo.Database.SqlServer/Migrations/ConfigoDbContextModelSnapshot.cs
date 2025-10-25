@@ -17,7 +17,7 @@ namespace Configo.Database.SqlServer.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.2")
+                .HasAnnotation("ProductVersion", "9.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -236,7 +236,7 @@ namespace Configo.Database.SqlServer.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
 
-                    b.Property<int?>("TagId")
+                    b.Property<int>("TagId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAtUtc")
@@ -260,8 +260,7 @@ namespace Configo.Database.SqlServer.Migrations
                     b.HasIndex("TagId");
 
                     b.HasIndex("Key", "TagId")
-                        .IsUnique()
-                        .HasFilter("[TagId] IS NOT NULL");
+                        .IsUnique();
 
                     b.ToTable("Variables");
                 });
@@ -323,7 +322,8 @@ namespace Configo.Database.SqlServer.Migrations
                     b.HasOne("Configo.Database.Tables.TagRecord", null)
                         .WithMany()
                         .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

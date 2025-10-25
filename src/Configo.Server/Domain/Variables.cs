@@ -14,13 +14,13 @@ public sealed record VariableModel
     public required string Key { get; set; }
     public required string Value { get; set; }
     public required VariableValueType ValueType { get; set; }
-    public required int? TagId { get; set; }
+    public required int TagId { get; set; }
 }
 
 public sealed record VariablesEditModel
 {
     public required string Json { get; set; }
-    public required int? TagId { get; set; }
+    public required int TagId { get; set; }
 }
 
 public sealed record VariablesPendingChanges(List<VariablesEditModel> EditModels)
@@ -113,7 +113,7 @@ public sealed record VariableManager
         
         var variablesQuery = variablesDbSet
             // If a variable is linked to any other tag, then it is not relevant
-            .Where(v => v.TagId == null || tagIds.Contains(v.TagId.Value));
+            .Where(v => tagIds.Contains(v.TagId));
 
         var variables = await variablesQuery
             .Select(v => new VariableModel
@@ -138,7 +138,7 @@ public sealed record VariableManager
                 _pendingChangesLock.Release();
             }
 
-            var matchingPendingChanges = pendingChanges.Where(c => c.TagId is null || tagIds.Contains(c.TagId.Value));
+            var matchingPendingChanges = pendingChanges.Where(c => tagIds.Contains(c.TagId));
 
             foreach (var pendingChange in matchingPendingChanges)
             {
@@ -150,7 +150,7 @@ public sealed record VariableManager
         // Take into account that we might have overlapping variables with the same key. In that case, the most "specific" variable wins
         var mergedVariables = variables
             .GroupBy(v => v.Key)
-            .Select(group => group.MaxBy(g => g.TagId is null ? -1 : tagIds.IndexOf(g.TagId.Value))!)
+            .Select(group => group.MaxBy(g => tagIds.IndexOf(g.TagId))!)
             .ToList();
 
         _logger.LogInformation("Got {NumberOfVariables} variables for tags {@TagIds}", mergedVariables.Count, tagIds);
@@ -448,7 +448,7 @@ public class VariablesJsonSerializer
                     switch (valueType)
                     {
                         case VariableValueType.String:
-                            jsonValue = JsonValue.Create(value)!;
+                            jsonValue = JsonValue.Create(value);
                             break;
                         case VariableValueType.Number:
                             jsonValue = JsonValue.Create(long.Parse(value));
@@ -492,13 +492,13 @@ public class VariablesJsonDeserializer
         CommentHandling = JsonCommentHandling.Skip
     };
 
-    public List<VariableModel> DeserializeFromJson(string json, int? tagId)
+    public List<VariableModel> DeserializeFromJson(string json, int tagId)
     {
         return Deserialize(json, tagId, _nodeOptions, _documentOptions).OrderBy(v => v.Key).ToList();
 
         static IEnumerable<VariableModel> Deserialize(
             string json,
-            int? tagId,
+            int tagId,
             JsonNodeOptions nodeOptions,
             JsonDocumentOptions documentOptions)
         {

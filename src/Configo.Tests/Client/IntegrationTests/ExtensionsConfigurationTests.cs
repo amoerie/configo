@@ -11,9 +11,12 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
 {
     private readonly IntegrationTestFixture _fixture;
     private TagFormModel _benelux = null!;
+    private TagFormModel _global = null!;
     private ApplicationModel _processor = null!;
     private string _globalVariables = null!;
     private string _beneluxVariables = null!;
+    
+    private TagGroupModel _globalGroup = null!;
     private TagGroupModel _environments = null!;
 
     public ExtensionsConfigurationTests(IntegrationTestFixture fixture, ITestOutputHelper output)
@@ -30,10 +33,14 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         var variableManager = _fixture.GetRequiredService<VariableManager>();
         var cancellationToken = CancellationToken.None;
 
+        _globalGroup = new TagGroupModel { Name = "Global" };
         _environments = new TagGroupModel { Name = "Environments" };
+        await tagGroupManager.SaveTagGroupAsync(_globalGroup, cancellationToken);
         await tagGroupManager.SaveTagGroupAsync(_environments, cancellationToken);
+        _global = new TagFormModel { Name = "Global", TagGroupId = _globalGroup.Id };
         _benelux = new TagFormModel { Name = "Benelux", TagGroupId = _environments.Id };
         await tagManager.SaveTagAsync(_benelux, cancellationToken);
+        await tagManager.SaveTagAsync(_global, cancellationToken);
         _processor = new ApplicationModel { Name = "Processor" };
         await applicationManager.SaveApplicationAsync(_processor, cancellationToken);
 
@@ -41,7 +48,7 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         var processorVariablesModel = new VariablesEditModel
         {
             Json = _globalVariables,
-            TagId = null
+            TagId = _global.Id
         };
         await variableManager.SaveAsync(processorVariablesModel, cancellationToken);
 
@@ -177,7 +184,7 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         var globalVariablesModel = new VariablesEditModel
         {
             Json = _globalVariables,
-            TagId = null
+            TagId = _global.Id
         };
         await variableManager.SaveAsync(globalVariablesModel, cancellationToken);
 

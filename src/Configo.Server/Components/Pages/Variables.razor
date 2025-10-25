@@ -17,6 +17,12 @@
     return;
 }
 
+@if (_tags.Count == 0)
+{
+    <MudAlert Severity="Severity.Warning">Please create at least one tag first</MudAlert>
+    return;
+}
+
 <MudGrid>
     <MudItem sm="12" md="5" lg="4" xl="3">
         <MudCard Square="true" Class="mb-1">
@@ -99,20 +105,12 @@
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent Class="py-0">
-                <MudList Class="py-0" Gutters="false" T="TagListModel">
+                <MudRadioGroup Class="py-0" T="int" Value="_selectedTagId" ValueChanged="OnChangeTag">
                     @foreach (var tag in _tags)
                     {
-                        <MudListItem Dense="true" T="TagListModel">
-                            <MudCheckBox T="bool"
-                                         Dense="true"
-                                         Size="Size.Small"
-                                         Label="@tag.Name"
-                                         Value="_selectedTagId == tag.Id"
-                                         ValueChanged="isChecked => OnCheckTag(isChecked, tag.Id)">
-                            </MudCheckBox>
-                        </MudListItem>
+                        <MudRadio Value="tag.Id" Dense="true" >@tag.Name</MudRadio>
                     }
-                </MudList>
+                </MudRadioGroup>
             </MudCardContent>
         </MudCard>
     </MudItem>
@@ -125,10 +123,10 @@
                         <MudChip T="string" Icon="@Icons.Material.Filled.Cloud"
                                  Color="Color.Primary" Text="@_selectedApplication.Name" />
                     }
-                    @if (_selectedTag is not null)
+                    @if (SelectedTag is { } selectedTag)
                     {
                         <MudChip T="string" Icon="@Icons.Material.Filled.Tag"
-                                 Color="Color.Primary" Text="@_selectedTag.Name" />
+                                 Color="Color.Primary" Text="@selectedTag.Name" />
                     }
                 </MudChipSet>
             </MudCardHeader>
@@ -152,13 +150,14 @@
     private bool _showMerged;
     private bool _showPendingChangesDiff;
     private bool _hasPendingChanges;
-    private int? _selectedTagId;
+    private int _selectedTagId;
     private int? _selectedApplicationId;
-    private TagListModel? _selectedTag;
     private ApplicationModel? _selectedApplication;
 
     private Dictionary<int, ApplicationModel> _applicationsById = new Dictionary<int, ApplicationModel>();
     private Dictionary<int, TagListModel> _tagsById = new Dictionary<int, TagListModel>();
+
+    private TagListModel? SelectedTag => _tags?[_selectedTagId];
 
     protected override async Task OnInitializedAsync()
     {
@@ -231,11 +230,10 @@
     private async Task UpdateEditorAsync()
     {
         _selectedApplication = _selectedApplicationId is null ? null : _applicationsById[_selectedApplicationId.Value];
-        _selectedTag = _selectedTagId is null ? null : _tagsById[_selectedTagId.Value];
         _objectReference ??= DotNetObjectReference.Create(this);
         var schema = await SchemaManager.GetSchemaAsync(_selectedApplicationId, CancellationToken);
         var isReadonly = _showMerged || _showPendingChangesDiff;
-        List<int> selectedTagIds = _selectedTagId is null ? [] : [_selectedTagId.Value]; 
+        List<int> selectedTagIds = [_selectedTagId]; 
         if (_showPendingChangesDiff)
         {
             var originalConfig = _showMerged
@@ -256,24 +254,15 @@
         }
     }
 
-    private async Task OnCheckTag(bool? isChecked, int tagId)
+    private async Task OnChangeTag(int selectedTagId)
     {
-        if (isChecked == true)
-        {
-            _selectedTagId = tagId;
-        }
-        else
-        {
-            _selectedTagId = null;
-        }
-
+        _selectedTagId = selectedTagId;
         await UpdateEditorAsync();
     }
 
     private async Task OnSelectApplication(int? selectedApplicationId)
     {
         _selectedApplicationId = selectedApplicationId;
-
         await UpdateEditorAsync();
     }
 
