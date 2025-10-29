@@ -27,28 +27,26 @@ public sealed record VariablesEditModel
 
 public sealed record VariablesPendingChanges(List<VariablesEditModel> EditModels)
 {
-    public VariablesPendingChanges() : this(new List<VariablesEditModel>()) {}
+    public VariablesPendingChanges() : this(new List<VariablesEditModel>()) { }
 }
 
 public sealed record VariableManager
 {
     private readonly IDbContextFactory<ConfigoDbContext> _dbContextFactory;
     private readonly ILogger<VariableManager> _logger;
-    private readonly VariablesPendingChanges _pendingChanges;
-    private readonly SemaphoreSlim _pendingChangesLock = new SemaphoreSlim(1, 1);
+    private readonly VariablesPendingChanges _pendingChanges = new([]);
+    private readonly SemaphoreSlim _pendingChangesLock = new(1, 1);
     private readonly VariablesJsonDeserializer _deserializer;
     private readonly VariablesJsonSerializer _serializer;
 
     public VariableManager(
         IDbContextFactory<ConfigoDbContext> dbContextFactory,
         ILogger<VariableManager> logger,
-        VariablesPendingChanges pendingChanges,
         VariablesJsonDeserializer deserializer,
         VariablesJsonSerializer serializer)
     {
         _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _pendingChanges = pendingChanges ?? throw new ArgumentNullException(nameof(pendingChanges));
         _deserializer = deserializer ?? throw new ArgumentNullException(nameof(deserializer));
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
     }
@@ -66,7 +64,7 @@ public sealed record VariableManager
 
         var apiKeys = dbContext.ApiKeys;
         var apiKeyTags = dbContext.ApiKeyTags;
-        
+
         // Get API key
         var apiKey = await apiKeys.FirstOrDefaultAsync(a => a.Id == apiKeyId, cancellationToken);
 
@@ -79,7 +77,8 @@ public sealed record VariableManager
         var tagIds = await apiKeyTags
             .Where(akt => akt.ApiKeyId == apiKeyId)
             .Join(dbContext.Tags, a => a.TagId, t => t.Id, (apiKeyTag, tag) => new { ApiKeyTag = apiKeyTag, Tag = tag })
-            .Join(dbContext.TagGroups, a => a.Tag.TagGroupId, t => t.Id, (apiKeyTagAndTag, tagGroup) => new { apiKeyTagAndTag.ApiKeyTag, apiKeyTagAndTag.Tag, TagGroup = tagGroup })
+            .Join(dbContext.TagGroups, a => a.Tag.TagGroupId, t => t.Id,
+                (apiKeyTagAndTag, tagGroup) => new { apiKeyTagAndTag.ApiKeyTag, apiKeyTagAndTag.Tag, TagGroup = tagGroup })
             .OrderBy(x => x.TagGroup.Order)
             .Select(x => x.Tag.Id)
             .ToListAsync(cancellationToken);
@@ -104,7 +103,24 @@ public sealed record VariableManager
     {
         return await GetMergedConfigAsync(applicationId, tagIds, includePendingChanges: true, cancellationToken);
     }
-    
+
+    public async Task<List<VariablesEditModel>> GetPendingChangesAsync(CancellationToken cancellationToken)
+    {
+        List<VariablesEditModel> pendingChanges;
+        
+        await _pendingChangesLock.WaitAsync(cancellationToken);
+        try
+        {
+            pendingChanges = _pendingChanges.EditModels.ToList();
+        }
+        finally
+        {
+            _pendingChangesLock.Release();
+        }
+
+        return pendingChanges;
+    }
+
     private async Task<string> GetMergedConfigAsync(int applicationId, List<int> tagIds, bool includePendingChanges, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -112,35 +128,25 @@ public sealed record VariableManager
         _logger.LogDebug("Getting merged config for tags {@TagIds}", tagIds);
 
         var variablesDbSet = dbContext.Variables;
-        
+
         var variablesQuery = variablesDbSet
             // If a variable is linked to any other tag or any other application, then it is not relevant
             .Where(v => tagIds.Contains(v.TagId) && v.ApplicationId == applicationId);
 
         var variables = await variablesQuery
             .Select(v => new VariableModel
-                {
-                    Key = v.Key,
-                    Value = v.Value,
-                    ValueType = v.ValueType,
-                    TagId = v.TagId,
-                    ApplicationId = v.ApplicationId
-                })
+            {
+                Key = v.Key,
+                Value = v.Value,
+                ValueType = v.ValueType,
+                TagId = v.TagId,
+                ApplicationId = v.ApplicationId
+            })
             .ToListAsync(cancellationToken);
 
         if (includePendingChanges)
         {
-            List<VariablesEditModel> pendingChanges;
-            await _pendingChangesLock.WaitAsync(cancellationToken);
-            try
-            {
-                pendingChanges = _pendingChanges.EditModels.ToList();
-            }
-            finally
-            {
-                _pendingChangesLock.Release();
-            }
-
+            var pendingChanges = await GetPendingChangesAsync(cancellationToken);
             var matchingPendingChanges = pendingChanges.Where(c => tagIds.Contains(c.TagId) && c.ApplicationId == applicationId);
 
             foreach (var pendingChange in matchingPendingChanges)
@@ -160,29 +166,29 @@ public sealed record VariableManager
 
         return _serializer.SerializeToJson(mergedVariables);
     }
-    
+
     /// <summary>
     /// Gets configuration variables that are defined exactly for this tag
     /// </summary>
-    public async Task<string> GetConfigAsync(int tagId, CancellationToken cancellationToken)
+    public async Task<string> GetConfigAsync(int tagId, int applicationId, CancellationToken cancellationToken)
     {
         ArgumentOutOfRangeException.ThrowIfZero(tagId);
-        return await GetConfigAsync(tagId, includePendingChanges: false, cancellationToken);
+        return await GetConfigAsync(tagId, applicationId, includePendingChanges: false, cancellationToken);
     }
-    
+
     /// <summary>
     /// Gets configuration variables that are defined exactly for this tag, including any pending changes
     /// </summary>
-    public async Task<string> GetConfigWithPendingChangesAsync(int tagId, CancellationToken cancellationToken)
+    public async Task<string> GetConfigWithPendingChangesAsync(int tagId, int applicationId, CancellationToken cancellationToken)
     {
         ArgumentOutOfRangeException.ThrowIfZero(tagId);
-        return await GetConfigAsync(tagId, includePendingChanges: true, cancellationToken);
+        return await GetConfigAsync(tagId, applicationId, includePendingChanges: true, cancellationToken);
     }
-    
+
     /// <summary>
     /// Gets configuration variables that are defined exactly for this tag
     /// </summary>
-    public async Task<string> GetConfigAsync(int tagId, bool includePendingChanges, CancellationToken cancellationToken)
+    public async Task<string> GetConfigAsync(int tagId, int applicationId, bool includePendingChanges, CancellationToken cancellationToken)
     {
         ArgumentOutOfRangeException.ThrowIfZero(tagId);
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -192,7 +198,7 @@ public sealed record VariableManager
         var variables = dbContext.Variables;
 
         var variablesQuery = variables
-            .Where(variable => variable.TagId == tagId);
+            .Where(variable => variable.TagId == tagId && variable.ApplicationId == applicationId);
 
         var matchingVariables = await variablesQuery
             .Select(variable => new VariableModel
@@ -222,13 +228,13 @@ public sealed record VariableManager
             pendingChanges.Reverse();
 
             var matchingPendingChanges = pendingChanges
-                .Where(pendingChange => pendingChange.TagId == tagId);
+                .Where(pendingChange => pendingChange.TagId == tagId && pendingChange.ApplicationId == applicationId);
 
             foreach (var pendingChange in matchingPendingChanges)
             {
                 matchingVariables.AddRange(_deserializer.DeserializeFromJson(pendingChange.Json, pendingChange.TagId, pendingChange.ApplicationId));
             }
-            
+
             // Ensure that duplicate keys are pruned, but that pending changes win over variables from the database
             matchingVariables = matchingVariables.AsEnumerable()
                 .Reverse()
@@ -241,14 +247,13 @@ public sealed record VariableManager
 
         return _serializer.SerializeToJson(matchingVariables);
     }
-    
+
     public async Task SaveToPendingAsync(VariablesEditModel model, CancellationToken cancellationToken)
     {
         await _pendingChangesLock.WaitAsync(cancellationToken);
         try
         {
-            var existing = _pendingChanges.EditModels.SingleOrDefault(m => m.TagId == model.TagId);
-
+            var existing = _pendingChanges.EditModels.SingleOrDefault(m => m.TagId == model.TagId && m.ApplicationId == model.ApplicationId);
             if (existing != null)
             {
                 existing.Json = model.Json;
@@ -263,7 +268,7 @@ public sealed record VariableManager
             _pendingChangesLock.Release();
         }
     }
-    
+
     public async Task SaveAsync(VariablesEditModel model, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(model);
@@ -302,7 +307,7 @@ public sealed record VariableManager
                 {
                     _logger.LogDebug("Skipped updating existing variable because value or value type did not change: {@Variable}", existingVariable);
                 }
-                
+
                 savedVariables.Add(existingVariable);
             }
             else
@@ -317,7 +322,7 @@ public sealed record VariableManager
                     CreatedAtUtc = DateTime.UtcNow,
                     UpdatedAtUtc = DateTime.UtcNow
                 };
-                
+
                 variables.Add(variableToAdd);
 
                 savedVariables.Add(variableToAdd);
@@ -348,6 +353,7 @@ public sealed record VariableManager
         {
             _pendingChangesLock.Release();
         }
+
         foreach (var pendingChange in pendingChanges)
         {
             await SaveAsync(pendingChange, cancellationToken);

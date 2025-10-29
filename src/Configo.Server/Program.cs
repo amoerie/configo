@@ -154,7 +154,6 @@ services.AddSingleton<SchemaManager>();
 services.AddSingleton<VariableManager>();
 services.AddSingleton<VariablesJsonSerializer>();
 services.AddSingleton<VariablesJsonDeserializer>();
-services.AddSingleton<VariablesPendingChanges>();
 
 // Aspire
 builder.AddServiceDefaults();

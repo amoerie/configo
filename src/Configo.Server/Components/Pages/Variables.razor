@@ -89,7 +89,7 @@
                            Class="py-0" >
                     @foreach (var application in _applications)
                     {
-                        <MudSelectItem T="int?" Value="@application.Id">@application.Name</MudSelectItem>
+                        <MudSelectItem T="int?" Value="@application.Id">@application.Name@(_applicationIdsWithPendingChanges.Contains(application.Id) ? " *" : "")</MudSelectItem>
                     }
                 </MudSelect>
             </MudCardContent>
@@ -118,7 +118,7 @@
                            Dense="true">
                     @foreach (var tagGroup in _tagGroups)
                     {
-                        <MudSelectItem Value="@((int?) tagGroup.Id)">@tagGroup.Name</MudSelectItem>
+                        <MudSelectItem Value="@((int?) tagGroup.Id)">@tagGroup.Name@(_tagGroupIdsWithPendingChanges.Contains(tagGroup.Id) ? " *" : "")</MudSelectItem>
                     }
                 </MudSelect>
                 <MudSelect T="int?"
@@ -132,7 +132,7 @@
                            Dense="true">
                     @foreach (var tag in _availableTags)
                     {
-                        <MudSelectItem Value="@((int?) tag.Id)">@tag.Name</MudSelectItem>
+                        <MudSelectItem Value="@((int?) tag.Id)">@tag.Name@(_tagIdsWithPendingChanges.Contains(tag.Id) ? " *" : "")</MudSelectItem>
                     }
                 </MudSelect>
             </MudCardContent>
@@ -183,6 +183,9 @@
     
     private Dictionary<int, ApplicationModel> _applicationsById = [];
     private Dictionary<int, TagDropdownModel> _tagsById = [];
+    private HashSet<int> _applicationIdsWithPendingChanges = [];
+    private HashSet<int> _tagIdsWithPendingChanges = [];
+    private HashSet<int> _tagGroupIdsWithPendingChanges = [];
 
     private TagDropdownModel? SelectedTag => _selectedTagId is null ? null : _tagsById[_selectedTagId.Value];
     private ApplicationModel? SelectedApplication => _selectedApplicationId is null ? null : _applicationsById[_selectedApplicationId.Value];
@@ -195,6 +198,7 @@
         _tags = await TagManager.GetAllTagsForDropdownAsync(CancellationToken);
         _tagsById = _tags.ToDictionary(g => g.Id);
         _hasPendingChanges = await VariableManager.HasPendingChangesAsync(CancellationToken);
+        await RefreshPendingChanges();
         await base.OnInitializedAsync();
     }
 
@@ -205,9 +209,19 @@
         _hasPendingChanges = false;
         _showPendingChangesDiff = false;
 
+        await RefreshPendingChanges();
         await UpdateEditorAsync();
 
         Snackbar.Add("Pending changes saved successfully", Severity.Success);
+    }
+
+    public async Task RefreshPendingChanges()
+    {
+        var pendingChanges = await VariableManager.GetPendingChangesAsync(CancellationToken);
+
+        _applicationIdsWithPendingChanges = pendingChanges.Select(pc => pc.ApplicationId).ToHashSet();
+        _tagIdsWithPendingChanges = pendingChanges.Select(pc => pc.TagId).ToHashSet();
+        _tagGroupIdsWithPendingChanges = _tagIdsWithPendingChanges.Select(id => _tagsById[id]).Select(t => t.GroupId).ToHashSet();
     }
 
     public async Task DiscardPendingChanges()
@@ -217,6 +231,7 @@
         _hasPendingChanges = false;
         _showPendingChangesDiff = false;
 
+        await RefreshPendingChanges();
         await UpdateEditorAsync();
     }
 
@@ -238,6 +253,7 @@
         Snackbar.Add("Variables saved to pending changes", Severity.Success);
 
         _hasPendingChanges = true;
+        await RefreshPendingChanges();
         StateHasChanged();
     }
 
@@ -264,7 +280,7 @@
 
     private async Task UpdateEditorAsync()
     {
-        if (_selectedTagId is null)
+        if (_selectedTagId is null || _selectedApplicationId is null)
         {
             return;
         }
@@ -274,13 +290,13 @@
         var isReadonly = _showPendingChangesDiff;
         if (_showPendingChangesDiff)
         {
-            var originalConfig = await VariableManager.GetConfigAsync(_selectedTagId.Value, CancellationToken);
-            var modifiedConfig = await VariableManager.GetConfigWithPendingChangesAsync(_selectedTagId.Value, CancellationToken);
+            var originalConfig = await VariableManager.GetConfigAsync(_selectedTagId.Value, _selectedApplicationId.Value, CancellationToken);
+            var modifiedConfig = await VariableManager.GetConfigWithPendingChangesAsync(_selectedTagId.Value, _selectedApplicationId.Value, CancellationToken);
             await JsRuntime.InvokeVoidAsync("variables.updateDiffEditor", CancellationToken, _objectReference, originalConfig, modifiedConfig, schema);
         }
         else
         {
-            var config = await VariableManager.GetConfigWithPendingChangesAsync(_selectedTagId.Value, CancellationToken);
+            var config = await VariableManager.GetConfigWithPendingChangesAsync(_selectedTagId.Value, _selectedApplicationId.Value, CancellationToken);
             await JsRuntime.InvokeVoidAsync("variables.updateEditor", CancellationToken, _objectReference, config, schema, isReadonly);
         }
     }
