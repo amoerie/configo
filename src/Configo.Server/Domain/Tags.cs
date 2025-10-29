@@ -26,6 +26,9 @@ public sealed record TagDropdownModel
 {
     public required int Id { get; init; }
     public required string Name { get; init; }
+    public required int GroupId { get; init; }
+    public required int GroupOrder { get; init; }
+    public required string GroupName { get; init; }
 }
 
 public sealed class TagManager
@@ -46,17 +49,14 @@ public sealed class TagManager
         _logger.LogDebug("Getting all tags");
 
         var tagRecords = await dbContext.Tags
-            .Select(t => new { t.Id, t.Name })
+            .Join(dbContext.TagGroups, tag => tag.TagGroupId, tagGroup => tagGroup.Id, (tag, tagGroup) => new { Tag = tag, TagGroup = tagGroup })
+            .OrderBy(t => t.TagGroup.Order).ThenBy(t => t.Tag.Name)
+            .Select(t => new TagDropdownModel{ Id = t.Tag.Id, Name = t.Tag.Name, GroupId = t.TagGroup.Id, GroupOrder = t.TagGroup.Order, GroupName = t.TagGroup.Name })
             .ToListAsync(cancellationToken);
 
         _logger.LogInformation("Got {NumberOfTags} tags", tagRecords.Count);
         
-        return tagRecords.Select(tagRecord => new TagDropdownModel
-            {
-                Id = tagRecord.Id,
-                Name = tagRecord.Name
-            })
-            .ToList();
+        return tagRecords;
     }
     
     public async Task<List<TagListModel>> GetAllTagsAsync(CancellationToken cancellationToken)

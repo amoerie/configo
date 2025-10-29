@@ -5,7 +5,7 @@
 @inject IDialogService DialogService
 
 <MudText Typo="Typo.h4" GutterBottom="true">
-    Tag Groups
+    <MudIcon Icon="@Icons.Material.Filled.Category" Size="Size.Large"/> Tag Groups
 </MudText>
 
 @if (_tagGroups == null)
@@ -16,7 +16,7 @@
 
 <MudButton
     Variant="Variant.Filled"
-    Size="Size.Large"
+    Size="Size.Medium"
     OnClick="@AddNew" Color="@Color.Success" Class="add-item-btn" StartIcon="@Icons.Material.Filled.Add">
     Add new
 </MudButton>
@@ -31,7 +31,9 @@
              EditMode="DataGridEditMode.Form"
              EditTrigger="DataGridEditTrigger.OnRowClick"
              CanceledEditingItem="(TagGroupModel model) => DoNotSaveTagGroup(model)"
-             CommittedItemChanges="(TagGroupModel model) => SaveTagGroup(model)">
+             CommittedItemChanges="(TagGroupModel model) => SaveTagGroup(model)"
+             Dense="true"
+             RowsPerPage="25">
     <Columns>
         <PropertyColumn Property="(TagGroupModel x) => x.Name" Title="Name" Sortable="false" />
         <TemplateColumn Title="# Tags" 

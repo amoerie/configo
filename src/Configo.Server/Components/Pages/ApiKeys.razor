@@ -22,7 +22,7 @@
 
 <MudButton
     Variant="Variant.Filled"
-    Size="Size.Large"
+    Size="Size.Medium"
     OnClick="@AddNew" Color="@Color.Success" Class="add-item-btn" StartIcon="@Icons.Material.Filled.Add">
     Add new
 </MudButton>
@@ -37,9 +37,12 @@
              EditMode="DataGridEditMode.Form"
              EditTrigger="DataGridEditTrigger.OnRowClick"
              CanceledEditingItem="(ApiKeyModel model) => DoNotSaveApiKey(model)"
-             CommittedItemChanges="(ApiKeyModel model) => SaveApiKey(model)">
+             CommittedItemChanges="(ApiKeyModel model) => SaveApiKey(model)"
+             Dense="true"
+             RowsPerPage="25">
     <Columns>
-        <TemplateColumn T="ApiKeyModel" Title="Application" Filterable="false" Sortable="true" SortBy="GetApplicationName">
+        <TemplateColumn T="ApiKeyModel" Title="Application" Filterable="true" Sortable="true"
+                        SortBy="GetApplicationName">
             <CellTemplate>
                 @if (context.Item.ApplicationId != 0)
                 {
@@ -54,8 +57,24 @@
                     }
                 </MudSelect>
             </EditTemplate>
+            <FilterTemplate>
+                <MudStack Spacing="0">
+                    <MudSelect T="int?"
+                               Label="Application" 
+                               Value="_filteredApplicationId"
+                               ValueChanged="id => OnChangeFilteredApplicationId(context, id)"
+                               Clearable="true"
+                               Margin="Margin.Dense"
+                               Variant="Variant.Outlined">
+                        @foreach (var application in _applications)
+                        {
+                            <MudSelectItem T="int?" Value="@((int?)application.Id)">@application.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudStack>
+            </FilterTemplate>
         </TemplateColumn>
-        <TemplateColumn T="ApiKeyModel" Title="Tags" Filterable="false" Sortable="true" SortBy="GetTagNames">
+        <TemplateColumn T="ApiKeyModel" Title="Tags" Filterable="true" Sortable="true" SortBy="GetTagNames">
             <CellTemplate>
                 @foreach (var tagId in context.Item.TagIds)
                 {
@@ -63,21 +82,41 @@
                     {
                         continue;
                     }
-                    <MudChip>@tag.Name</MudChip>
+
+                    <MudChip>@tag.GroupName: @tag.Name</MudChip>
                 }
             </CellTemplate>
             <EditTemplate>
-                <MudSelect T="int" Label="Tags" MultiSelection="true" 
-                           @bind-SelectedValues="context.Item.TagIds"
+                <MudSelect T="int" Label="Tags" MultiSelection="true"
+                           SelectedValues="context.Item.TagIds"
+                           SelectedValuesChanged="tagIds => OnChangeSelectedTagIds(context, tagIds)"
                            MultiSelectionTextFunc="GetTagNames">
                     @foreach (var tag in _tags)
                     {
                         <MudSelectItem T="int" Value="@tag.Id">
-                            @tag.Name
+                            @tag.GroupName: @tag.Name
                         </MudSelectItem>
                     }
                 </MudSelect>
             </EditTemplate>
+            <FilterTemplate>
+                <MudStack Spacing="0">
+                    <MudSelect T="int" Label="Tags" MultiSelection="true"
+                               SelectedValues="_filteredTagIds"
+                               SelectedValuesChanged="tagIds => OnChangeFilteredTagIds(context, tagIds)"
+                               MultiSelectionTextFunc="GetTagNames"
+                               Margin="Margin.Dense"
+                               Variant="Variant.Outlined"
+                               Clearable="true">
+                        @foreach (var tag in _tags)
+                        {
+                            <MudSelectItem T="int" Value="@tag.Id">
+                                @tag.GroupName: @tag.Name
+                            </MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudStack>
+            </FilterTemplate>
         </TemplateColumn>
         <TemplateColumn T="ApiKeyModel" Title="Key" Sortable="false" Filterable="false" Editable="false">
             <CellTemplate>
@@ -85,17 +124,19 @@
                 {
                     <mark>@(context.Item.Key.Substring(0, 3))...@context.Item.Key.Substring(context.Item.Key.Length - 3)</mark>
                     <MudTooltip Text="Copy to clipboard">
-                        <MudButton StartIcon="@Icons.Material.Filled.FileCopy" @onclick="() => CopyKeyToClipboard(context.Item)"/>
+                        <MudButton StartIcon="@Icons.Material.Filled.FileCopy"
+                                   @onclick="() => CopyKeyToClipboard(context.Item)"/>
                     </MudTooltip>
                 }
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn T="ApiKeyModel" TProperty="DateTime" Property="x => x.ActiveSinceUtc" Title="Active Since" 
-                        Editable="true" Filterable="false" Sortable="true" Format="u" />
-        <PropertyColumn T="ApiKeyModel" TProperty="DateTime" Property="x => x.ActiveUntilUtc" Title="Active Until" 
-                        Editable="true" Filterable="false" Sortable="true" Format="u" />
-        <PropertyColumn T="ApiKeyModel" TProperty="DateTime" Property="x => x.UpdatedAtUtc" Title="Updated" 
-                        Editable="true" Filterable="false" Sortable="true" Format="u" />
+        <PropertyColumn T="ApiKeyModel" TProperty="DateTime" Property="x => x.ActiveSinceUtc" Title="Active Since"
+                        Editable="true" Filterable="false" Sortable="true" Format="u">
+        </PropertyColumn>
+        <PropertyColumn T="ApiKeyModel" TProperty="DateTime" Property="x => x.ActiveUntilUtc" Title="Active Until"
+                        Editable="true" Filterable="false" Sortable="true" Format="u"/>
+        <PropertyColumn T="ApiKeyModel" TProperty="DateTime" Property="x => x.UpdatedAtUtc" Title="Updated"
+                        Editable="true" Filterable="false" Sortable="true" Format="u"/>
         <TemplateColumn Editable="false" Filterable="false" Sortable="false">
             <CellTemplate>
                 <MudStack Row>
@@ -123,6 +164,11 @@
     private Dictionary<int, TagDropdownModel>? _tagsById;
     private Dictionary<int, ApplicationDropdownModel>? _applicationsById;
 
+    private int? _filteredApplicationId;
+    private List<int> _filteredTagIds = [];
+    private FilterDefinition<ApiKeyModel> _applicationIdFilterDefinition = null!;
+    private FilterDefinition<ApiKeyModel> _tagIdsFilterDefinition = null!;
+
     protected override async Task OnInitializedAsync()
     {
         _apiKeys = new ObservableCollection<ApiKeyModel>(await ApiKeyManager.GetAllApiKeysAsync(CancellationToken));
@@ -130,6 +176,15 @@
         _tagsById = _tags.ToDictionary(t => t.Id);
         _applications = await ApplicationManager.GetAllApplicationsForDropdownAsync(CancellationToken);
         _applicationsById = _applications.ToDictionary(a => a.Id);
+        _filteredApplicationId = null;
+        _applicationIdFilterDefinition = new FilterDefinition<ApiKeyModel>
+        {
+            FilterFunction = apiKeyModel => _filteredApplicationId is null || apiKeyModel.ApplicationId == _filteredApplicationId.Value
+        };
+        _tagIdsFilterDefinition = new FilterDefinition<ApiKeyModel>
+        {
+            FilterFunction = apiKeyModel => _filteredTagIds.Count == 0 || _filteredTagIds.All(tagId => apiKeyModel.TagIds.Contains(tagId))
+        };
     }
 
     private async Task OpenDeleteDialogAsync(ApiKeyModel apiKey)
@@ -186,7 +241,8 @@
     private string GetApplicationName(ApiKeyModel apiKeyModel)
     {
         return _applicationsById != null && _applicationsById.TryGetValue(apiKeyModel.ApplicationId, out var application)
-            ? application.Name : "";
+            ? application.Name
+            : "";
     }
 
     private string GetTagNames(ApiKeyModel apiKeyModel)
@@ -195,6 +251,7 @@
         {
             return "";
         }
+
         var sb = new StringBuilder();
         foreach (var tagId in apiKeyModel.TagIds)
         {
@@ -204,6 +261,7 @@
                 sb.Append(", ");
             }
         }
+
         return sb.ToString().TrimEnd(' ').TrimEnd(',');
     }
 
@@ -214,7 +272,70 @@
             .Select(i => i!.Value)
             .Select(id => _tagsById != null && _tagsById.TryGetValue(id, out var tag) ? (TagDropdownModel?)tag : null)
             .Where(tag => tag != null)
-            .Select(tag => tag!.Name));
+            .Select(tag => tag!)
+            .OrderBy(tag => tag.GroupOrder)
+            .Select(tag => $"{tag.GroupName}: {tag.Name}"));
+    }
+
+    private Task OnChangeSelectedTagIds(CellContext<ApiKeyModel> context, IEnumerable<int>? tagIds)
+    {
+        if (tagIds is null)
+        {
+            context.Item.TagIds = [];
+            return Task.CompletedTask;
+        }
+        
+        var oldTagIds = context.Item.TagIds.ToHashSet();
+        var newTags = tagIds.Select(tagId => _tagsById![tagId]).ToList();
+        var newTagsByGroupId = newTags.GroupBy(t => t.GroupId).ToList();
+        foreach(var newTagsOfGroup in newTagsByGroupId)
+        {
+            if (newTagsOfGroup.Count() == 1)
+            {
+                continue;
+            }
+            
+            // More than one tag in the same group? Automatically un-select old tags
+            foreach (var newTagOfGroup in newTagsOfGroup)
+            {
+                if (oldTagIds.Contains(newTagOfGroup.Id))
+                {
+                    newTags.Remove(newTagOfGroup);
+                }
+            }
+        }
+        context.Item.TagIds = newTags.OrderBy(t => t.GroupOrder).Select(t => t.Id).ToList();
+        return Task.CompletedTask;
+    }
+
+    private async Task OnChangeFilteredApplicationId(FilterContext<ApiKeyModel> context, int? id)
+    {
+        _filteredApplicationId = id;
+        
+        if (_filteredApplicationId is null)
+        {
+            await context.Actions.ClearFilterAsync(_applicationIdFilterDefinition);
+            return;
+        }
+        
+        await context.Actions.ApplyFilterAsync(_applicationIdFilterDefinition);
+    }
+
+    private async Task OnChangeFilteredTagIds(FilterContext<ApiKeyModel> context, IEnumerable<int>? tagIds)
+    {
+        _filteredTagIds = tagIds?
+            .Select(id => _tagsById![id])
+            .OrderBy(t => t.GroupOrder).ThenBy(t => t.Name)
+            .Select(t => t.Id)
+            .ToList() ?? [];
+        
+        if (_filteredTagIds.Count == 0)
+        {
+            await context.Actions.ClearFilterAsync(_tagIdsFilterDefinition);
+            return;
+        }
+        
+        await context.Actions.ApplyFilterAsync(_tagIdsFilterDefinition);
     }
 
 }

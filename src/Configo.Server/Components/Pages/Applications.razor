@@ -16,7 +16,7 @@
 
 <MudButton
     Variant="Variant.Filled"
-    Size="Size.Large"
+    Size="Size.Medium"
     OnClick="@AddNew" Color="@Color.Success" Class="add-item-btn" StartIcon="@Icons.Material.Filled.Add">
     Add new
 </MudButton>
@@ -31,7 +31,9 @@
              EditMode="DataGridEditMode.Form"
              EditTrigger="DataGridEditTrigger.OnRowClick"
              CanceledEditingItem="(ApplicationModel model) => DoNotSaveApplication(model)"
-             CommittedItemChanges="(ApplicationModel model) => SaveApplication(model)">
+             CommittedItemChanges="(ApplicationModel model) => SaveApplication(model)"
+             Dense="true"
+             RowsPerPage="25">
     <Columns>
         <PropertyColumn Property="(ApplicationModel x) => x.Name" Title="Name"/>
         <PropertyColumn Property="(ApplicationModel x) => x.UpdatedAtUtc" Title="Updated" 
