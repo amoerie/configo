@@ -89,22 +89,23 @@ export class Variables {
         this.#diffEditor?.setModel(null);
     }
     
-    #initializeEditorContainers() {
+    async #initializeEditorContainers() {
+        const containerTimeout = 5000;
         if (!this.#editorContainer) {
-            const container = document.getElementById("variables-editor-container");
+            const container = await this.getContainerWithTimeout("variables-editor-container", containerTimeout);
 
             if (!container) {
-                console.warn("Container for editor not present");
+                console.warn(`Container for editor not present after waiting ${containerTimeout}ms`);
             }
             else {
                 this.#editorContainer = container;
             }
         }
         if (!this.#diffEditorContainer) {
-            const container = document.getElementById("variables-diff-editor-container");
+            const container = await this.getContainerWithTimeout("variables-diff-editor-container", containerTimeout);
 
             if (!container) {
-                console.warn("Container for diff editor not present");
+                console.warn(`Container for diff editor not present after waiting ${containerTimeout}ms`);
             }
             else {
                 this.#diffEditorContainer = container;
@@ -118,10 +119,10 @@ export class Variables {
      * @param {string} schema
      * @param {boolean} isReadonly
      */
-    updateEditor(dotNetRef, config, schema, isReadonly) {
+    async updateEditor(dotNetRef, config, schema, isReadonly) {
         this.#dotNetRef = dotNetRef;
         this.#disposeDiffEditorModels();
-        this.#initializeEditorContainers();
+        await this.#initializeEditorContainers();
         this.#diffEditorContainer.style.display = "none";
         this.#editorContainer.style.display = "block";
 
@@ -178,10 +179,10 @@ export class Variables {
      * @param {string} modifiedConfig
      * @param {string} schema
      */
-    updateDiffEditor(dotNetRef, originalConfig, modifiedConfig, schema) {
+    async updateDiffEditor(dotNetRef, originalConfig, modifiedConfig, schema) {
         this.#dotNetRef = dotNetRef;
         this.#disposeEditorModels();
-        this.#initializeEditorContainers();
+        await this.#initializeEditorContainers();
         this.#editorContainer.style.display = "none";
         this.#diffEditorContainer.style.display = "block";
         
@@ -238,6 +239,24 @@ export class Variables {
             height: document.documentElement.clientHeight - this.#diffEditorContainer.offsetTop,
             width: this.#diffEditorContainer.clientWidth
         });
+    }
+
+    async getContainerWithTimeout(id, timeout) {
+        while(true) {
+            const container = document.getElementById(id);
+
+            if (container) {
+                return container;
+            }
+
+            if (timeout <= 0) {
+                return null;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            timeout -= 100;
+        }
     }
 
     destroy() {
