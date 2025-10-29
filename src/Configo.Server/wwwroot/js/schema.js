@@ -22,9 +22,11 @@ export class Schema {
      * @type {monaco.editor.IStandaloneCodeEditor}
      */
     #editor;
+    
     constructor() {
     }
-    initialize(dotNetRef, applicationId, schema) {
+    
+    async initialize(dotNetRef, applicationId, schema) {
         this.#dotNetRef = dotNetRef;
         this.#applicationId = applicationId;
 
@@ -44,12 +46,11 @@ export class Schema {
         });
 
         this.#model = monaco.editor.createModel(schema, "json", monaco.Uri.parse("internal://server/schema.json"));
-        const container = document.getElementById("schema-editor-container");
 
-        if(!container)
-        {
-            console.warn("Container for monaco editor not present");
-            return;
+        const containerTimeout = 5000
+        const container = await this.getContainerWithTimeout(containerTimeout);
+        if(!container) {
+            console.warn(`Container for monaco editor not present after waiting ${containerTimeout}ms`);
         }
         
         this.#editor = monaco.editor.create(container, {
@@ -65,6 +66,24 @@ export class Schema {
             width: container.clientWidth,
             height: document.documentElement.clientHeight - container.offsetTop
         });
+    }
+    
+    async getContainerWithTimeout(timeout) {
+        while(true) {
+            const container = document.getElementById("schema-editor-container");
+
+            if (container) {
+                return container;
+            }
+
+            if (timeout <= 0) {
+                return null;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            timeout -= 100;
+        }
     }
     
     destroy() {

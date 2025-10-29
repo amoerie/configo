@@ -39,7 +39,10 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await InitEditorIfNecessary();
+        if (firstRender)
+        {
+            await InitEditorIfNecessary();
+        }
     }
 
     protected override async Task OnParametersSetAsync()
