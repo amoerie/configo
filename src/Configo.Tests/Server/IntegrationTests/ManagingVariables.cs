@@ -67,7 +67,8 @@ public class ManagingVariables : IAsyncLifetime
                        "Common": "Common from other tag"
                    }
                    """",
-            TagId = _otherTagForm.Id
+            TagId = _otherTagForm.Id,
+            ApplicationId = _processor.Id
         };
         await variableManager.SaveAsync(otherVariablesModel, cancellationToken);
 
@@ -81,7 +82,8 @@ public class ManagingVariables : IAsyncLifetime
         var blade1VariablesModel = new VariablesEditModel
         {
             Json = _blade1Variables,
-            TagId = _blade1.Id
+            TagId = _blade1.Id,
+            ApplicationId = _processor.Id
         };
         _blade2Variables = """"
                            {
@@ -92,7 +94,8 @@ public class ManagingVariables : IAsyncLifetime
         var blade2VariablesModel = new VariablesEditModel
         {
             Json = _blade2Variables,
-            TagId = _blade2.Id
+            TagId = _blade2.Id,
+            ApplicationId = _processor.Id
         };
         await variableManager.SaveAsync(blade1VariablesModel, cancellationToken);
         await variableManager.SaveAsync(blade2VariablesModel, cancellationToken);
@@ -107,7 +110,8 @@ public class ManagingVariables : IAsyncLifetime
         var beneluxVariablesModel = new VariablesEditModel
         {
             Json = _beneluxVariables,
-            TagId = _benelux.Id
+            TagId = _benelux.Id,
+            ApplicationId = _processor.Id
         };
         _nordicsVariables = """"
                             {
@@ -118,7 +122,8 @@ public class ManagingVariables : IAsyncLifetime
         var nordicsVariablesModel = new VariablesEditModel
         {
             Json = _nordicsVariables,
-            TagId = _nordics.Id
+            TagId = _nordics.Id,
+            ApplicationId = _processor.Id
         };
         await variableManager.SaveAsync(beneluxVariablesModel, cancellationToken);
         await variableManager.SaveAsync(nordicsVariablesModel, cancellationToken);
@@ -132,7 +137,8 @@ public class ManagingVariables : IAsyncLifetime
         var globalVariablesModel = new VariablesEditModel
         {
             Json = _globalVariables,
-            TagId = _global.Id
+            TagId = _global.Id,
+            ApplicationId = _processor.Id
         };
         await variableManager.SaveAsync(globalVariablesModel, cancellationToken);
     }
@@ -353,7 +359,8 @@ public class ManagingVariables : IAsyncLifetime
         await variableManager.SaveAsync(new VariablesEditModel
         {
             Json = newBlade1Variables,
-            TagId = _blade1.Id
+            TagId = _blade1.Id,
+            ApplicationId = _processor.Id
         }, cancellationToken);
 
         var actualBlade1VariablesModel = await variableManager.GetConfigAsync(

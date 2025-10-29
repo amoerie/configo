@@ -5,7 +5,7 @@ namespace Configo.Tests.Server.Domain;
 
 public class VariablesJsonSerializerTests
 {
-    private readonly VariablesJsonSerializer _jsonSerializer = new VariablesJsonSerializer();
+    private readonly VariablesJsonSerializer _jsonSerializer = new();
 
     [Fact]
     public void SimpleKeyValue()
@@ -13,7 +13,7 @@ public class VariablesJsonSerializerTests
         // Arrange
         var variables = new List<VariableModel>
         {
-            new VariableModel { Key = "Foo", Value = "Bar", ValueType = VariableValueType.String, TagId = 1 }
+            new() { Key = "Foo", Value = "Bar", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2 }
         };
         var expected = """"
                        {
@@ -34,7 +34,7 @@ public class VariablesJsonSerializerTests
         // Arrange
         var variables = new List<VariableModel>
         {
-            new VariableModel { Key = "Foo:Bar", Value = "Test", ValueType = VariableValueType.String, TagId = 1 }
+            new() { Key = "Foo:Bar", Value = "Test", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2 }
         };
         var expected = """"
                        {
@@ -58,8 +58,8 @@ public class VariablesJsonSerializerTests
         // Arrange
         var variables = new List<VariableModel>
         {
-            new VariableModel { Key = "Foo:0", Value = "Test1", ValueType = VariableValueType.String, TagId = 1 },
-            new VariableModel { Key = "Foo:1", Value = "Test2", ValueType = VariableValueType.String, TagId = 1 }
+            new() { Key = "Foo:0", Value = "Test1", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2 },
+            new() { Key = "Foo:1", Value = "Test2", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2 }
         };
         var expected = """"
                        {
@@ -80,17 +80,12 @@ public class VariablesJsonSerializerTests
         // Arrange
         var variables = new List<VariableModel>
         {
-            new VariableModel
-                { Key = "Panel Members:0:FirstName", Value = "Stephen", ValueType = VariableValueType.String, TagId = 1 },
-            new VariableModel
-                { Key = "Panel Members:0:LastName", Value = "Fry", ValueType = VariableValueType.String, TagId = 1 },
-            new VariableModel
-                { Key = "Panel Members:1:FirstName", Value = "Alan", ValueType = VariableValueType.String, TagId = 1 },
-            new VariableModel
-                { Key = "Panel Members:1:LastName", Value = "Davies", ValueType = VariableValueType.String, TagId = 1 },
-            new VariableModel
-                { Key = "Number Of Guests", Value = "145", ValueType = VariableValueType.Number, TagId = 1 },
-            new VariableModel { Key = "Was Recorded", Value = "true", ValueType = VariableValueType.Boolean, TagId = 1 },
+            new() { Key = "Panel Members:0:FirstName", Value = "Stephen", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2 },
+            new() { Key = "Panel Members:0:LastName", Value = "Fry", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2 },
+            new() { Key = "Panel Members:1:FirstName", Value = "Alan", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2 },
+            new() { Key = "Panel Members:1:LastName", Value = "Davies", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2 },
+            new() { Key = "Number Of Guests", Value = "145", ValueType = VariableValueType.Number, TagId = 1, ApplicationId = 2 },
+            new() { Key = "Was Recorded", Value = "true", ValueType = VariableValueType.Boolean, TagId = 1, ApplicationId = 2 },
         };
         var expected = """"
                        {
@@ -116,16 +111,11 @@ public class VariablesJsonSerializerTests
         // Arrange
         var variables = new List<VariableModel>
         {
-            new VariableModel
-                { Key = "0", Value = "Arrays can't exist at the root level", ValueType = VariableValueType.String, TagId = 1 },
-            new VariableModel
-                { Key = "1", Value = "So they should be properties instead", ValueType = VariableValueType.String, TagId = 1 },
-            new VariableModel
-                { Key = "DeletedVariables:1", Value = "Sometimes variables", ValueType = VariableValueType.String, TagId = 1 },
-            new VariableModel
-                { Key = "DeletedVariables:3", Value = "Get deleted", ValueType = VariableValueType.String, TagId = 1 },
-            new VariableModel
-                { Key = "DeletedVariables:5", Value = "Which causes gaps", ValueType = VariableValueType.String, TagId = 1 },
+            new() { Key = "0", Value = "Arrays can't exist at the root level", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2 },
+            new() { Key = "1", Value = "So they should be properties instead", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2 },
+            new() { Key = "DeletedVariables:1", Value = "Sometimes variables", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2 },
+            new() { Key = "DeletedVariables:3", Value = "Get deleted", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2 },
+            new() { Key = "DeletedVariables:5", Value = "Which causes gaps", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2 },
         };
         var expected = """"
                        {

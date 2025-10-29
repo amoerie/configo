@@ -17,7 +17,7 @@ namespace Configo.Database.NpgSql.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.9")
+                .HasAnnotation("ProductVersion", "9.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -226,6 +226,9 @@ namespace Configo.Database.NpgSql.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -257,9 +260,11 @@ namespace Configo.Database.NpgSql.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ApplicationId");
+
                     b.HasIndex("TagId");
 
-                    b.HasIndex("Key", "TagId")
+                    b.HasIndex("Key", "TagId", "ApplicationId")
                         .IsUnique();
 
                     b.ToTable("Variables");
@@ -319,6 +324,12 @@ namespace Configo.Database.NpgSql.Migrations
 
             modelBuilder.Entity("Configo.Database.Tables.VariableRecord", b =>
                 {
+                    b.HasOne("Configo.Database.Tables.ApplicationRecord", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Configo.Database.Tables.TagRecord", null)
                         .WithMany()
                         .HasForeignKey("TagId")

@@ -223,7 +223,7 @@
     [JSInvokable]
     public async Task Save(string variables)
     {
-        if (_selectedTagId is null)
+        if (_selectedTagId is null || _selectedApplicationId is null)
         {
             return;
         }
@@ -231,7 +231,8 @@
         await VariableManager.SaveToPendingAsync(new VariablesEditModel
         {
             Json = variables,
-            TagId = _selectedTagId.Value
+            TagId = _selectedTagId.Value,
+            ApplicationId = _selectedApplicationId.Value
         }, CancellationToken);
 
         Snackbar.Add("Variables saved to pending changes", Severity.Success);

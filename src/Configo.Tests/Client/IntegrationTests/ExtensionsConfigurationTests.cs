@@ -48,7 +48,8 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         var processorVariablesModel = new VariablesEditModel
         {
             Json = _globalVariables,
-            TagId = _global.Id
+            TagId = _global.Id,
+            ApplicationId = _processor.Id
         };
         await variableManager.SaveAsync(processorVariablesModel, cancellationToken);
 
@@ -56,7 +57,8 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         var processorBeneluxVariablesModel = new VariablesEditModel
         {
             Json = _beneluxVariables,
-            TagId = _benelux.Id
+            TagId = _benelux.Id,
+            ApplicationId = _processor.Id
         };
         await variableManager.SaveAsync(processorBeneluxVariablesModel, cancellationToken);
     }
@@ -184,7 +186,8 @@ public class ExtensionsConfigurationTests : IAsyncLifetime
         var globalVariablesModel = new VariablesEditModel
         {
             Json = _globalVariables,
-            TagId = _global.Id
+            TagId = _global.Id,
+            ApplicationId = _processor.Id
         };
         await variableManager.SaveAsync(globalVariablesModel, cancellationToken);
 

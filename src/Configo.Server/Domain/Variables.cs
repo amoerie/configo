@@ -15,12 +15,14 @@ public sealed record VariableModel
     public required string Value { get; set; }
     public required VariableValueType ValueType { get; set; }
     public required int TagId { get; set; }
+    public required int ApplicationId { get; set; }
 }
 
 public sealed record VariablesEditModel
 {
     public required string Json { get; set; }
     public required int TagId { get; set; }
+    public required int ApplicationId { get; set; }
 }
 
 public sealed record VariablesPendingChanges(List<VariablesEditModel> EditModels)
@@ -82,28 +84,28 @@ public sealed record VariableManager
             .Select(x => x.Tag.Id)
             .ToListAsync(cancellationToken);
 
-        return await GetMergedConfigAsync(tagIds, cancellationToken);
+        return await GetMergedConfigAsync(apiKey.ApplicationId, tagIds, cancellationToken);
     }
 
     /// <summary>
     /// Gets configuration variables that are defined for the specified tags, or a subset thereof
     /// If multiple variables with the same key exist, the one linked to the last tag will win
     /// </summary>
-    public async Task<string> GetMergedConfigAsync(List<int> tagIds, CancellationToken cancellationToken)
+    public async Task<string> GetMergedConfigAsync(int applicationId, List<int> tagIds, CancellationToken cancellationToken)
     {
-        return await GetMergedConfigAsync(tagIds, includePendingChanges: false, cancellationToken);
+        return await GetMergedConfigAsync(applicationId, tagIds, includePendingChanges: false, cancellationToken);
     }
 
     /// <summary>
     /// Gets configuration variables that are defined for the specified applications and tags, or a subset thereof, including any pending changes
     /// The most specific variable is the one constrained to the highest number of applications and tags
     /// </summary>
-    public async Task<string> GetMergedConfigWithPendingChangesAsync(List<int> tagIds, CancellationToken cancellationToken)
+    public async Task<string> GetMergedConfigWithPendingChangesAsync(int applicationId, List<int> tagIds, CancellationToken cancellationToken)
     {
-        return await GetMergedConfigAsync(tagIds, includePendingChanges: true, cancellationToken);
+        return await GetMergedConfigAsync(applicationId, tagIds, includePendingChanges: true, cancellationToken);
     }
     
-    private async Task<string> GetMergedConfigAsync(List<int> tagIds, bool includePendingChanges, CancellationToken cancellationToken)
+    private async Task<string> GetMergedConfigAsync(int applicationId, List<int> tagIds, bool includePendingChanges, CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -112,8 +114,8 @@ public sealed record VariableManager
         var variablesDbSet = dbContext.Variables;
         
         var variablesQuery = variablesDbSet
-            // If a variable is linked to any other tag, then it is not relevant
-            .Where(v => tagIds.Contains(v.TagId));
+            // If a variable is linked to any other tag or any other application, then it is not relevant
+            .Where(v => tagIds.Contains(v.TagId) && v.ApplicationId == applicationId);
 
         var variables = await variablesQuery
             .Select(v => new VariableModel
@@ -122,6 +124,7 @@ public sealed record VariableManager
                     Value = v.Value,
                     ValueType = v.ValueType,
                     TagId = v.TagId,
+                    ApplicationId = v.ApplicationId
                 })
             .ToListAsync(cancellationToken);
 
@@ -138,11 +141,11 @@ public sealed record VariableManager
                 _pendingChangesLock.Release();
             }
 
-            var matchingPendingChanges = pendingChanges.Where(c => tagIds.Contains(c.TagId));
+            var matchingPendingChanges = pendingChanges.Where(c => tagIds.Contains(c.TagId) && c.ApplicationId == applicationId);
 
             foreach (var pendingChange in matchingPendingChanges)
             {
-                var pendingVariables = _deserializer.DeserializeFromJson(pendingChange.Json, pendingChange.TagId);
+                var pendingVariables = _deserializer.DeserializeFromJson(pendingChange.Json, pendingChange.TagId, pendingChange.ApplicationId);
                 variables.AddRange(pendingVariables);
             }
         }
@@ -198,6 +201,7 @@ public sealed record VariableManager
                 Value = variable.Value,
                 ValueType = variable.ValueType,
                 TagId = variable.TagId,
+                ApplicationId = variable.ApplicationId
             })
             .ToListAsync(cancellationToken);
 
@@ -222,7 +226,7 @@ public sealed record VariableManager
 
             foreach (var pendingChange in matchingPendingChanges)
             {
-                matchingVariables.AddRange(_deserializer.DeserializeFromJson(pendingChange.Json, pendingChange.TagId));
+                matchingVariables.AddRange(_deserializer.DeserializeFromJson(pendingChange.Json, pendingChange.TagId, pendingChange.ApplicationId));
             }
             
             // Ensure that duplicate keys are pruned, but that pending changes win over variables from the database
@@ -268,11 +272,12 @@ public sealed record VariableManager
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         var tagId = model.TagId;
-        _logger.LogDebug("Saving variables for tag {@TagId}", tagId);
+        var applicationId = model.ApplicationId;
+        _logger.LogDebug("Saving variables for tag {TagId} and application {ApplicationId}", tagId, applicationId);
 
         var variables = dbContext.Variables;
         var existingVariables = await variables.Where(v => v.TagId == tagId).AsTracking().ToListAsync(cancellationToken);
-        var newVariables = _deserializer.DeserializeFromJson(model.Json, model.TagId);
+        var newVariables = _deserializer.DeserializeFromJson(model.Json, model.TagId, model.ApplicationId);
 
         // Add or update variables
         var savedVariables = new List<VariableRecord>();
@@ -307,6 +312,7 @@ public sealed record VariableManager
                     Value = value,
                     ValueType = valueType,
                     TagId = tagId,
+                    ApplicationId = applicationId,
                     CreatedAtUtc = DateTime.UtcNow,
                     UpdatedAtUtc = DateTime.UtcNow
                 };
@@ -498,13 +504,14 @@ public class VariablesJsonDeserializer
         CommentHandling = JsonCommentHandling.Skip
     };
 
-    public List<VariableModel> DeserializeFromJson(string json, int tagId)
+    public List<VariableModel> DeserializeFromJson(string json, int tagId, int applicationId)
     {
-        return Deserialize(json, tagId, _nodeOptions, _documentOptions).OrderBy(v => v.Key).ToList();
+        return Deserialize(json, tagId, applicationId, _nodeOptions, _documentOptions).OrderBy(v => v.Key).ToList();
 
         static IEnumerable<VariableModel> Deserialize(
             string json,
             int tagId,
+            int applicationId,
             JsonNodeOptions nodeOptions,
             JsonDocumentOptions documentOptions)
         {
@@ -528,7 +535,8 @@ public class VariablesJsonDeserializer
                                 Key = path,
                                 Value = stringValue,
                                 ValueType = VariableValueType.Boolean,
-                                TagId = tagId
+                                TagId = tagId,
+                                ApplicationId = applicationId
                             };
                         }
                         else if (jsonValue.TryGetValue(out double _))
@@ -538,7 +546,8 @@ public class VariablesJsonDeserializer
                                 Key = path,
                                 Value = stringValue,
                                 ValueType = VariableValueType.Number,
-                                TagId = tagId
+                                TagId = tagId,
+                                ApplicationId = applicationId
                             };
                         }
                         else
@@ -548,7 +557,8 @@ public class VariablesJsonDeserializer
                                 Key = path,
                                 Value = stringValue,
                                 ValueType = VariableValueType.String,
-                                TagId = tagId
+                                TagId = tagId,
+                                ApplicationId = applicationId
                             };
                         }
 

@@ -9,6 +9,7 @@ public sealed record VariableRecord
     public required string Key { get; set; }
     public required string Value { get; set; }
     public required VariableValueType ValueType { get; set; }
+    public required int ApplicationId { get; set; }
     public required int TagId { get; set; }
     public required DateTime CreatedAtUtc { get; set; }
     public required DateTime UpdatedAtUtc { get; set; }
@@ -27,6 +28,10 @@ public class VariableRecordConfigurator: IEntityTypeConfiguration<VariableRecord
             .WithMany()
             .HasForeignKey(t => t.TagId)
             .OnDelete(DeleteBehavior.Cascade);
-        builder.HasIndex(r => new { r.Key, r.TagId }).IsUnique();
+        builder.HasOne<ApplicationRecord>()
+            .WithMany()
+            .HasForeignKey(t => t.ApplicationId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasIndex(r => new { r.Key, r.TagId, r.ApplicationId }).IsUnique();
     }
 }

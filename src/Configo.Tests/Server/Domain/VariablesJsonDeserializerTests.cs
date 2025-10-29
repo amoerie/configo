@@ -5,7 +5,7 @@ namespace Configo.Tests.Server.Domain;
 
 public class VariablesJsonDeserializerTests
 {
-    private readonly VariablesJsonDeserializer _jsonDeserializer = new VariablesJsonDeserializer();
+    private readonly VariablesJsonDeserializer _jsonDeserializer = new();
 
     [Fact]
     public void SimpleKeyValue()
@@ -18,11 +18,11 @@ public class VariablesJsonDeserializerTests
                    """";
         var expected = new List<VariableModel>
         {
-            new VariableModel { Key = "Foo", Value = "Bar", ValueType = VariableValueType.String, TagId = 1 }
+            new() { Key = "Foo", Value = "Bar", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2 }
         };
 
         // Act
-        var actual = _jsonDeserializer.DeserializeFromJson(json, 1);
+        var actual = _jsonDeserializer.DeserializeFromJson(json, 1, 2);
 
         // Assert
         Assert.Equal(expected, actual);
@@ -39,11 +39,11 @@ public class VariablesJsonDeserializerTests
                    """";
         var expected = new List<VariableModel>
         {
-            new VariableModel { Key = "Foo", Value = "Bar", ValueType = VariableValueType.String, TagId = 7 }
+            new() { Key = "Foo", Value = "Bar", ValueType = VariableValueType.String, TagId = 7,ApplicationId = 8}
         };
 
         // Act
-        var actual = _jsonDeserializer.DeserializeFromJson(json, 7);
+        var actual = _jsonDeserializer.DeserializeFromJson(json, 7, 8);
 
         // Assert
         Assert.Equal(expected, actual);
@@ -63,11 +63,11 @@ public class VariablesJsonDeserializerTests
                    """";
         var expected = new List<VariableModel>
         {
-            new VariableModel { Key = "Foo:Bar", Value = "Test", ValueType = VariableValueType.String, TagId = 1 }
+            new() { Key = "Foo:Bar", Value = "Test", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2}
         };
 
         // Act
-        var actual = _jsonDeserializer.DeserializeFromJson(json, 1);
+        var actual = _jsonDeserializer.DeserializeFromJson(json, 1, 2);
 
         // Assert
         Assert.Equal(expected, actual);
@@ -84,12 +84,12 @@ public class VariablesJsonDeserializerTests
                    """";
         var expected = new List<VariableModel>
         {
-            new VariableModel { Key = "Foo:0", Value = "Test1", ValueType = VariableValueType.String, TagId = 2 },
-            new VariableModel { Key = "Foo:1", Value = "Test2", ValueType = VariableValueType.String, TagId = 2 }
+            new() { Key = "Foo:0", Value = "Test1", ValueType = VariableValueType.String, TagId = 2, ApplicationId = 3},
+            new() { Key = "Foo:1", Value = "Test2", ValueType = VariableValueType.String, TagId = 2, ApplicationId = 3}
         };
 
         // Act
-        var actual = _jsonDeserializer.DeserializeFromJson(json, 2);
+        var actual = _jsonDeserializer.DeserializeFromJson(json, 2, 3);
 
         // Assert
         Assert.Equal(expected, actual);
@@ -112,16 +112,16 @@ public class VariablesJsonDeserializerTests
                    """";
         var expected = new List<VariableModel>
         {
-            new VariableModel { Key = "Number Of Guests", Value = "145", ValueType = VariableValueType.Number, TagId = 1 },
-            new VariableModel { Key = "Panel Members:0:FirstName", Value = "Stephen", ValueType = VariableValueType.String, TagId = 1 },
-            new VariableModel { Key = "Panel Members:0:LastName", Value = "Fry", ValueType = VariableValueType.String, TagId = 1 },
-            new VariableModel { Key = "Panel Members:1:FirstName", Value = "Alan", ValueType = VariableValueType.String, TagId = 1 },
-            new VariableModel { Key = "Panel Members:1:LastName", Value = "Davies", ValueType = VariableValueType.String, TagId = 1 },
-            new VariableModel { Key = "Was Recorded", Value = "true", ValueType = VariableValueType.Boolean, TagId = 1 },
+            new() { Key = "Number Of Guests", Value = "145", ValueType = VariableValueType.Number, TagId = 1, ApplicationId = 2},
+            new() { Key = "Panel Members:0:FirstName", Value = "Stephen", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2},
+            new() { Key = "Panel Members:0:LastName", Value = "Fry", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2},
+            new() { Key = "Panel Members:1:FirstName", Value = "Alan", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2},
+            new() { Key = "Panel Members:1:LastName", Value = "Davies", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2},
+            new() { Key = "Was Recorded", Value = "true", ValueType = VariableValueType.Boolean, TagId = 1, ApplicationId = 2},
         };
 
         // Act
-        var actual = _jsonDeserializer.DeserializeFromJson(json, 1);
+        var actual = _jsonDeserializer.DeserializeFromJson(json, 1, 2);
 
         // Assert
         Assert.Equal(expected, actual);
@@ -139,14 +139,12 @@ public class VariablesJsonDeserializerTests
                    """";
         var expected = new List<VariableModel>
         {
-            new VariableModel
-                { Key = "0", Value = "Arrays can't exist at the root level", ValueType = VariableValueType.String, TagId = 1 },
-            new VariableModel
-                { Key = "1", Value = "So they should be properties instead", ValueType = VariableValueType.String, TagId = 1 },
+            new() { Key = "0", Value = "Arrays can't exist at the root level", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2 },
+            new() { Key = "1", Value = "So they should be properties instead", ValueType = VariableValueType.String, TagId = 1, ApplicationId = 2 },
         };
 
         // Act
-        var actual = _jsonDeserializer.DeserializeFromJson(json, 1);
+        var actual = _jsonDeserializer.DeserializeFromJson(json, 1, 2);
 
         // Assert
         Assert.Equal(expected, actual);

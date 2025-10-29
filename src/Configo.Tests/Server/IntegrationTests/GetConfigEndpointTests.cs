@@ -48,7 +48,8 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var globalVariables = new VariablesEditModel
         {
             Json = _globalVariables,
-            TagId = _global.Id
+            TagId = _global.Id,
+            ApplicationId = _processor.Id
         };
         await variableManager.SaveAsync(globalVariables, cancellationToken);
 
@@ -60,7 +61,8 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var beneluxVariables = new VariablesEditModel
         {
             Json = _beneluxVariables,
-            TagId = _benelux.Id
+            TagId = _benelux.Id,
+            ApplicationId = _processor.Id
         };
         await variableManager.SaveAsync(beneluxVariables, cancellationToken);
     }
