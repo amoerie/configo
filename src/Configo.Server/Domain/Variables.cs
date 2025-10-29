@@ -268,6 +268,7 @@ public sealed record VariableManager
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentOutOfRangeException.ThrowIfZero(model.TagId);
+        ArgumentOutOfRangeException.ThrowIfZero(model.ApplicationId);
 
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -276,7 +277,7 @@ public sealed record VariableManager
         _logger.LogDebug("Saving variables for tag {TagId} and application {ApplicationId}", tagId, applicationId);
 
         var variables = dbContext.Variables;
-        var existingVariables = await variables.Where(v => v.TagId == tagId).AsTracking().ToListAsync(cancellationToken);
+        var existingVariables = await variables.Where(v => v.TagId == tagId && v.ApplicationId == applicationId).AsTracking().ToListAsync(cancellationToken);
         var newVariables = _deserializer.DeserializeFromJson(model.Json, model.TagId, model.ApplicationId);
 
         // Add or update variables

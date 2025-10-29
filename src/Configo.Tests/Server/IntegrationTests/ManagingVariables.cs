@@ -7,20 +7,14 @@ namespace Configo.Tests.Server.IntegrationTests;
 public class ManagingVariables : IAsyncLifetime
 {
     private readonly IntegrationTestFixture _fixture;
-    private TagFormModel _global = null!;
+    private TagFormModel _acceptation = null!;
+    private TagFormModel _production = null!;
     private TagFormModel _benelux = null!;
-    private TagFormModel _nordics = null!;
-    private TagFormModel _blade1 = null!;
-    private TagFormModel _blade2 = null!;
+    private TagFormModel _france = null!;
+    private TagFormModel _otherTag = null!;
     private ApplicationModel _processor = null!;
     private ApplicationModel _router = null!;
     private ApplicationModel _otherApplication = null!;
-    private TagFormModel _otherTagForm = null!;
-    private string _blade1Variables = null!;
-    private string _blade2Variables = null!;
-    private string _beneluxVariables = null!;
-    private string _nordicsVariables = null!;
-    private string _globalVariables = null!;
 
     public ManagingVariables(IntegrationTestFixture fixture, ITestOutputHelper output)
     {
@@ -36,22 +30,27 @@ public class ManagingVariables : IAsyncLifetime
         var variableManager = _fixture.GetRequiredService<VariableManager>();
         var cancellationToken = CancellationToken.None;
 
-        var environments = new TagGroupModel { Name = "Environments" };
-        var globalGroup = new TagGroupModel { Name = "Global" };
+        // Tag groups
+        var environments = new TagGroupModel { Name = "Environments", Order = 1 };
+        var regions = new TagGroupModel { Name = "Regions", Order = 2 };
+        var otherTagGroup = new TagGroupModel { Name = "OtherTagGroup", Order = 3 };
+        await tagGroupManager.SaveTagGroupAsync(regions, cancellationToken);
         await tagGroupManager.SaveTagGroupAsync(environments, cancellationToken);
-        await tagGroupManager.SaveTagGroupAsync(globalGroup, cancellationToken);
-        _global = new TagFormModel { Name = "Global", TagGroupId = globalGroup.Id };
-        _benelux = new TagFormModel { Name = "Benelux", TagGroupId = environments.Id };
-        _nordics = new TagFormModel { Name = "Nordics", TagGroupId = environments.Id };
-        _blade1 = new TagFormModel { Name = "Blade 1", TagGroupId = environments.Id };
-        _blade2 = new TagFormModel { Name = "Blade 2", TagGroupId = environments.Id };
-        _otherTagForm = new TagFormModel { Name = "Other Tag", TagGroupId = environments.Id };
+        await tagGroupManager.SaveTagGroupAsync(otherTagGroup, cancellationToken);
+
+        // Tags
+        _acceptation = new TagFormModel { Name = "Acceptation", TagGroupId = environments.Id };
+        _production = new TagFormModel { Name = "Production", TagGroupId = environments.Id };
+        _benelux = new TagFormModel { Name = "Benelux", TagGroupId = regions.Id };
+        _france = new TagFormModel { Name = "France", TagGroupId = regions.Id };
+        _otherTag = new TagFormModel { Name = "Other Tag", TagGroupId = otherTagGroup.Id };
         await tagManager.SaveTagAsync(_benelux, cancellationToken);
-        await tagManager.SaveTagAsync(_nordics, cancellationToken);
-        await tagManager.SaveTagAsync(_blade1, cancellationToken);
-        await tagManager.SaveTagAsync(_blade2, cancellationToken);
-        await tagManager.SaveTagAsync(_otherTagForm, cancellationToken);
-        await tagManager.SaveTagAsync(_global, cancellationToken);
+        await tagManager.SaveTagAsync(_france, cancellationToken);
+        await tagManager.SaveTagAsync(_acceptation, cancellationToken);
+        await tagManager.SaveTagAsync(_production, cancellationToken);
+        await tagManager.SaveTagAsync(_otherTag, cancellationToken);
+
+        // Applications
         _processor = new ApplicationModel { Name = "Processor" };
         _router = new ApplicationModel { Name = "Router" };
         _otherApplication = new ApplicationModel { Name = "Other" };
@@ -59,88 +58,115 @@ public class ManagingVariables : IAsyncLifetime
         await applicationManager.SaveApplicationAsync(_router, cancellationToken);
         await applicationManager.SaveApplicationAsync(_otherApplication, cancellationToken);
 
-        // Other config
-        var otherVariablesModel = new VariablesEditModel
+        // Variables
+
+        // Environment: acceptation or production
+        await variableManager.SaveAsync(new VariablesEditModel
         {
             Json = """"
                    {
-                       "Common": "Common from other tag"
+                       "RabbitMq": {
+                           "NamePrefix": "AcceptationProcessor"     
+                       },
+                       "LogLevel": "Debug"
                    }
                    """",
-            TagId = _otherTagForm.Id,
+            TagId = _acceptation.Id,
             ApplicationId = _processor.Id
-        };
-        await variableManager.SaveAsync(otherVariablesModel, cancellationToken);
+        }, cancellationToken);
+        await variableManager.SaveAsync(new VariablesEditModel
+        {
+            Json = """"
+                   {
+                       "RabbitMq": {
+                           "NamePrefix": "AcceptationRouter"     
+                       },
+                       "LogLevel": "Debug"
+                   }
+                   """",
+            TagId = _acceptation.Id,
+            ApplicationId = _router.Id
+        }, cancellationToken);
+        await variableManager.SaveAsync(new VariablesEditModel
+        {
+            Json = """"
+                   {
+                       "RabbitMq": {
+                           "NamePrefix": "ProductionProcessor"     
+                       },
+                       "LogLevel": "Warning"
+                   }
+                   """",
+            TagId = _production.Id,
+            ApplicationId = _processor.Id
+        }, cancellationToken);
+        await variableManager.SaveAsync(new VariablesEditModel
+        {
+            Json = """"
+                   {
+                       "RabbitMq": {
+                           "NamePrefix": "ProductionRouter"     
+                       },
+                       "LogLevel": "Warning"
+                   }
+                   """",
+            TagId = _production.Id,
+            ApplicationId = _router.Id
+        }, cancellationToken);
 
-        // Machine specific config
-        _blade1Variables = """"
-                           {
-                                "Machine": "Blade1",
-                                "Common": "Common from Blade1"
-                           }
-                           """";
-        var blade1VariablesModel = new VariablesEditModel
+        // Region: benelux or france
+        await variableManager.SaveAsync(new VariablesEditModel
         {
-            Json = _blade1Variables,
-            TagId = _blade1.Id,
-            ApplicationId = _processor.Id
-        };
-        _blade2Variables = """"
-                           {
-                                "Machine": "Blade2",
-                                "Common": "Common from Blade2"
-                           }
-                           """";
-        var blade2VariablesModel = new VariablesEditModel
-        {
-            Json = _blade2Variables,
-            TagId = _blade2.Id,
-            ApplicationId = _processor.Id
-        };
-        await variableManager.SaveAsync(blade1VariablesModel, cancellationToken);
-        await variableManager.SaveAsync(blade2VariablesModel, cancellationToken);
-
-        // Environment specific config
-        _beneluxVariables = """"
-                            {
-                                 "Environment": "Benelux",
-                                 "Common": "Common from Benelux"
-                            }
-                            """";
-        var beneluxVariablesModel = new VariablesEditModel
-        {
-            Json = _beneluxVariables,
+            Json = """"
+                   {
+                       "RabbitMq": {
+                           "Server": "rabbitmq_benelux",
+                           "UserName": "rabbitmq_processor_benelux"
+                       }
+                   }
+                   """",
             TagId = _benelux.Id,
             ApplicationId = _processor.Id
-        };
-        _nordicsVariables = """"
-                            {
-                                 "Environment": "Nordics",
-                                 "Common": "Common from Nordics"
-                            }
-                            """";
-        var nordicsVariablesModel = new VariablesEditModel
+        }, cancellationToken);
+        await variableManager.SaveAsync(new VariablesEditModel
         {
-            Json = _nordicsVariables,
-            TagId = _nordics.Id,
-            ApplicationId = _processor.Id
-        };
-        await variableManager.SaveAsync(beneluxVariablesModel, cancellationToken);
-        await variableManager.SaveAsync(nordicsVariablesModel, cancellationToken);
-
-        // Global config
-        _globalVariables = """"
-                           {
-                               "Common": "Common from Global"
-                           }
-                           """";
-        var globalVariablesModel = new VariablesEditModel
+            Json = """"
+                   {
+                       "RabbitMq": {
+                           "Server": "rabbitmq_benelux",
+                           "UserName": "rabbitmq_router_benelux"
+                       }
+                   }
+                   """",
+            TagId = _benelux.Id,
+            ApplicationId = _router.Id
+        }, cancellationToken);
+        await variableManager.SaveAsync(new VariablesEditModel
         {
-            Json = _globalVariables,
-            TagId = _global.Id,
+            Json = """"
+                   {
+                       "RabbitMq": {
+                           "Server": "rabbitmq_france",
+                           "UserName": "rabbitmq_processor_france"
+                       }
+                   }
+                   """",
+            TagId = _france.Id,
             ApplicationId = _processor.Id
-        };
-        await variableManager.SaveAsync(globalVariablesModel, cancellationToken);
+        }, cancellationToken);
+        await variableManager.SaveAsync(new VariablesEditModel
+        {
+            Json = """"
+                   {
+                       "RabbitMq": {
+                           "Server": "rabbitmq_france",
+                           "UserName": "rabbitmq_router_france"
+                       }
+                   }
+                   """",
+            TagId = _france.Id,
+            ApplicationId = _router.Id
+        }, cancellationToken);
     }
 
     public Task DisposeAsync()
@@ -156,222 +182,189 @@ public class ManagingVariables : IAsyncLifetime
         var variableManager = _fixture.GetRequiredService<VariableManager>();
         var cancellationToken = CancellationToken.None;
 
-        // Processor runs on both blades for both environments
-        // Router runs on blade 1 for benelux and on blade 2 for nordics
-        var processorBlade1BeneluxApiKey = new ApiKeyModel
+        var processorBeneluxAcceptationApiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
-            TagIds = new List<int> { _benelux.Id, _blade1.Id },
+            TagIds = new List<int> { _acceptation.Id, _benelux.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var processorBlade2BeneluxApiKey = new ApiKeyModel
+        var processorBeneluxProductionApiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
-            TagIds = new List<int> { _benelux.Id, _blade2.Id },
+            TagIds = new List<int> { _production.Id, _benelux.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var processorBlade1NordicsApiKey = new ApiKeyModel
+        var processorFranceProductionApiKey = new ApiKeyModel
         {
             ApplicationId = _processor.Id,
-            TagIds = new List<int> { _nordics.Id, _blade1.Id },
+            TagIds = new List<int> { _production.Id, _france.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var processorBlade2NordicsApiKey = new ApiKeyModel
-        {
-            ApplicationId = _processor.Id,
-            TagIds = new List<int> { _nordics.Id, _blade2.Id },
-            ActiveSinceUtc = DateTime.UtcNow,
-            ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
-        };
-        var routerBlade1BeneluxApiKey = new ApiKeyModel
+        var routerBeneluxAcceptationApiKey = new ApiKeyModel
         {
             ApplicationId = _router.Id,
-            TagIds = new List<int> { _benelux.Id, _blade1.Id },
+            TagIds = new List<int> { _acceptation.Id, _benelux.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var routerBlade2NordicsApiKey = new ApiKeyModel
+        var routerBeneluxProductionApiKey = new ApiKeyModel
         {
             ApplicationId = _router.Id,
-            TagIds = new List<int> { _nordics.Id, _blade2.Id },
+            TagIds = new List<int> { _production.Id, _benelux.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        var otherApiKeyModel = new ApiKeyModel
+        var routerFranceProductionApiKey = new ApiKeyModel
         {
-            ApplicationId = _otherApplication.Id,
-            TagIds = new List<int> { _otherTagForm.Id },
+            ApplicationId = _router.Id,
+            TagIds = new List<int> { _production.Id, _france.Id },
             ActiveSinceUtc = DateTime.UtcNow,
             ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
         };
-        await apiKeyManager.SaveApiKeyAsync(processorBlade1BeneluxApiKey, cancellationToken);
-        await apiKeyManager.SaveApiKeyAsync(processorBlade2BeneluxApiKey, cancellationToken);
-        await apiKeyManager.SaveApiKeyAsync(processorBlade1NordicsApiKey, cancellationToken);
-        await apiKeyManager.SaveApiKeyAsync(processorBlade2NordicsApiKey, cancellationToken);
-        await apiKeyManager.SaveApiKeyAsync(routerBlade1BeneluxApiKey, cancellationToken);
-        await apiKeyManager.SaveApiKeyAsync(routerBlade2NordicsApiKey, cancellationToken);
-        await apiKeyManager.SaveApiKeyAsync(otherApiKeyModel, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(processorBeneluxAcceptationApiKey, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(processorBeneluxProductionApiKey, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(processorFranceProductionApiKey, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(routerBeneluxAcceptationApiKey, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(routerBeneluxProductionApiKey, cancellationToken);
+        await apiKeyManager.SaveApiKeyAsync(routerFranceProductionApiKey, cancellationToken);
 
         // Act
-        var processorBlade1BeneluxConfig = await variableManager.GetMergedConfigAsync(processorBlade1BeneluxApiKey.Id, cancellationToken);
-        var processorBlade2BeneluxConfig = await variableManager.GetMergedConfigAsync(processorBlade2BeneluxApiKey.Id, cancellationToken);
-        var processorBlade1NordicsConfig = await variableManager.GetMergedConfigAsync(processorBlade1NordicsApiKey.Id, cancellationToken);
-        var processorBlade2NordicsConfig = await variableManager.GetMergedConfigAsync(processorBlade2NordicsApiKey.Id, cancellationToken);
-        var routerBlade1BeneluxConfig = await variableManager.GetMergedConfigAsync(routerBlade1BeneluxApiKey.Id, cancellationToken);
-        var routerBlade2NordicsConfig = await variableManager.GetMergedConfigAsync(routerBlade2NordicsApiKey.Id, cancellationToken);
+        var processorBeneluxAcceptationConfig = await variableManager.GetMergedConfigAsync(processorBeneluxAcceptationApiKey.Id, cancellationToken);
+        var processorBeneluxProductionConfig = await variableManager.GetMergedConfigAsync(processorBeneluxProductionApiKey.Id, cancellationToken);
+        var processorFranceProductionConfig = await variableManager.GetMergedConfigAsync(processorFranceProductionApiKey.Id, cancellationToken);
+        var routerBeneluxAcceptationConfig = await variableManager.GetMergedConfigAsync(routerBeneluxAcceptationApiKey.Id, cancellationToken);
+        var routerBeneluxProductionConfig = await variableManager.GetMergedConfigAsync(routerBeneluxProductionApiKey.Id, cancellationToken);
+        var routerFranceProductionConfig = await variableManager.GetMergedConfigAsync(routerFranceProductionApiKey.Id, cancellationToken);
 
         // Assert
-        var expectedProcessorBlade1BeneluxConfig =
+        var expectedProcessorBeneluxAcceptationConfig =
             """
             {
-                "Common": "Common from Blade1",
-                "Environment": "Benelux",
-                "Machine": "Blade1"
+                "LogLevel": "Debug",
+                "RabbitMq": {
+                    "NamePrefix": "AcceptationProcessor",
+                    "Server": "rabbitmq_benelux",
+                    "UserName": "rabbitmq_processor_benelux"
+                }
             }
             """;
-        var expectedProcessorBlade2BeneluxConfig =
+        var expectedProcessorBeneluxProductionConfig =
             """
             {
-                "Common": "Common from Blade2",
-                "Environment": "Benelux",
-                "Machine": "Blade2"
+                "LogLevel": "Warning",
+                "RabbitMq": {
+                    "NamePrefix": "ProductionProcessor",
+                    "Server": "rabbitmq_benelux",
+                    "UserName": "rabbitmq_processor_benelux"
+                }
             }
             """;
-        var expectedProcessorBlade1NordicsConfig =
+        var expectedProcessorFranceProductionConfig =
             """
             {
-                "Common": "Common from Blade1",
-                "Environment": "Nordics",
-                "Machine": "Blade1"
+                "LogLevel": "Warning",
+                "RabbitMq": {
+                    "NamePrefix": "ProductionProcessor",
+                    "Server": "rabbitmq_france",
+                    "UserName": "rabbitmq_processor_france"
+                }
             }
             """;
-        var expectedProcessorBlade2NordicsConfig =
+        var expectedRouterBeneluxAcceptationConfig =
             """
             {
-                "Common": "Common from Blade2",
-                "Environment": "Nordics",
-                "Machine": "Blade2"
+                "LogLevel": "Debug",
+                "RabbitMq": {
+                    "NamePrefix": "AcceptationRouter",
+                    "Server": "rabbitmq_benelux",
+                    "UserName": "rabbitmq_router_benelux"
+                }
             }
             """;
-        var expectedRouterBlade1BeneluxConfig =
+        var expectedRouterBeneluxProductionConfig =
             """
             {
-                "Common": "Common from Blade1",
-                "Environment": "Benelux",
-                "Machine": "Blade1"
+                "LogLevel": "Warning",
+                "RabbitMq": {
+                    "NamePrefix": "ProductionRouter",
+                    "Server": "rabbitmq_benelux",
+                    "UserName": "rabbitmq_router_benelux"
+                }
             }
             """;
-        var expectedRouterBlade2NordicsConfig =
+        var expectedRouterFranceProductionConfig =
             """
             {
-                "Common": "Common from Blade2",
-                "Environment": "Nordics",
-                "Machine": "Blade2"
+                "LogLevel": "Warning",
+                "RabbitMq": {
+                    "NamePrefix": "ProductionRouter",
+                    "Server": "rabbitmq_france",
+                    "UserName": "rabbitmq_router_france"
+                }
             }
             """;
-        Assert.Equal(JsonNormalizer.Normalize(expectedProcessorBlade1BeneluxConfig), JsonNormalizer.Normalize(processorBlade1BeneluxConfig));
-        Assert.Equal(JsonNormalizer.Normalize(expectedProcessorBlade2BeneluxConfig), JsonNormalizer.Normalize(processorBlade2BeneluxConfig));
-        Assert.Equal(JsonNormalizer.Normalize(expectedProcessorBlade1NordicsConfig), JsonNormalizer.Normalize(processorBlade1NordicsConfig));
-        Assert.Equal(JsonNormalizer.Normalize(expectedProcessorBlade2NordicsConfig), JsonNormalizer.Normalize(processorBlade2NordicsConfig));
-        Assert.Equal(JsonNormalizer.Normalize(expectedRouterBlade1BeneluxConfig), JsonNormalizer.Normalize(routerBlade1BeneluxConfig));
-        Assert.Equal(JsonNormalizer.Normalize(expectedRouterBlade2NordicsConfig), JsonNormalizer.Normalize(routerBlade2NordicsConfig));
-    }
 
-    [Fact]
-    public async Task GettingConfigViaApplicationIdsAndTagIds()
-    {
-        // Arrange
-        var variableManager = _fixture.GetRequiredService<VariableManager>();
-        var cancellationToken = CancellationToken.None;
-
-        // Act
-        var actualBlade1VariablesModel = await variableManager.GetConfigAsync(
-            _blade1.Id,
-            cancellationToken
-        );
-
-        var actualBlade2VariablesModel = await variableManager.GetConfigAsync(
-            _blade2.Id,
-            cancellationToken
-        );
-
-        var actualBeneluxVariablesModel = await variableManager.GetConfigAsync(
-            _benelux.Id,
-            cancellationToken
-        );
-
-        var actualNordicsVariablesModel = await variableManager.GetConfigAsync(
-            _nordics.Id,
-            cancellationToken
-        );
-
-        var actualGlobalVariables = await variableManager.GetConfigAsync(
-            _global.Id,
-            cancellationToken
-        );
-
-        // Assert
-        Assert.Equal(
-            JsonNormalizer.Normalize(_blade1Variables),
-            JsonNormalizer.Normalize(actualBlade1VariablesModel)
-        );
-        Assert.Equal(
-            JsonNormalizer.Normalize(_blade2Variables),
-            JsonNormalizer.Normalize(actualBlade2VariablesModel)
-        );
-        Assert.Equal(
-            JsonNormalizer.Normalize(_beneluxVariables),
-            JsonNormalizer.Normalize(actualBeneluxVariablesModel)
-        );
-        Assert.Equal(
-            JsonNormalizer.Normalize(_nordicsVariables),
-            JsonNormalizer.Normalize(actualNordicsVariablesModel)
-        );
-        Assert.Equal(
-            JsonNormalizer.Normalize(_globalVariables),
-            JsonNormalizer.Normalize(actualGlobalVariables)
-        );
+        Assert.Equal(JsonNormalizer.Normalize(expectedProcessorBeneluxAcceptationConfig), JsonNormalizer.Normalize(processorBeneluxAcceptationConfig));
+        Assert.Equal(JsonNormalizer.Normalize(expectedProcessorBeneluxProductionConfig), JsonNormalizer.Normalize(processorBeneluxProductionConfig));
+        Assert.Equal(JsonNormalizer.Normalize(expectedProcessorFranceProductionConfig), JsonNormalizer.Normalize(processorFranceProductionConfig));
+        Assert.Equal(JsonNormalizer.Normalize(expectedRouterBeneluxAcceptationConfig), JsonNormalizer.Normalize(routerBeneluxAcceptationConfig));
+        Assert.Equal(JsonNormalizer.Normalize(expectedRouterBeneluxProductionConfig), JsonNormalizer.Normalize(routerBeneluxProductionConfig));
+        Assert.Equal(JsonNormalizer.Normalize(expectedRouterFranceProductionConfig), JsonNormalizer.Normalize(routerFranceProductionConfig));
     }
 
     [Fact]
     public async Task UpdatingExistingConfig()
     {
         // Arrange
+        var apiKeyManager = _fixture.GetRequiredService<ApiKeyManager>();
         var variableManager = _fixture.GetRequiredService<VariableManager>();
         var cancellationToken = CancellationToken.None;
-        var newBlade1Variables = """"
-                                 {
-                                      "Machine": "Blade1-Modified",
-                                      "Common": "Common from Blade1-Modified"
-                                 }
-                                 """";
 
-        // Ensure we are really testing something
-        Assert.NotEqual(
-            JsonNormalizer.Normalize(_blade1Variables),
-            JsonNormalizer.Normalize(newBlade1Variables)
-        );
-
-        // Act
         await variableManager.SaveAsync(new VariablesEditModel
         {
-            Json = newBlade1Variables,
-            TagId = _blade1.Id,
+            Json = """"
+                   {
+                       "RabbitMq": {
+                           "NamePrefix": "ProductionProcessor_Modified"     
+                       },
+                       "LogLevel": "Error"
+                   }
+                   """",
+            TagId = _production.Id,
             ApplicationId = _processor.Id
         }, cancellationToken);
 
-        var actualBlade1VariablesModel = await variableManager.GetConfigAsync(
-            _blade1.Id,
-            cancellationToken
-        );
+        var expectedProcessorBeneluxProductionConfig =
+            """
+            {
+                "LogLevel": "Error",
+                "RabbitMq": {
+                    "NamePrefix": "ProductionProcessor_Modified",
+                    "Server": "rabbitmq_benelux",
+                    "UserName": "rabbitmq_processor_benelux"
+                }
+            }
+            """;
+
+        var processorBeneluxProductionApiKey = new ApiKeyModel
+        {
+            ApplicationId = _processor.Id,
+            TagIds = new List<int> { _production.Id, _benelux.Id },
+            ActiveSinceUtc = DateTime.UtcNow,
+            ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
+        };
+        await apiKeyManager.SaveApiKeyAsync(processorBeneluxProductionApiKey, cancellationToken);
+
+        // Act
+        var processorBeneluxProductionConfig = await variableManager.GetMergedConfigAsync(processorBeneluxProductionApiKey.Id, cancellationToken);
 
         // Assert
         Assert.Equal(
-            JsonNormalizer.Normalize(newBlade1Variables),
-            JsonNormalizer.Normalize(actualBlade1VariablesModel)
+            JsonNormalizer.Normalize(expectedProcessorBeneluxProductionConfig),
+            JsonNormalizer.Normalize(processorBeneluxProductionConfig)
         );
     }
 }
