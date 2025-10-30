@@ -1,5 +1,6 @@
 ﻿using Configo.Database;
 using Configo.Database.Tables;
+using Configo.Server.Caching;
 using Microsoft.EntityFrameworkCore;
 
 namespace Configo.Server.Domain;
@@ -31,22 +32,13 @@ public sealed record TagDropdownModel
     public required string GroupName { get; init; }
 }
 
-public sealed class TagManager
+public sealed class TagManager(ILogger<TagManager> logger, IDbContextFactory<ConfigoDbContext> dbContextFactory, CacheManager cacheManager)
 {
-    private readonly ILogger<TagManager> _logger;
-    private readonly IDbContextFactory<ConfigoDbContext> _dbContextFactory;
-
-    public TagManager(ILogger<TagManager> logger, IDbContextFactory<ConfigoDbContext> dbContextFactory)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
-    }
-
     public async Task<List<TagDropdownModel>> GetAllTagsForDropdownAsync(CancellationToken cancellationToken)
     {
-        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        _logger.LogDebug("Getting all tags");
+        logger.LogDebug("Getting all tags");
 
         var tagRecords = await dbContext.Tags
             .Join(dbContext.TagGroups, tag => tag.TagGroupId, tagGroup => tagGroup.Id, (tag, tagGroup) => new { Tag = tag, TagGroup = tagGroup })
@@ -54,16 +46,16 @@ public sealed class TagManager
             .Select(t => new TagDropdownModel{ Id = t.Tag.Id, Name = t.Tag.Name, GroupId = t.TagGroup.Id, GroupOrder = t.TagGroup.Order, GroupName = t.TagGroup.Name })
             .ToListAsync(cancellationToken);
 
-        _logger.LogInformation("Got {NumberOfTags} tags", tagRecords.Count);
+        logger.LogInformation("Got {NumberOfTags} tags", tagRecords.Count);
         
         return tagRecords;
     }
     
     public async Task<List<TagListModel>> GetAllTagsAsync(CancellationToken cancellationToken)
     {
-        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        _logger.LogDebug("Getting tags");
+        logger.LogDebug("Getting tags");
 
         var tags = await dbContext.Tags
             .Join(dbContext.TagGroups,
@@ -88,16 +80,16 @@ public sealed class TagManager
             .ThenBy(t => t.Name)
             .ToListAsync(cancellationToken);
 
-        _logger.LogInformation("Got {NumberOfTags} tags", tags.Count);
+        logger.LogInformation("Got {NumberOfTags} tags", tags.Count);
 
         return tags;
     }
 
     public async Task SaveTagAsync(TagFormModel formModel, CancellationToken cancellationToken)
     {
-        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        _logger.LogDebug("Saving tag {@Tag}", formModel);
+        logger.LogDebug("Saving tag {@Tag}", formModel);
 
         if (!await dbContext.TagGroups.AnyAsync(t => t.Id == formModel.TagGroupId, cancellationToken))
         {
@@ -121,7 +113,7 @@ public sealed class TagManager
             };
             dbContext.Tags.Add(tagRecord);
             await dbContext.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation("Saved {@Tag}", tagRecord);
+            logger.LogInformation("Saved {@Tag}", tagRecord);
             formModel.Id = tagRecord.Id;
             return;
         }
@@ -139,14 +131,16 @@ public sealed class TagManager
         tagRecord.UpdatedAtUtc = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
         
-        _logger.LogInformation("Saved {@Tag}", tagRecord);
+        logger.LogInformation("Saved {@Tag}", tagRecord);
+        
+        await cacheManager.ExpireAllConfigAsync(cancellationToken);
     }
 
     public async Task DeleteTagAsync(TagListModel tag, CancellationToken cancellationToken)
     {
-        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        _logger.LogDebug("Deleting tag {@Tag}", tag);
+        logger.LogDebug("Deleting tag {@Tag}", tag);
 
         var tagRecord = await dbContext.Tags
             .AsTracking()
@@ -155,6 +149,8 @@ public sealed class TagManager
         dbContext.Tags.Remove(tagRecord);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Deleted tag {@Tag}", tag);
+        logger.LogInformation("Deleted tag {@Tag}", tag);
+        
+        await cacheManager.ExpireAllConfigAsync(cancellationToken);
     }
 }

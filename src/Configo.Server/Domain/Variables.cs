@@ -5,17 +5,18 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Configo.Database;
 using Configo.Database.Tables;
+using Configo.Server.Caching;
 using Microsoft.EntityFrameworkCore;
 
 namespace Configo.Server.Domain;
 
 public sealed record VariableModel
 {
-    public required string Key { get; set; }
-    public required string Value { get; set; }
-    public required VariableValueType ValueType { get; set; }
-    public required int TagId { get; set; }
-    public required int ApplicationId { get; set; }
+    public required string Key { get; init; }
+    public required string Value { get; init; }
+    public required VariableValueType ValueType { get; init; }
+    public required int TagId { get; init; }
+    public required int ApplicationId { get; init; }
 }
 
 public sealed record VariablesEditModel
@@ -30,26 +31,15 @@ public sealed record VariablesPendingChanges(List<VariablesEditModel> EditModels
     public VariablesPendingChanges() : this(new List<VariablesEditModel>()) { }
 }
 
-public sealed record VariableManager
+public sealed class VariableManager(
+    IDbContextFactory<ConfigoDbContext> dbContextFactory,
+    ILogger<VariableManager> logger,
+    VariablesJsonDeserializer deserializer,
+    VariablesJsonSerializer serializer,
+    CacheManager cacheManager)
 {
-    private readonly IDbContextFactory<ConfigoDbContext> _dbContextFactory;
-    private readonly ILogger<VariableManager> _logger;
     private readonly VariablesPendingChanges _pendingChanges = new([]);
     private readonly SemaphoreSlim _pendingChangesLock = new(1, 1);
-    private readonly VariablesJsonDeserializer _deserializer;
-    private readonly VariablesJsonSerializer _serializer;
-
-    public VariableManager(
-        IDbContextFactory<ConfigoDbContext> dbContextFactory,
-        ILogger<VariableManager> logger,
-        VariablesJsonDeserializer deserializer,
-        VariablesJsonSerializer serializer)
-    {
-        _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _deserializer = deserializer ?? throw new ArgumentNullException(nameof(deserializer));
-        _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
-    }
 
     /// <summary>
     /// Gets configuration variables that are defined for the specified API key.
@@ -58,9 +48,9 @@ public sealed record VariableManager
     /// </summary>
     public async Task<string> GetMergedConfigAsync(int apiKeyId, CancellationToken cancellationToken)
     {
-        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        _logger.LogDebug("Getting config for API key {ApiKeyId}", apiKeyId);
+        logger.LogDebug("Getting config for API key {ApiKeyId}", apiKeyId);
 
         var apiKeys = dbContext.ApiKeys;
         var apiKeyTags = dbContext.ApiKeyTags;
@@ -123,9 +113,9 @@ public sealed record VariableManager
 
     private async Task<string> GetMergedConfigAsync(int applicationId, List<int> tagIds, bool includePendingChanges, CancellationToken cancellationToken)
     {
-        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        _logger.LogDebug("Getting merged config for tags {@TagIds}", tagIds);
+        logger.LogDebug("Getting merged config for tags {@TagIds}", tagIds);
 
         var variablesDbSet = dbContext.Variables;
 
@@ -151,7 +141,7 @@ public sealed record VariableManager
 
             foreach (var pendingChange in matchingPendingChanges)
             {
-                var pendingVariables = _deserializer.DeserializeFromJson(pendingChange.Json, pendingChange.TagId, pendingChange.ApplicationId);
+                var pendingVariables = deserializer.DeserializeFromJson(pendingChange.Json, pendingChange.TagId, pendingChange.ApplicationId);
                 variables.AddRange(pendingVariables);
             }
         }
@@ -162,9 +152,9 @@ public sealed record VariableManager
             .Select(group => group.MaxBy(g => tagIds.IndexOf(g.TagId))!)
             .ToList();
 
-        _logger.LogInformation("Got {NumberOfVariables} variables for tags {@TagIds}", mergedVariables.Count, tagIds);
+        logger.LogInformation("Got {NumberOfVariables} variables for tags {@TagIds}", mergedVariables.Count, tagIds);
 
-        return _serializer.SerializeToJson(mergedVariables);
+        return serializer.SerializeToJson(mergedVariables);
     }
 
     /// <summary>
@@ -191,9 +181,9 @@ public sealed record VariableManager
     public async Task<string> GetConfigAsync(int tagId, int applicationId, bool includePendingChanges, CancellationToken cancellationToken)
     {
         ArgumentOutOfRangeException.ThrowIfZero(tagId);
-        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
-        _logger.LogDebug("Getting config for tag {@TagId}", tagId);
+        logger.LogDebug("Getting config for tag {@TagId}", tagId);
 
         var variables = dbContext.Variables;
 
@@ -232,7 +222,7 @@ public sealed record VariableManager
 
             foreach (var pendingChange in matchingPendingChanges)
             {
-                matchingVariables.AddRange(_deserializer.DeserializeFromJson(pendingChange.Json, pendingChange.TagId, pendingChange.ApplicationId));
+                matchingVariables.AddRange(deserializer.DeserializeFromJson(pendingChange.Json, pendingChange.TagId, pendingChange.ApplicationId));
             }
 
             // Ensure that duplicate keys are pruned, but that pending changes win over variables from the database
@@ -243,9 +233,9 @@ public sealed record VariableManager
                 .ToList();
         }
 
-        _logger.LogInformation("Got {NumberOfVariables} variables for tag {@TagId}", matchingVariables.Count, tagId);
+        logger.LogInformation("Got {NumberOfVariables} variables for tag {@TagId}", matchingVariables.Count, tagId);
 
-        return _serializer.SerializeToJson(matchingVariables);
+        return serializer.SerializeToJson(matchingVariables);
     }
 
     public async Task SaveToPendingAsync(VariablesEditModel model, CancellationToken cancellationToken)
@@ -275,15 +265,15 @@ public sealed record VariableManager
         ArgumentOutOfRangeException.ThrowIfZero(model.TagId);
         ArgumentOutOfRangeException.ThrowIfZero(model.ApplicationId);
 
-        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
         var tagId = model.TagId;
         var applicationId = model.ApplicationId;
-        _logger.LogDebug("Saving variables for tag {TagId} and application {ApplicationId}", tagId, applicationId);
+        logger.LogDebug("Saving variables for tag {TagId} and application {ApplicationId}", tagId, applicationId);
 
         var variables = dbContext.Variables;
         var existingVariables = await variables.Where(v => v.TagId == tagId && v.ApplicationId == applicationId).AsTracking().ToListAsync(cancellationToken);
-        var newVariables = _deserializer.DeserializeFromJson(model.Json, model.TagId, model.ApplicationId);
+        var newVariables = deserializer.DeserializeFromJson(model.Json, model.TagId, model.ApplicationId);
 
         // Add or update variables
         var savedVariables = new List<VariableRecord>();
@@ -301,11 +291,11 @@ public sealed record VariableManager
                     existingVariable.Value = value;
                     existingVariable.ValueType = valueType;
                     existingVariable.UpdatedAtUtc = DateTime.UtcNow;
-                    _logger.LogInformation("Updated existing variable: {@Variable}", existingVariable);
+                    logger.LogInformation("Updated existing variable: {@Variable}", existingVariable);
                 }
                 else
                 {
-                    _logger.LogDebug("Skipped updating existing variable because value or value type did not change: {@Variable}", existingVariable);
+                    logger.LogDebug("Skipped updating existing variable because value or value type did not change: {@Variable}", existingVariable);
                 }
 
                 savedVariables.Add(existingVariable);
@@ -333,11 +323,13 @@ public sealed record VariableManager
         var variablesToDelete = existingVariables.Except(savedVariables).ToList();
         foreach (var variableToDelete in variablesToDelete)
         {
-            _logger.LogInformation("Deleted existing variable: {@Variable}", variableToDelete);
+            logger.LogInformation("Deleted existing variable: {@Variable}", variableToDelete);
             variables.Remove(variableToDelete);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        
+        await cacheManager.ExpireAllConfigAsync(cancellationToken);
     }
 
     public async Task SavePendingChangesAsync(CancellationToken cancellationToken)
@@ -402,7 +394,7 @@ public sealed record VariableManager
 
 public class VariablesJsonSerializer
 {
-    private readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions
+    private readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         WriteIndented = true,
@@ -513,12 +505,12 @@ public class VariablesJsonSerializer
 
 public class VariablesJsonDeserializer
 {
-    private readonly JsonNodeOptions _nodeOptions = new JsonNodeOptions
+    private readonly JsonNodeOptions _nodeOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
-    private readonly JsonDocumentOptions _documentOptions = new JsonDocumentOptions
+    private readonly JsonDocumentOptions _documentOptions = new()
     {
         AllowTrailingCommas = true,
         CommentHandling = JsonCommentHandling.Skip

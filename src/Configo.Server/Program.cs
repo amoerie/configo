@@ -1,8 +1,10 @@
 using System.IO.Compression;
+using System.Text.Json;
 using Configo.Database;
 using Configo.Database.NpgSql;
 using Configo.Database.SqlServer;
 using Configo.Server;
+using Configo.Server.Caching;
 using Configo.Server.Components;
 using Configo.Server.Database;
 using Configo.Server.Domain;
@@ -15,8 +17,13 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.Options;
 using MudBlazor.Services;
+using ZiggyCreatures.Caching.Fusion;
+using ZiggyCreatures.Caching.Fusion.Backplane.StackExchangeRedis;
+using ZiggyCreatures.Caching.Fusion.Serialization.SystemTextJson;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -96,6 +103,24 @@ var requireAuthenticatedUserPolicy = new AuthorizationPolicyBuilder()
     .Build();
 services.AddAuthorizationBuilder().SetFallbackPolicy(requireAuthenticatedUserPolicy);
 
+/* Caching */
+services.AddSingleton<CacheManager>();
+var fusionCacheBuilder = services.AddFusionCache()
+    .WithDefaultEntryOptions(new FusionCacheEntryOptions
+    {
+        IsFailSafeEnabled = true, 
+        FactorySoftTimeout = TimeSpan.FromMinutes(5),
+        FactoryHardTimeout = TimeSpan.FromMinutes(30)
+    })
+    .WithSerializer(new FusionCacheSystemTextJsonSerializer(JsonSerializerOptions.Web))
+    .AsHybridCache();
+var redisConnectionString = configuration.GetConnectionString("Redis");
+if (!string.IsNullOrEmpty(redisConnectionString))
+{
+    fusionCacheBuilder
+        .WithDistributedCache(new RedisCache(new RedisCacheOptions { Configuration = redisConnectionString }))
+        .WithBackplane(new RedisBackplane(new RedisBackplaneOptions { Configuration = redisConnectionString }));
+}
 
 // SQL Server Database
 services.AddDbContextFactory<ConfigoDbContext>(dbContextOptions =>

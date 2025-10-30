@@ -1,6 +1,9 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
+using Configo.Database;
+using Configo.Server.Caching;
 using Configo.Server.Domain;
+using Microsoft.EntityFrameworkCore;
 using Xunit.Abstractions;
 
 namespace Configo.Tests.Server.IntegrationTests;
@@ -91,7 +94,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
         await apiKeyManager.SaveApiKeyAsync(apiKey, cancellationToken);
 
         // Act
-        var request = new HttpRequestMessage(HttpMethod.Get, "/api/config");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/config");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey.Key);
 
         var response = await httpClient.SendAsync(request, cancellationToken);
@@ -128,7 +131,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
         await apiKeyManager.SaveApiKeyAsync(apiKey, cancellationToken);
 
         // Act
-        var request = new HttpRequestMessage(HttpMethod.Get, "/api/config");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/config");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey.Key);
 
         var response = await httpClient.SendAsync(request, cancellationToken);
@@ -156,7 +159,7 @@ public class GetConfigEndpointTests : IAsyncLifetime
         await apiKeyManager.SaveApiKeyAsync(apiKey, cancellationToken);
 
         // Act
-        var request = new HttpRequestMessage(HttpMethod.Get, "/api/config");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/config");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey.Key);
 
         var response = await httpClient.SendAsync(request, cancellationToken);
@@ -177,12 +180,83 @@ public class GetConfigEndpointTests : IAsyncLifetime
         var apiKey = apiKeyGenerator.Generate(64);
 
         // Act
-        var request = new HttpRequestMessage(HttpMethod.Get, "/api/config");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/config");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
         var response = await httpClient.SendAsync(request, cancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Caching()
+    {
+        // Arrange
+        var apiKeyManager = _fixture.GetRequiredService<ApiKeyManager>();
+        var cacheManager = _fixture.GetRequiredService<CacheManager>();
+        var dbContextFactory = _fixture.GetRequiredService<IDbContextFactory<ConfigoDbContext>>();
+        var cancellationToken = CancellationToken.None;
+
+        // Processor runs in benelux
+        var apiKey = new ApiKeyModel
+        {
+            ApplicationId = _processor.Id,
+            TagIds = new List<int> { _global.Id, _benelux.Id },
+            ActiveSinceUtc = DateTime.UtcNow,
+            ActiveUntilUtc = DateTime.UtcNow.AddMonths(1),
+        };
+        await apiKeyManager.SaveApiKeyAsync(apiKey, cancellationToken);
+
+        // Act
+        var config1 = await GetConfig();
+
+        // Now clear the database without expiring the cache
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+            await dbContext.Variables.ExecuteDeleteAsync(cancellationToken);
+        }
+
+        // Now get the config again, it should have remained the same value
+        var config2 = await GetConfig();
+        
+        // Now expire the cache entry
+        await cacheManager.ExpireConfigByApiKeyIdAsync(apiKey.Id, cancellationToken);
+        var config3 = await GetConfig();
+
+        // Assert
+        var expectedConfig1 =
+            """
+            {
+                "Company": "Lexisoft",
+                "Environment": "Benelux"
+            }
+            """;
+        var expectedConfig2 =
+            """
+            {
+                "Company": "Lexisoft",
+                "Environment": "Benelux"
+            }
+            """;
+        var expectedConfig3 =
+            """
+            {
+            }
+            """;
+        Assert.Equal(JsonNormalizer.Normalize(expectedConfig1), JsonNormalizer.Normalize(config1));
+        Assert.Equal(JsonNormalizer.Normalize(expectedConfig2), JsonNormalizer.Normalize(config2));
+        Assert.Equal(JsonNormalizer.Normalize(expectedConfig3), JsonNormalizer.Normalize(config3));
+
+        async Task<string> GetConfig()
+        {
+            using var httpClient = _fixture.CreateClient();
+            using var request = new HttpRequestMessage(HttpMethod.Get, "/api/config");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey.Key);
+
+            var response = await httpClient.SendAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadAsStringAsync(cancellationToken);
+        }
     }
 }

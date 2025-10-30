@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using Configo.Database;
 using Configo.Database.Tables;
+using Configo.Server.Caching;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -33,14 +34,17 @@ public sealed class ApiKeyManager
     private readonly ILogger<ApiKeyManager> _logger;
     private readonly IDbContextFactory<ConfigoDbContext> _dbContextFactory;
     private readonly ApiKeyGenerator _apiKeyGenerator;
+    private readonly CacheManager _cacheManager;
 
     public ApiKeyManager(ILogger<ApiKeyManager> logger,
         IDbContextFactory<ConfigoDbContext> dbContextFactory,
-        ApiKeyGenerator apiKeyGenerator)
+        ApiKeyGenerator apiKeyGenerator,
+        CacheManager cacheManager)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
         _apiKeyGenerator = apiKeyGenerator ?? throw new ArgumentNullException(nameof(apiKeyGenerator));
+        _cacheManager = cacheManager ?? throw new ArgumentNullException(nameof(cacheManager));
     }
     
     public async Task<List<ApiKeyModel>> GetAllApiKeysAsync(CancellationToken cancellationToken)
@@ -169,6 +173,8 @@ public sealed class ApiKeyManager
         model.UpdatedAtUtc = apiKeyRecord.UpdatedAtUtc;
         model.ApplicationId = apiKeyRecord.ApplicationId;
         model.TagIds = apiKeyTagIds;
+
+        await _cacheManager.ExpireConfigByApiKeyIdAsync(apiKeyRecord.Id, cancellationToken);
     }
 
     public async Task DeleteApiKeyAsync(ApiKeyModel apiKey, CancellationToken cancellationToken)
@@ -184,6 +190,8 @@ public sealed class ApiKeyManager
         dbContext.ApiKeys.Remove(apiKeyRecord);
         await dbContext.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Deleted apiKey {@ApiKey}", apiKey);
+        
+        await _cacheManager.ExpireConfigByApiKeyIdAsync(apiKeyRecord.Id, cancellationToken);
     }
 }
 

@@ -1,5 +1,6 @@
 ﻿using Configo.Database;
 using Configo.Database.Tables;
+using Configo.Server.Caching;
 using Microsoft.EntityFrameworkCore;
 
 namespace Configo.Server.Domain;
@@ -19,7 +20,7 @@ public sealed record TagGroupDropdownModel
     public required string Name { get; init; }
 }
 
-public sealed class TagGroupManager(ILogger<TagGroupManager> logger, IDbContextFactory<ConfigoDbContext> dbContextFactory)
+public sealed class TagGroupManager(ILogger<TagGroupManager> logger, IDbContextFactory<ConfigoDbContext> dbContextFactory, CacheManager cacheManager)
 {
     public async Task<List<TagGroupDropdownModel>> GetAllTagGroupsForDropdownAsync(CancellationToken cancellationToken)
     {
@@ -78,10 +79,10 @@ public sealed class TagGroupManager(ILogger<TagGroupManager> logger, IDbContextF
             var existing = await dbContext.TagGroups.FirstOrDefaultAsync(t => t.Name == model.Name, cancellationToken);
             if (existing is not null)
             {
-                 throw new ArgumentException($"Tag group name {model.Name} already in use by group {existing.Id}");
+                throw new ArgumentException($"Tag group name {model.Name} already in use by group {existing.Id}");
             }
 
-            var maxOrder = await dbContext.TagGroups.Select(o => (int?) o.Order).MaxAsync(cancellationToken);
+            var maxOrder = await dbContext.TagGroups.Select(o => (int?)o.Order).MaxAsync(cancellationToken);
             tagGroupRecord = new TagGroupRecord
             {
                 Name = model.Name,
@@ -119,6 +120,7 @@ public sealed class TagGroupManager(ILogger<TagGroupManager> logger, IDbContextF
         model.Name = tagGroupRecord.Name;
         model.UpdatedAtUtc = tagGroupRecord.UpdatedAtUtc;
         model.NumberOfTags = await dbContext.Tags.CountAsync(tv => tv.TagGroupId == tagGroupRecord.Id, cancellationToken);
+        await cacheManager.ExpireAllConfigAsync(cancellationToken);
     }
 
     public async Task DeleteTagGroupAsync(TagGroupModel tagGroup, CancellationToken cancellationToken)
@@ -137,6 +139,8 @@ public sealed class TagGroupManager(ILogger<TagGroupManager> logger, IDbContextF
         await dbContext.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Deleted tag group {@TagGroup}", tagGroup);
+        
+        await cacheManager.ExpireAllConfigAsync(cancellationToken);
     }
 
     public async Task ChangeOrderAsync(int tagGroupId, int newOrder, CancellationToken cancellationToken)
@@ -186,5 +190,7 @@ public sealed class TagGroupManager(ILogger<TagGroupManager> logger, IDbContextF
         await dbContext.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Reordered tag groups");
+        
+        await cacheManager.ExpireAllConfigAsync(cancellationToken);
     }
 }
