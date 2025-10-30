@@ -7,6 +7,7 @@
 @inject SchemaManager SchemaManager
 @inject IJSRuntime JsRuntime
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 
 <MudText Typo="Typo.h4" GutterBottom="true">
     <MudIcon Icon="@Icons.Material.Filled.SettingsSuggest" Size="Size.Large"/>
@@ -55,7 +56,8 @@
                                  Label="true"
                                  Icon="@Icons.Material.Filled.Cloud"
                                  Size="Size.Small"
-                                 @onclick="() => OnSelectPendingChange(application, tag)">
+                                 OnClick="async _ => await OnSelectPendingChange(application, tag)"
+                                 OnClose="async _ => await OnClosePendingChange(pendingChange, application, tag)">
                             @application.Name (@tag.GroupName:@tag.Name)
                         </MudChip>
                     </MudStack>
@@ -239,6 +241,20 @@
 
     public async Task DiscardPendingChanges()
     {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var label = "all pending changes";
+        var parameters = new DialogParameters<DeleteDialog>
+        {
+            { x => x.ThingThatWillBeDeleted, label },
+            { x => x.YesButtonLabel, "Yes, discard ALL pending changes" },
+        };
+        var dialog = await DialogService.ShowAsync<DeleteDialog>("Discard all pending changes", parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled)
+        {
+            return;
+        }
+        
         await VariableManager.DiscardPendingChangesAsync(CancellationToken);
 
         _hasPendingChanges = false;
@@ -352,6 +368,27 @@
         await OnChangeSelectedApplicationId(application.Id);
         await OnChangeSelectedTagGroupId(tag.GroupId);
         await OnChangeSelectedTagId(tag.Id);
+    }
+
+    private async Task OnClosePendingChange(VariablesEditModel pendingChange, ApplicationModel application, TagDropdownModel tag)
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var label = $"the pending changes for application {application.Name} and tag {tag.GroupName}:{tag.Name}";
+        var parameters = new DialogParameters<DeleteDialog>
+        {
+            { x => x.ThingThatWillBeDeleted, label },
+            { x => x.YesButtonLabel, "Yes, discard these pending changes" },
+        };
+        var dialog = await DialogService.ShowAsync<DeleteDialog>("Discard pending change", parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled)
+        {
+            return;
+        }
+        
+        await VariableManager.DiscardPendingChangeAsync(pendingChange, CancellationToken);
+        await RefreshPendingChanges();
+        await UpdateEditorAsync();
     }
 
     private async Task OnShowPendingChanges(bool? value)

@@ -8,8 +8,8 @@
         </MudAlert>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">No, I changed my mind</MudButton>
-        <MudButton Color="Color.Error" OnClick="Submit">Yes, delete it forever</MudButton>
+        <MudButton OnClick="Cancel">@NoButtonLabel</MudButton>
+        <MudButton Color="Color.Error" OnClick="Submit">@YesButtonLabel</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -20,6 +20,10 @@
 
     [Parameter]
     public string? ThingThatWillBeDeleted { get; set; }
+
+    [Parameter] public string? YesButtonLabel { get; set; } = "Yes, delete it forever";
+
+    [Parameter] public string? NoButtonLabel { get; set; } = "No, I changed my mind";
 
     void Submit()
     {

@@ -373,6 +373,19 @@ public sealed record VariableManager
         }
     }
 
+    public async Task DiscardPendingChangeAsync(VariablesEditModel pendingChange, CancellationToken cancellationToken)
+    {
+        await _pendingChangesLock.WaitAsync(cancellationToken);
+        try
+        {
+            _pendingChanges.EditModels.RemoveAll(e => e.TagId == pendingChange.TagId && e.ApplicationId == pendingChange.ApplicationId);
+        }
+        finally
+        {
+            _pendingChangesLock.Release();
+        }
+    }
+
     public async Task<bool> HasPendingChangesAsync(CancellationToken cancellationToken)
     {
         await _pendingChangesLock.WaitAsync(cancellationToken);
@@ -513,6 +526,11 @@ public class VariablesJsonDeserializer
 
     public List<VariableModel> DeserializeFromJson(string json, int tagId, int applicationId)
     {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return [];
+        }
+        
         return Deserialize(json, tagId, applicationId, _nodeOptions, _documentOptions).OrderBy(v => v.Key).ToList();
 
         static IEnumerable<VariableModel> Deserialize(
