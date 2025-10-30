@@ -5,28 +5,29 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Npgsql;
+using StackExchange.Redis;
 
 namespace Configo.Tests;
 
-public class TestWebApplicationFactory(string connectionString, IntegrationTestOutputAccessor outputAccessor) : WebApplicationFactory<Configo.Server.Program>
+public class TestWebApplicationFactory(NpgsqlConnectionStringBuilder dbConnectionString, ConfigurationOptions redisConnectionString, IntegrationTestOutputAccessor outputAccessor)
+    : WebApplicationFactory<Configo.Server.Program>
 {
-    private readonly string _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
-    private readonly IntegrationTestOutputAccessor _outputAccessor = outputAccessor ?? throw new ArgumentNullException(nameof(outputAccessor));
-
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureAppConfiguration(configuration =>
             {
                 configuration.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    { "ConnectionStrings:Configo", _connectionString },
+                    { "ConnectionStrings:Configo", dbConnectionString.ConnectionString },
+                    { "ConnectionStrings:Redis", redisConnectionString.ToString() },
                     { "Provider", "Postgres" }
                 });
             })
             .ConfigureLogging(logging =>
             {
                 logging.ClearProviders();
-                logging.AddProvider(new IntegrationTestLoggerProvider(_outputAccessor));
+                logging.AddProvider(new IntegrationTestLoggerProvider(outputAccessor));
             }).ConfigureServices(services =>
             {
                 // Test specific authentication

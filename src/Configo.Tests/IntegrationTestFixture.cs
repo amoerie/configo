@@ -3,7 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using Respawn;
+using StackExchange.Redis;
 using Testcontainers.PostgreSql;
+using Testcontainers.Redis;
 using Xunit.Abstractions;
 
 namespace Configo.Tests;
@@ -20,27 +22,33 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
 {
     public const string Collection = "IntegrationTests";
 
-    private PostgreSqlContainer _container = null!;
+    private PostgreSqlContainer _dbContainer = null!;
+    private RedisContainer _redisContainer = null!;
     private Respawner _respawner = null!;
     private TestWebApplicationFactory _testWebApplicationFactory = null!;
-    private string _connectionString = null!;
+    private NpgsqlConnectionStringBuilder _dbConnectionString = null!;
+    private ConfigurationOptions _redisConnectionString = null!;
     private readonly IntegrationTestOutputAccessor _outputAccessor = new IntegrationTestOutputAccessor();
     private ILogger<IntegrationTestFixture>? _logger;
+    private ConnectionMultiplexer _redisConnection = null!;
 
     public async Task InitializeAsync()
     {
-        // setup database
-        _container = new PostgreSqlBuilder()
+        // setup database + redis
+        _dbContainer = new PostgreSqlBuilder()
             .WithDatabase("configo")
             .WithEnvironment("PGDATA", "/var/lib/postgresql/data")
             .WithTmpfsMount("/var/lib/postgresql/data")
             .Build();
-
-        await _container.StartAsync();
-        _connectionString = _container.GetConnectionString();
-        _connectionString = new NpgsqlConnectionStringBuilder(_connectionString) { IncludeErrorDetail = true }.ConnectionString;
-
-        _testWebApplicationFactory = new TestWebApplicationFactory(_connectionString, _outputAccessor);
+        _redisContainer = new RedisBuilder()
+            .Build();
+        await Task.WhenAll(_dbContainer.StartAsync(), _redisContainer.StartAsync());
+        
+        _dbConnectionString = new NpgsqlConnectionStringBuilder(_dbContainer.GetConnectionString()) { IncludeErrorDetail = true };
+        _redisConnectionString = ConfigurationOptions.Parse(_redisContainer.GetConnectionString());
+        // This is needed to allow FLUSHDB
+        _redisConnectionString.AllowAdmin = true;
+        _testWebApplicationFactory = new TestWebApplicationFactory(_dbConnectionString,  _redisConnectionString, _outputAccessor);
         
         // By using any of the APIs, we ensure that the server is running
         using var _ = _testWebApplicationFactory.CreateClient();
@@ -48,7 +56,7 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
         _logger = _testWebApplicationFactory.Services.GetRequiredService<ILogger<IntegrationTestFixture>>();
         _logger.LogInformation("Creating database respawn point");
 
-        await using var connection = new NpgsqlConnection(_connectionString);
+        await using var connection = new NpgsqlConnection(_dbConnectionString.ConnectionString);
         await connection.OpenAsync();
         _respawner = await Respawner.CreateAsync(connection, new RespawnerOptions
         {
@@ -59,6 +67,8 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
             DbAdapter = DbAdapter.Postgres
         });
         
+        _redisConnection = await ConnectionMultiplexer.ConnectAsync(_redisConnectionString);
+
         _logger.LogInformation("Initialization complete");
     }
 
@@ -72,23 +82,35 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
 
     public async Task ResetAsync()
     {
+        await Task.WhenAll(ResetDbAsync(), ResetRedisAsync());
+        _outputAccessor.Output = null;
+    }
+
+    private async Task ResetDbAsync()
+    {
         _logger?.LogInformation("Resetting database");
-        await using var connection = new NpgsqlConnection(_connectionString);
+        await using var connection = new NpgsqlConnection(_dbConnectionString.ConnectionString);
         await connection.OpenAsync();
         await _respawner.ResetAsync(connection);
-        _outputAccessor.Output = null;
+    }
+
+    private async Task ResetRedisAsync()
+    {
+        _logger?.LogInformation("Resetting redis");
+        var server = _redisConnection.GetServer(_redisConnection.GetEndPoints().First());
+        await server.FlushDatabaseAsync();
     }
 
     public async Task DisposeAsync()
     {
         try
         {
-            await _container.StopAsync();
+            await _dbContainer.StopAsync();
             await _testWebApplicationFactory.DisposeAsync();
         }
         finally
         {
-            await _container.DisposeAsync();
+            await _dbContainer.DisposeAsync();
         }
     }
 }
@@ -134,7 +156,7 @@ public class IntegrationTestLogger : ILogger
     {
         _outputAccessor = outputAccessor ?? throw new ArgumentNullException(nameof(outputAccessor));
         _minimumLevel = minimumLevel;
-        _prefixEnrichers = prefixEnrichers?.ToList() ?? throw new ArgumentNullException(nameof(prefixEnrichers));
+        _prefixEnrichers = prefixEnrichers.ToList() ?? throw new ArgumentNullException(nameof(prefixEnrichers));
     }
 
     private void AddPrefixEnricher(PrefixEnricher prefixEnricher)
