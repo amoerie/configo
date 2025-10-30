@@ -9,7 +9,8 @@
 @inject ISnackbar Snackbar
 
 <MudText Typo="Typo.h4" GutterBottom="true">
-    <MudIcon Icon="@Icons.Material.Filled.SettingsSuggest" Size="Size.Large"/> Variables
+    <MudIcon Icon="@Icons.Material.Filled.SettingsSuggest" Size="Size.Large"/>
+    Variables
 </MudText>
 
 @if (_tags.Count == 0)
@@ -30,22 +31,37 @@
             <MudCardHeader Class="py-2">
                 <CardHeaderAvatar>
                     <MudAvatar Size="Size.Small" Variant="Variant.Filled">
-                        <MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Settings" />
+                        <MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Timer"/>
                     </MudAvatar>
                 </CardHeaderAvatar>
                 <CardHeaderContent>
-                    <MudText>Settings</MudText>
+                    <MudText>Pending changes</MudText>
                 </CardHeaderContent>
             </MudCardHeader>
-            <MudCardContent Class="py-0">
+            <MudCardContent Class="py-2 px-4">
                 <MudSwitch T="bool"
                            Value="@_showPendingChangesDiff"
                            ValueChanged="isChecked => OnShowPendingChanges((bool?)isChecked)"
                            Color="Color.Primary">
-                    Show pending changes diff
+                    Show diff
                 </MudSwitch>
+                @foreach (var pendingChange in _pendingChanges)
+                {
+                    var application = _applicationsById[pendingChange.ApplicationId];
+                    var tag = _tagsById[pendingChange.TagId];
+
+                    <MudStack Row="true">
+                        <MudChip T="string"
+                                 Label="true"
+                                 Icon="@Icons.Material.Filled.Cloud"
+                                 Size="Size.Small"
+                                 @onclick="() => OnSelectPendingChange(application, tag)">
+                            @application.Name (@tag.GroupName:@tag.Name)
+                        </MudChip>
+                    </MudStack>
+                }
             </MudCardContent>
-            <MudCardActions>
+            <MudCardActions Class="py-2 px-4">
                 <MudButtonGroup OverrideStyles="false">
                     <MudButton Color="Color.Success"
                                Size="Size.Small"
@@ -53,7 +69,7 @@
                                Disabled="!_hasPendingChanges"
                                @onclick="SavePendingChanges">
                         <MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Save"/>
-                        Save pending
+                        Save changes
                     </MudButton>
                     <MudButton Color="Color.Error"
                                Size="Size.Small"
@@ -61,7 +77,7 @@
                                Disabled="!_hasPendingChanges"
                                @onclick="DiscardPendingChanges">
                         <MudIcon Size="Size.Small" Icon="@Icons.Material.Filled.Delete"/>
-                        Discard pending
+                        Discard changes
                     </MudButton>
                 </MudButtonGroup>
             </MudCardActions>
@@ -78,18 +94,18 @@
                     <MudText>Application</MudText>
                 </CardHeaderContent>
             </MudCardHeader>
-            <MudCardContent Class="py-0">
-                <MudSelect T="int?" 
+            <MudCardContent Class="py-2 px-4">
+                <MudSelect T="int?"
                            Value="_selectedApplicationId"
                            ValueChanged="OnChangeSelectedApplicationId"
                            Variant="Variant.Outlined"
                            Clearable="true"
+                           Placeholder="Choose an application"
                            Margin="Margin.Dense"
-                           Dense="true"
-                           Class="py-0" >
+                           Dense="true">
                     @foreach (var application in _applications)
                     {
-                        <MudSelectItem T="int?" Value="@application.Id">@application.Name@(_applicationIdsWithPendingChanges.Contains(application.Id) ? " *" : "")</MudSelectItem>
+                        <MudSelectItem T="int?" Value="@application.Id">@application.Name</MudSelectItem>
                     }
                 </MudSelect>
             </MudCardContent>
@@ -106,19 +122,19 @@
                     <MudText>Tag</MudText>
                 </CardHeaderContent>
             </MudCardHeader>
-            <MudCardContent Class="py-0">
+            <MudCardContent Class="py-2">
                 <MudSelect T="int?"
                            Value="_selectedTagGroupId"
                            ValueChanged="OnChangeSelectedTagGroupId"
                            Label="Tag group"
-                           Placeholder="Filter by tag group"
+                           Placeholder="Choose a tag group"
                            Variant="Variant.Outlined"
                            Clearable="true"
                            Margin="Margin.Dense"
                            Dense="true">
                     @foreach (var tagGroup in _tagGroups)
                     {
-                        <MudSelectItem Value="@((int?) tagGroup.Id)">@tagGroup.Name@(_tagGroupIdsWithPendingChanges.Contains(tagGroup.Id) ? " *" : "")</MudSelectItem>
+                        <MudSelectItem Value="@((int?)tagGroup.Id)">@tagGroup.Name</MudSelectItem>
                     }
                 </MudSelect>
                 <MudSelect T="int?"
@@ -132,7 +148,7 @@
                            Dense="true">
                     @foreach (var tag in _availableTags)
                     {
-                        <MudSelectItem Value="@((int?) tag.Id)">@tag.Name@(_tagIdsWithPendingChanges.Contains(tag.Id) ? " *" : "")</MudSelectItem>
+                        <MudSelectItem Value="@((int?)tag.Id)">@tag.Name</MudSelectItem>
                     }
                 </MudSelect>
             </MudCardContent>
@@ -140,23 +156,20 @@
     </MudItem>
     <MudItem sm="12" md="7" lg="8" xl="9">
         <MudCard>
-            <MudCardHeader>
-                <MudChipSet T="string">
-                    @if(SelectedApplication is { } selectedApplication)
+            <MudCardHeader Class="px-2 py-1">
+                <MudStack Row="true">
+                    @if (SelectedApplication is { } selectedApplication && SelectedTag is { } selectedTag)
                     {
-                        <MudChip T="string" Icon="@Icons.Material.Filled.Cloud"
-                                 Color="Color.Primary" Text="@selectedApplication.Name" />
-                    }
-                    @if (SelectedTag is { } selectedTag)
-                    {
-                        <MudChip T="string" Icon="@Icons.Material.Filled.Tag"
+                        <MudChip T="string"
+                                 Label="true"
+                                 Icon="@Icons.Material.Filled.Cloud"
                                  Color="Color.Primary">
-                            @selectedTag.GroupName: @selectedTag.Name
+                            @selectedApplication.Name (@selectedTag.GroupName:@selectedTag.Name)
                         </MudChip>
                     }
-                </MudChipSet>
+                </MudStack>
             </MudCardHeader>
-            <MudCardContent>
+            <MudCardContent Class="py-0 px-0">
                 @* Editors go here *@
                 <div id="variables-editor-container" class="container-fluid" style="min-height: 70vh">
 
@@ -180,12 +193,11 @@
     private int? _selectedTagGroupId;
     private int? _selectedTagId;
     private int? _selectedApplicationId;
-    
+    private List<VariablesEditModel> _pendingChanges = [];
+
+
     private Dictionary<int, ApplicationModel> _applicationsById = [];
     private Dictionary<int, TagDropdownModel> _tagsById = [];
-    private HashSet<int> _applicationIdsWithPendingChanges = [];
-    private HashSet<int> _tagIdsWithPendingChanges = [];
-    private HashSet<int> _tagGroupIdsWithPendingChanges = [];
 
     private TagDropdownModel? SelectedTag => _selectedTagId is null ? null : _tagsById[_selectedTagId.Value];
     private ApplicationModel? SelectedApplication => _selectedApplicationId is null ? null : _applicationsById[_selectedApplicationId.Value];
@@ -217,11 +229,12 @@
 
     public async Task RefreshPendingChanges()
     {
-        var pendingChanges = await VariableManager.GetPendingChangesAsync(CancellationToken);
-
-        _applicationIdsWithPendingChanges = pendingChanges.Select(pc => pc.ApplicationId).ToHashSet();
-        _tagIdsWithPendingChanges = pendingChanges.Select(pc => pc.TagId).ToHashSet();
-        _tagGroupIdsWithPendingChanges = _tagIdsWithPendingChanges.Select(id => _tagsById[id]).Select(t => t.GroupId).ToHashSet();
+        _pendingChanges = await VariableManager.GetPendingChangesAsync(CancellationToken);
+        _pendingChanges = _pendingChanges
+            .Select(p => new { PendingChange = p, Application = _applicationsById[p.ApplicationId], Tag = _tagsById[p.TagId] })
+            .OrderBy(p => p.Application.Name).ThenBy(p => p.Tag.GroupOrder).ThenBy(p => p.Tag.Name)
+            .Select(p => p.PendingChange)
+            .ToList();
     }
 
     public async Task DiscardPendingChanges()
@@ -242,7 +255,7 @@
         {
             return;
         }
-        
+
         await VariableManager.SaveToPendingAsync(new VariablesEditModel
         {
             Json = variables,
@@ -284,7 +297,7 @@
         {
             return;
         }
-        
+
         _objectReference ??= DotNetObjectReference.Create(this);
         var schema = await SchemaManager.GetSchemaAsync(_selectedApplicationId, CancellationToken);
         var isReadonly = _showPendingChangesDiff;
@@ -304,7 +317,7 @@
     private async Task OnChangeSelectedTagGroupId(int? selectedTagGroupId)
     {
         _selectedTagGroupId = selectedTagGroupId;
-        if (_selectedTagGroupId is {} tagGroupId)
+        if (_selectedTagGroupId is { } tagGroupId)
         {
             _availableTags.Clear();
             _availableTags.AddRange(_tags.Where(t => t.GroupId == tagGroupId));
@@ -318,7 +331,7 @@
         {
             _selectedTagId = null;
         }
-        
+
         await UpdateEditorAsync();
     }
 
@@ -332,6 +345,13 @@
     {
         _selectedApplicationId = selectedApplicationId;
         await UpdateEditorAsync();
+    }
+
+    private async Task OnSelectPendingChange(ApplicationModel application, TagDropdownModel tag)
+    {
+        await OnChangeSelectedApplicationId(application.Id);
+        await OnChangeSelectedTagGroupId(tag.GroupId);
+        await OnChangeSelectedTagId(tag.Id);
     }
 
     private async Task OnShowPendingChanges(bool? value)
