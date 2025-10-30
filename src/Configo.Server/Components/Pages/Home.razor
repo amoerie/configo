@@ -31,12 +31,7 @@
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent>
-                <MudList Gutters="false" T="string">
-                    @foreach (var tag in _tags)
-                    {
-                        <MudListItem Text="@tag.Name"/>
-                    }
-                </MudList>
+                <MudChip T="string" Size="Size.Medium">@_tags.Count tags configured</MudChip>
             </MudCardContent>
             <MudCardActions>
                 <MudButton Color="Color.Primary" Href="@Urls.Tags">Manage</MudButton>
@@ -58,12 +53,7 @@
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent>
-                <MudList Gutters="false" T="string">
-                    @foreach (var application in _applications)
-                    {
-                        <MudListItem Text="@application.Name"/>
-                    }
-                </MudList>
+                <MudChip T="string" Size="Size.Medium">@_applications.Count applications configured</MudChip>
             </MudCardContent>
             <MudCardActions>
                 <MudButton Color="Color.Primary" Href="@Urls.Applications">Manage</MudButton>
@@ -86,12 +76,7 @@
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent>
-                <MudList Gutters="false" T="string">
-                    @foreach (var apiKey in _apiKeys)
-                    {
-                        <MudListItem Text="@(apiKey.Key.Substring(0, 5) + "...")"></MudListItem>
-                    }
-                </MudList>
+                <MudChip T="string" Size="Size.Medium">@_apiKeys.Count API keys configured</MudChip>
             </MudCardContent>
             <MudCardActions>
                 <MudButton Color="Color.Primary" Href="@Urls.ApiKeys">Manage</MudButton>
