@@ -39,7 +39,7 @@
         <TemplateColumn Title="# Tags" 
                         Editable="false"
                         Filterable="false" 
-                        Sortable="true"
+                        Sortable="false"
                         SortBy="(TagGroupModel model) => model.NumberOfTags">
             <CellTemplate>
                 <MudChip Color="Color.Primary">@context.Item.NumberOfTags</MudChip> 
@@ -49,6 +49,7 @@
                         Title="Updated" 
                         Editable="false"
                         Filterable="false"
+                        Sortable="false"
                         Format="u"/>
         <TemplateColumn Editable="false" Filterable="false" Sortable="false">
             <CellTemplate>
